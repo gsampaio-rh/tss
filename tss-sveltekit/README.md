@@ -1,0 +1,54 @@
+# Tactical Sailing Simulator (TSS)
+
+A tactical sailing race simulator built with SvelteKit and TypeScript.
+
+**Version 1.0.0** - Core features complete and stable.
+
+## Quick Start
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+## Features
+
+- 🎮 Full tactical sailing race simulation
+- ⛵ Player management with customizable start positions
+- 🌬️ Wind scenario system (presets + custom scenarios)
+- 📊 Visual game canvas with tactical grid and laylines
+- 🎨 Modern UI with responsive layout
+- 💾 Settings and game state persistence
+- 🔧 TypeScript for type safety
+
+## Project Structure
+
+- `src/lib/components/` - Svelte components
+- `src/lib/stores/` - State management
+- `src/lib/types/` - TypeScript definitions
+- `src/lib/utils/` - Utility functions
+- `src/routes/` - Application routes
+
+## Documentation
+
+- [Release Notes](./RELEASE_NOTES.md) - Version 1.0 release notes
+- [Product Backlog](./BACKLOG.md) - Future features and enhancements
+- [Migration Status](./MIGRATION_STATUS.md) - Migration completion summary
+- [Migration Guide](../docs/MIGRATION_GUIDE.md) - Historical migration documentation
+
+## Version
+
+**1.0.0** - Core features complete and stable.
+
+---
+
+Built with [SvelteKit](https://kit.svelte.dev/) and [TypeScript](https://www.typescriptlang.org/)
