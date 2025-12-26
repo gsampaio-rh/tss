@@ -8,6 +8,7 @@
   import ScaleIndicator from './ScaleIndicator.svelte';
   import GridLabels from './GridLabels.svelte';
   import GridLines from './GridLines.svelte';
+  import BoatTacticalLines from './BoatTacticalLines.svelte';
   import { onMount, afterUpdate } from 'svelte';
   
   let gameArea: HTMLDivElement;
@@ -203,6 +204,11 @@
       
       <!-- Marks -->
       <Marks marks={$marks} />
+      
+      <!-- Tactical Lines (Course Axis, Wind Axis, Target Angles) -->
+      {#each $players as player, playerIndex}
+        <BoatTacticalLines boat={player} {playerIndex} />
+      {/each}
       
       <!-- Boats -->
       {#if $settings.showBoats}
