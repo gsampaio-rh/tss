@@ -16,7 +16,8 @@ export const currentWind = derived(
   [game, turnCount],
   ([$game, $turnCount]) => {
     if (!$game) return 0;
-    return $game.getWind($turnCount + 1);
+    // Use turnCount directly (not +1) so wind[0] is shown at start
+    return $game.getWind($turnCount);
   }
 );
 

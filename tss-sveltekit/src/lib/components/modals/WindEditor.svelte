@@ -142,8 +142,7 @@
       width: formatNumber(mapWidth, 40),
       height: formatNumber(mapHeight, 30),
       startsize: formatNumber(startLineSize, 15),
-      stepscount: windValues.length,
-      allowedit: true
+      stepscount: windValues.length
     };
     
     if (editIndex === -1) {

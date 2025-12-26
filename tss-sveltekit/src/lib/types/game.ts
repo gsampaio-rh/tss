@@ -98,14 +98,32 @@ export class Game {
   setWindFromScenario(windscenario: WindScenario): void {
     this.wind = [];
     const stepscount = windscenario.stepscount || 50;
-    for (let i = 0; i < stepscount; i++) {
-      this.wind[i] = windscenario.wind[i % windscenario.wind.length];
+    // Wind must always start at 0 so the windward mark makes sense
+    // Store the first wind value from scenario to use as offset
+    const firstWindValue = windscenario.wind.length > 0 ? windscenario.wind[0] : 0;
+    
+    // First turn always has wind = 0
+    this.wind[0] = 0;
+    
+    // Subsequent turns use relative shifts from the scenario
+    for (let i = 1; i < stepscount; i++) {
+      const scenarioIndex = i % windscenario.wind.length;
+      const scenarioWind = windscenario.wind[scenarioIndex];
+      // Calculate relative shift from first value
+      this.wind[i] = scenarioWind - firstWindValue;
     }
     this.setMapData(windscenario);
   }
 
   setWindFromRandom(windscenario: WindScenario): void {
     this.wind = [];
+    
+    // Wind must always start at 0 so the windward mark makes sense
+    // Store the first wind value from scenario to use as offset
+    const firstWindValue = windscenario.wind.length > 0 ? windscenario.wind[0] : 0;
+
+    // First turn always has wind = 0
+    this.wind.push(0);
 
     while (this.wind.length < 50) {
       const cards: number[] = [];
@@ -114,9 +132,11 @@ export class Game {
           cards.push(windscenario.wind[i]);
         }
       }
-      while (cards.length > 0) {
+      while (cards.length > 0 && this.wind.length < 50) {
         const index = Math.floor(Math.random() * cards.length);
-        this.wind.push(cards[index]);
+        const scenarioWind = cards[index];
+        // Calculate relative shift from first value
+        this.wind.push(scenarioWind - firstWindValue);
         cards.splice(index, 1);
       }
     }

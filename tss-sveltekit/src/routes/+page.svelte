@@ -3,6 +3,7 @@
   import PlayerControl from '$lib/components/controls/PlayerControl.svelte';
   import WindSelector from '$lib/components/controls/WindSelector.svelte';
   import GameCanvas from '$lib/components/game/GameCanvas.svelte';
+  import LiftKnockIndicator from '$lib/components/game/LiftKnockIndicator.svelte';
   import { settings } from '$lib/stores/settings';
   import { game, players, turnCount, isStart, gameActions, currentWind } from '$lib/stores/game';
   import { windScenarios, windActions, initializeWindScenarios } from '$lib/stores/wind';
@@ -25,7 +26,6 @@
   
   // Sidebar state - collapsible sections
   let settingsExpanded = false;
-  let tacticalInsightExpanded = false;
   
   // Compute tactical insights for all players
   $: tacticalInsights = (() => {
@@ -142,16 +142,6 @@
     return { hasImportantInsights, insights, groupedInsights };
   })();
   
-  // Auto-expand when important insights appear (only once, not on every reactive update)
-  let hasAutoExpanded = false;
-  $: if (tacticalInsights.hasImportantInsights && !hasAutoExpanded && !tacticalInsightExpanded) {
-    tacticalInsightExpanded = true;
-    hasAutoExpanded = true;
-  }
-  // Reset auto-expand flag when insights clear
-  $: if (!tacticalInsights.hasImportantInsights) {
-    hasAutoExpanded = false;
-  }
   
   function handleStart() {
     // Apply all player settings first
@@ -207,36 +197,8 @@
 </svelte:head>
 
 <div class="d-flex h-100" style="overflow: hidden; background: #f0f0f0;">
-  <!-- Game Canvas - 80% width, full height stage -->
-  <div class="game-stage-container" style="width: 80%; height: 100vh; position: relative; background: #d5d5d5; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-right: 3px solid #bbb;">
-    {#if $game}
-      <div class="game-field-container" style="
-        width: 100%; 
-        height: 100%; 
-        max-width: 100vh; 
-        max-height: 100vh; 
-        background: #ebeaff; 
-        position: relative;
-        border: 2px solid rgba(0, 0, 0, 0.15);
-        border-radius: 4px;
-        box-shadow: 
-          inset 0 0 30px rgba(0,0,0,0.08),
-          0 2px 8px rgba(0,0,0,0.1);
-      ">
-        <GameCanvas />
-      </div>
-    {:else}
-      <div class="d-flex align-items-center justify-content-center h-100">
-        <div class="text-center">
-          <h3>Loading game...</h3>
-          <p class="text-muted">Initializing wind scenarios...</p>
-        </div>
-      </div>
-    {/if}
-  </div>
-
-  <!-- Right Sidebar - 20% width, redesigned with hierarchy -->
-  <div class="sidebar" style="width: 20%; background: #ffffff; overflow-y: auto; height: 100vh; flex-shrink: 0; box-shadow: -2px 0 10px rgba(0,0,0,0.1); border-left: 1px solid #e0e0e0;">
+  <!-- Left Sidebar - Controls and Settings -->
+  <div class="sidebar sidebar-left" style="width: 18%; background: #ffffff; overflow-y: auto; height: 100vh; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); border-right: 1px solid #e0e0e0;">
     <div class="sidebar-content">
       <!-- Minimal Header -->
       <div class="sidebar-header">
@@ -385,34 +347,51 @@
           </div>
         {/if}
       </div>
-      
-      <!-- Tactical Insight Panel - Contextual Coach/Referee -->
-      <div class="sidebar-section collapsible tactical-insight-panel" class:has-alerts={tacticalInsights.hasImportantInsights}>
-        <button 
-          class="section-toggle"
-          on:click={() => tacticalInsightExpanded = !tacticalInsightExpanded}
-          aria-expanded={tacticalInsightExpanded}
-        >
+    </div>
+  </div>
+
+  <!-- Game Canvas - 64% width, full height stage -->
+  <div class="game-stage-container" style="width: 64%; height: 100vh; position: relative; background: #d5d5d5; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-left: 1px solid #bbb; border-right: 1px solid #bbb;">
+    {#if $game}
+      <div class="game-field-container" style="
+        width: 100%; 
+        height: 100%; 
+        max-width: 100vh; 
+        max-height: 100vh; 
+        background: #ebeaff; 
+        position: relative;
+        border: 2px solid rgba(0, 0, 0, 0.15);
+        border-radius: 4px;
+        box-shadow: 
+          inset 0 0 30px rgba(0,0,0,0.08),
+          0 2px 8px rgba(0,0,0,0.1);
+      ">
+        <GameCanvas />
+      </div>
+    {:else}
+      <div class="d-flex align-items-center justify-content-center h-100">
+        <div class="text-center">
+          <h3>Loading game...</h3>
+          <p class="text-muted">Initializing wind scenarios...</p>
+        </div>
+      </div>
+    {/if}
+  </div>
+
+  <!-- Right Sidebar - Insights Only, 18% width -->
+  <div class="sidebar sidebar-right" style="width: 18%; background: #ffffff; overflow-y: auto; height: 100vh; flex-shrink: 0; box-shadow: -2px 0 10px rgba(0,0,0,0.1); border-left: 1px solid #e0e0e0;">
+    <div class="sidebar-content">
+      <!-- Tactical Insight Panel - Contextual Coach/Referee (Always Expanded) -->
+      <div class="sidebar-section tactical-insight-panel" class:has-alerts={tacticalInsights.hasImportantInsights}>
+        <div class="section-header">
           <h6 class="section-title">
             {#if tacticalInsights.hasImportantInsights}
               <span class="alert-indicator">⚠</span>
             {/if}
             Race Insight
           </h6>
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="16" 
-            height="16" 
-            fill="currentColor" 
-            viewBox="0 0 16 16"
-            class="toggle-icon"
-            class:expanded={tacticalInsightExpanded}
-          >
-            <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
-          </svg>
-        </button>
-        {#if tacticalInsightExpanded}
-          <div class="section-content">
+        </div>
+        <div class="section-content">
             {#if $game && !$isStart}
               <div class="tactical-insight-content">
                 <!-- Grouped Insights First (if any) -->
@@ -472,7 +451,13 @@
                               <span class="position-text">Trailing by {insight.relativeToOthers.toFixed(1)}</span>
                             {/if}
                           </div>
-                          <div class="insight-message">{insight.message}</div>
+                          <!-- Lift/Knock Visual Indicator -->
+                          {#if insight.level !== 'neutral' && insight.level !== 'optimal'}
+                            <LiftKnockIndicator 
+                              relativeAngle={insight.relativeAngle} 
+                              liftAmount={insight.liftAmount} 
+                            />
+                          {/if}
                           <div class="insight-detail">{insight.detail}</div>
                           {#if insight.level === 'act'}
                             <div class="insight-action">
@@ -515,7 +500,6 @@
               <p class="text-muted small">Loading...</p>
             {/if}
           </div>
-        {/if}
       </div>
     </div>
   </div>
@@ -535,6 +519,14 @@
   .sidebar {
     display: flex;
     flex-direction: column;
+  }
+  
+  .sidebar-left {
+    min-width: 200px;
+  }
+  
+  .sidebar-right {
+    min-width: 250px;
   }
   
   .sidebar-content {
@@ -864,6 +856,12 @@
     color: #6c757d;
     font-style: italic;
     font-size: 0.85rem;
+  }
+  
+  .wind-deviation {
+    margin-top: 0.25rem;
+    padding-top: 0.25rem;
+    border-top: 1px solid #e9ecef;
   }
   
   .badge-sm {
