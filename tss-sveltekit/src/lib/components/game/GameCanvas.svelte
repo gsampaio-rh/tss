@@ -1,7 +1,7 @@
 <script lang="ts">
   import { game, players, marks, gameWidth, gameHeight, currentWind, turnCount } from '$lib/stores/game';
   import { settings } from '$lib/stores/settings';
-  import { GRID_SIZE } from '$lib/types/game';
+  import { GRID_SIZE, getBoatColorHex } from '$lib/types/game';
   import Boat from './Boat.svelte';
   import Marks from './Marks.svelte';
   import WindParticles from './WindParticles.svelte';
@@ -35,41 +35,30 @@
     
     if (w === 0 || h === 0) return; // Container not sized yet
     
-    let scale: number;
-    let left = 0;
-    let top = 0;
-    
-    // Use 95% of available space to ensure map stays within bounds
-    // Leave some padding to prevent overflow into sidebars
-    const padding = Math.min(w * 0.025, h * 0.025); // 2.5% padding on each side
-    const targetWidth = w - (padding * 2);
-    const targetHeight = h - (padding * 2);
-    
+    // Game area should have the actual game size in pixels
     const gameWidthPx = $game.width * GRID_SIZE;
     const gameHeightPx = $game.height * GRID_SIZE;
     
-    // Calculate scale to fit within bounds while maintaining aspect ratio
-    const scaleX = targetWidth / gameWidthPx;
-    const scaleY = targetHeight / gameHeightPx;
+    // Set game-area to actual game dimensions
+    gameArea.style.width = formatCssPx(gameWidthPx);
+    gameArea.style.height = formatCssPx(gameHeightPx);
     
-    // Use the smaller scale to maintain aspect ratio and ensure it fits
-    scale = Math.min(scaleX, scaleY);
+    // Calculate scale to fit within container
+    const scaleX = w / gameWidthPx;
+    const scaleY = h / gameHeightPx;
     
-    // Center the game area within the container
+    // Use the larger scale to fill the container completely
+    const scale = Math.max(scaleX, scaleY);
+    
+    // Center the game-area within the container
     const scaledWidth = gameWidthPx * scale;
     const scaledHeight = gameHeightPx * scale;
-    left = (w - scaledWidth) / 2;
-    top = (h - scaledHeight) / 2;
+    const left = (w - scaledWidth) / 2;
+    const top = (h - scaledHeight) / 2;
     
-    // Ensure position is never negative (prevents overflow)
-    left = Math.max(0, left);
-    top = Math.max(0, top);
-    
-    gameArea.style.left = formatCssPx(left);
-    gameArea.style.top = formatCssPx(top);
-    gameArea.style.scale = scale.toString();
-    gameArea.style.height = formatCssPx($game.height * GRID_SIZE);
-    gameArea.style.width = formatCssPx($game.width * GRID_SIZE);
+    // Apply transform to scale and position
+    gameArea.style.transform = `translate(${left}px, ${top}px) scale(${scale})`;
+    gameArea.style.transformOrigin = 'top left';
   }
   
   // Only re-render when game dimensions change
@@ -166,14 +155,14 @@
     <div 
       bind:this={gameArea}
       id="game-area" 
-      style="position: absolute; overflow: hidden;"
+      style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden;"
       data-show-boats={$settings.showBoats ? 'full' : 'dot'}
     >
       <!-- Background -->
       <svg 
         viewBox={formatSvgViewBox(0, 0, $game.width, $game.height)} 
         id="background" 
-        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #ebeaff;"
+        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #F4F6F8;"
       ></svg>
       
       <!-- Grid Lines (visual grid for spatial reference - major/minor structure) -->
@@ -195,14 +184,14 @@
           viewBox={formatSvgViewBox(0, 0, $game.width, $game.height)}
         >
           {#each $players as player, playerIndex}
-            {@const isCurrentPlayer = playerIndex === 0}
-            {@const trackOpacity = isCurrentPlayer ? 0.9 : 0.5}
-            {@const trackWidth = isCurrentPlayer ? 0.08 : 0.05}
+            {@const trackOpacity = 0.4}
+            {@const trackWidth = 0.08}
+            {@const trackColor = getBoatColorHex(player.color)}
             <polyline 
               class="player-track"
               data-player-index={playerIndex.toString()}
               points={getTrackPoints(player)}
-              stroke={player.color}
+              stroke={trackColor}
               fill="none"
               stroke-width={trackWidth}
               opacity={trackOpacity}
@@ -224,25 +213,8 @@
       <!-- Wind Particles -->
       <WindParticles />
       
-      <!-- Laylines (from up mark) - Decision-defining elements -->
+        <!-- Laylines (from up mark) - Decision-defining elements -->
         {#if $settings.showLanelines && upMark}
-          {@const laylineOpacity = (() => {
-            // Calculate relevance based on closest boat distance to laylines
-            if ($players.length === 0) return 0.4;
-            let minDistance = Infinity;
-            for (const player of $players) {
-              if (player.finished !== false) continue;
-              // Distance from boat to windward mark
-              const distToMark = Math.sqrt(
-                Math.pow(player.x - upMark.x, 2) + Math.pow(player.y - upMark.y, 2)
-              );
-              if (distToMark < minDistance) minDistance = distToMark;
-            }
-            // Fade if far (> 15 units), strengthen if close (< 8 units)
-            if (minDistance > 15) return 0.25;
-            if (minDistance < 8) return 0.6;
-            return 0.4;
-          })()}
           <!-- Laylines SVG - extends from windward mark across full field -->
           <svg 
             xmlns="http://www.w3.org/2000/svg" 
@@ -256,7 +228,6 @@
               width: 100%;
               height: 100%;
               pointer-events: none;
-              opacity: {laylineOpacity};
               z-index: 15;
             "
           >
@@ -269,8 +240,9 @@
               y1={upMark.y} 
               x2={portLaylineEndX} 
               y2={portLaylineEndY}
-              stroke="#444" 
+              stroke="#8FA3BF" 
               stroke-width="0.08"
+              stroke-opacity="0.6"
               stroke-dasharray="0.5 1.5"
               stroke-linecap="round"
             ></line>
@@ -280,8 +252,9 @@
               y1={upMark.y} 
               x2={starboardLaylineEndX} 
               y2={starboardLaylineEndY}
-              stroke="#444" 
+              stroke="#8FA3BF" 
               stroke-width="0.08"
+              stroke-opacity="0.6"
               stroke-dasharray="0.5 1.5"
               stroke-linecap="round"
             ></line>
@@ -323,7 +296,7 @@
                       y1="5" 
                       x2="5" 
                       y2="0" 
-                      stroke={player.color}
+                      stroke={getBoatColorHex(player.color)}
                       stroke-width="0.15"
                       stroke-linecap="round"
                       transform="rotate({angleDiff1 < angleDiff2 ? laylineAngle1 - angleToMark : laylineAngle2 - angleToMark} 5 5)"
@@ -346,8 +319,7 @@
           id="start-line" 
           stroke-dasharray="0.4 0.6" 
           stroke-width="0.12" 
-          stroke="#555"
-          opacity="0.7"
+          stroke="#6B8EC6"
           stroke-linecap="round"
           x1={startMark1 ? startMark1.x : 0}
           y1={startMark1 ? startMark1.y : 0}

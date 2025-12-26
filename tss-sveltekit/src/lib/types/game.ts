@@ -10,6 +10,27 @@ export const COLORS = [
   'purple', 'gray', 'yellow', 'darkred', 'darkblue', 'goldenrod'
 ];
 
+// Color mapping for boats - converts color names to hex values
+export const BOAT_COLORS: Record<string, string> = {
+  'red': '#D94B41',
+  'blue': '#2F6FD6',
+  'black': '#000000',
+  'green': '#4A9B4A',
+  'cyan': '#00CED1',
+  'magenta': '#C71585',
+  'purple': '#9370DB',
+  'gray': '#808080',
+  'yellow': '#FFD700',
+  'darkred': '#8B0000',
+  'darkblue': '#00008B',
+  'goldenrod': '#DAA520'
+};
+
+// Helper function to get boat color hex value
+export function getBoatColorHex(colorName: string): string {
+  return BOAT_COLORS[colorName.toLowerCase()] || colorName;
+}
+
 export enum MarkType {
   StartLeft = 0,
   StartRight = 1,

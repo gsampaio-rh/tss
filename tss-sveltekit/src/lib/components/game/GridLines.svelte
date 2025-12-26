@@ -61,14 +61,14 @@
   style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5;"
 >
   <!-- Minor grid lines (very faint) -->
-  <g opacity="0.15">
+  <g>
     {#each minorVerticalLines as x}
       <line 
         x1={x} 
         y1="0" 
         x2={x} 
         y2={gameHeight}
-        stroke="#999"
+        stroke="rgba(0, 0, 0, 0.035)"
         stroke-width="0.015"
       />
     {/each}
@@ -79,21 +79,21 @@
         y1={y} 
         x2={gameWidth} 
         y2={y}
-        stroke="#999"
+        stroke="rgba(0, 0, 0, 0.035)"
         stroke-width="0.015"
       />
     {/each}
   </g>
   
   <!-- Major grid lines (more visible) -->
-  <g opacity="0.3">
+  <g>
     {#each majorVerticalLines as x}
       <line 
         x1={x} 
         y1="0" 
         x2={x} 
         y2={gameHeight}
-        stroke="#666"
+        stroke="rgba(0, 0, 0, 0.07)"
         stroke-width="0.03"
       />
     {/each}
@@ -104,7 +104,7 @@
         y1={y} 
         x2={gameWidth} 
         y2={y}
-        stroke="#666"
+        stroke="rgba(0, 0, 0, 0.07)"
         stroke-width="0.03"
       />
     {/each}

@@ -49,13 +49,13 @@
       />
       
       {#if i === 2}
-        <!-- Up mark (dashed ring) -->
+        <!-- Windward mark (dashed ring with accent) -->
         <circle 
           cx="18" 
           cy="18" 
           r="12" 
-          fill="none" 
-          stroke="rgba(0, 0, 0, 0.45)" 
+          fill="#7A7F87" 
+          stroke="#3E4451" 
           stroke-width="2" 
           stroke-dasharray="2 2"
           class="mark-ring"
@@ -63,18 +63,26 @@
         <circle 
           cx="18" 
           cy="18" 
-          r="2.5" 
-          fill="#6d2121"
+          r="3" 
+          fill="#3E4451"
           class="mark-center"
         />
+        <!-- Windward mark accent dot (top) -->
+        <circle 
+          cx="18" 
+          cy="6" 
+          r="2" 
+          fill="#E5533D"
+          class="mark-accent"
+        />
       {:else}
-        <!-- Regular mark (solid ring) -->
+        <!-- Regular mark (start marks - Pin/Boat) -->
         <circle 
           cx="18" 
           cy="18" 
           r="12" 
-          fill="none" 
-          stroke="rgba(0, 0, 0, 0.45)" 
+          fill="#7A7F87" 
+          stroke="#4A6FAE" 
           stroke-width="2"
           class="mark-ring"
         />
@@ -82,7 +90,7 @@
           cx="18" 
           cy="18" 
           r="3" 
-          fill="#6d2121"
+          fill="#4A6FAE"
           class="mark-center"
         />
       {/if}

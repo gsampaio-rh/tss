@@ -57,14 +57,15 @@
   <!-- Y-axis labels (left edge only, aligned) -->
   {#each yLabels as y}
     <text 
-      x="0.5" 
-      y={y + 0.25}
+      x="0.3" 
+      y={y}
       font-size="0.65"
       fill="#777"
       opacity="0.6"
       text-anchor="start"
       font-family="Arial, sans-serif"
       font-weight="500"
+      dominant-baseline="middle"
     >
       {y}
     </text>

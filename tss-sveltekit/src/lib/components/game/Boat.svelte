@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Boat } from '$lib/types/boat';
-  import { GRID_SIZE } from '$lib/types/game';
+  import { GRID_SIZE, getBoatColorHex } from '$lib/types/game';
   
   export let boat: Boat;
   export let playerIndex: number = 0;
@@ -77,7 +77,7 @@
     top: {formatCssPx(boat.y * GRID_SIZE)};
     rotate: {formatCssDeg(boat.rotation)};
     transform: scaleX({sx});
-    color: {boat.color};
+    color: {getBoatColorHex(boat.color)};
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)) drop-shadow(0 0 8px rgba(255,255,255,0.5));
     cursor: pointer;
   "

@@ -67,7 +67,7 @@
     particle.setAttribute('x2', startX.toFixed(2));
     particle.setAttribute('y2', startY.toFixed(2));
     
-    particle.setAttribute('stroke', 'rgba(60, 60, 60, 0.6)');
+    particle.setAttribute('stroke', 'rgba(95, 125, 184, 0.35)');
     particle.setAttribute('stroke-width', '0.08'); // Much thinner stroke
     particle.setAttribute('stroke-linecap', 'round');
     
