@@ -180,6 +180,13 @@ export class Game {
 
     for (let i = 0; i < this.players.length; i++) {
       const player = this.players[i];
+      // If boat has custom position, preserve it
+      if (player.customStartX !== undefined) {
+        player.x = player.customStartX;
+        player.y = this.height - 2;
+        continue;
+      }
+      
       if (player.startPos === 0) {
         boatsStartLeft.push(player);
       } else if (player.startPos === 2) {

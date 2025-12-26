@@ -97,9 +97,40 @@ export const gameActions = {
       if (player.startPos !== startPos) {
         player.startPos = startPos;
         player.startPriority = g.currentStartPriority++;
+        // Clear custom position when changing startPos via buttons
+        player.customStartX = undefined;
         g.placeBoatsOnStart();
         players.set(g.players);
       }
+      
+      return g;
+    });
+  },
+  
+  updateStartPosition: (playerIndex: number, x: number) => {
+    game.update(g => {
+      if (!g || !g.isStart) return g;
+      const player = g.players[playerIndex];
+      if (!player) return g;
+      
+      // Constrain X to be between the start marks
+      const startMark1 = g.marks[0];
+      const startMark2 = g.marks[1];
+      if (!startMark1 || !startMark2) return g;
+      
+      const minX = Math.min(startMark1.x, startMark2.x) + 0.5;
+      const maxX = Math.max(startMark1.x, startMark2.x) - 0.5;
+      const constrainedX = Math.max(minX, Math.min(maxX, x));
+      
+      // Store custom position
+      player.customStartX = constrainedX;
+      player.x = constrainedX;
+      player.y = g.height - 2; // Keep on start line
+      player.startPriority = g.currentStartPriority++;
+      
+      // Re-position all boats (will preserve custom positions)
+      g.placeBoatsOnStart();
+      players.set(g.players);
       
       return g;
     });

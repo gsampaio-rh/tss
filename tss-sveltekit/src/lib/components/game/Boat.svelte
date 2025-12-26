@@ -5,10 +5,16 @@
   export let boat: Boat;
   export let playerIndex: number = 0;
   
-  import { currentWind } from '$lib/stores/game';
+  import { currentWind, isStart, game, gameActions } from '$lib/stores/game';
+  import { onMount, onDestroy } from 'svelte';
   
   let boatElement: HTMLDivElement;
   let hovered = false;
+  let isDragging = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let initialBoatX = 0;
+  let initialBoatY = 0;
   
   function handleMouseEnter() {
     hovered = true;
@@ -21,6 +27,11 @@
   }
   
   function handleClick() {
+    // Don't focus if we're in start phase and might be dragging
+    if ($isStart && isDragging) {
+      return;
+    }
+    
     const currentFocused = document.body.getAttribute('data-focused-player');
     if (currentFocused === playerIndex.toString()) {
       document.body.removeAttribute('data-focused-player');
@@ -28,6 +39,78 @@
       document.body.setAttribute('data-focused-player', playerIndex.toString());
     }
   }
+  
+  function handleMouseDown(e: MouseEvent) {
+    if (!$isStart) return;
+    
+    isDragging = true;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    initialBoatX = boat.x;
+    initialBoatY = boat.y;
+    
+    // Add global listeners
+    if (typeof document !== 'undefined') {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+    
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  
+  function handleMouseMove(e: MouseEvent) {
+    if (!$isStart || !isDragging) return;
+    
+    const gameHeight = $game?.height || 0;
+    const startMark1 = $game?.marks[0];
+    const startMark2 = $game?.marks[1];
+    
+    if (!startMark1 || !startMark2) return;
+    
+    // Calculate delta in game units
+    const deltaX = (e.clientX - dragStartX) / GRID_SIZE;
+    
+    // Calculate new position
+    let newX = initialBoatX + deltaX;
+    
+    // Constrain X to be between the start marks (with some margin)
+    const minX = Math.min(startMark1.x, startMark2.x) + 0.5;
+    const maxX = Math.max(startMark1.x, startMark2.x) - 0.5;
+    newX = Math.max(minX, Math.min(maxX, newX));
+    
+    // Keep Y on the start line (height - 2)
+    const startLineY = gameHeight - 2;
+    
+    // Update boat position
+    boat.x = newX;
+    boat.y = startLineY;
+  }
+  
+  function handleMouseUp(e: MouseEvent) {
+    if (!$isStart || !isDragging) return;
+    
+    isDragging = false;
+    
+    // Remove global listeners
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    }
+    
+    // Save custom position
+    if ($game) {
+      gameActions.updateStartPosition(playerIndex, boat.x);
+    }
+  }
+  
+  onDestroy(() => {
+    // Cleanup listeners on destroy
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    }
+  });
   
   // Calculate wind angle arc for hover visualization
   $: windAngle = $currentWind * 2;
@@ -79,10 +162,12 @@
     transform: scaleX({sx});
     color: {getBoatColorHex(boat.color)};
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)) drop-shadow(0 0 8px rgba(255,255,255,0.5));
-    cursor: pointer;
+    cursor: {$isStart ? 'grab' : 'pointer'};
   "
+  class:dragging={isDragging}
   on:mouseenter={handleMouseEnter}
   on:mouseleave={handleMouseLeave}
+  on:mousedown={handleMouseDown}
   on:click={handleClick}
   on:keydown={(e) => e.key === 'Enter' || e.key === ' ' ? handleClick() : null}
 >
@@ -106,6 +191,16 @@
   .pn-boat:hover {
     filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4)) drop-shadow(0 0 12px rgba(255,255,255,0.7));
     transform: scale(1.1);
+  }
+  
+  .pn-boat.dragging {
+    cursor: grabbing !important;
+    z-index: 102;
+    transition: none;
+  }
+  
+  :global(body:not(.start)) .pn-boat.dragging {
+    cursor: pointer !important;
   }
   
 </style>

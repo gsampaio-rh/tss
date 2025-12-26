@@ -27,6 +27,7 @@ export class Boat {
   isStart: boolean = true;
   startPos: number = 1;
   startPriority: number = 0;
+  customStartX?: number; // Custom X position on start line (when dragged)
   color: string;
   name: string = '';
   turntype: TurnType = TurnType.Forward;
