@@ -81,6 +81,7 @@
     class="wind-zones"
     xmlns="http://www.w3.org/2000/svg"
     viewBox={formatSvgViewBox(0, 0, gameWidth, gameHeight)}
+    data-player-index={playerIndex.toString()}
     style="
       position: absolute;
       left: 0;
@@ -224,11 +225,6 @@
   
   .wind-zone {
     transition: opacity 0.2s ease;
-  }
-  
-  .zone-label {
-    pointer-events: none;
-    user-select: none;
   }
 </style>
 

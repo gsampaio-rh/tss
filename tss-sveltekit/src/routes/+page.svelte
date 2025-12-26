@@ -486,16 +486,24 @@
                               <span 
                                 class="player-dot" 
                                 style="background-color: {$players[playerIdx].color};"
+                                role="button"
+                                tabindex="0"
+                                aria-label={$players[playerIdx].name || `Player ${playerIdx + 1}`}
                                 on:mouseenter={() => highlightPlayer(playerIdx)}
                                 on:mouseleave={() => unhighlightPlayer()}
                                 on:click={() => focusPlayer(playerIdx)}
+                                on:keydown={(e) => e.key === 'Enter' || e.key === ' ' ? focusPlayer(playerIdx) : null}
                                 title={$players[playerIdx].name || `Player ${playerIdx + 1}`}
                               ></span>
                               <span 
                                 class="player-name-link"
+                                role="button"
+                                tabindex="0"
+                                aria-label={$players[playerIdx].name || `Player ${playerIdx + 1}`}
                                 on:mouseenter={() => highlightPlayer(playerIdx)}
                                 on:mouseleave={() => unhighlightPlayer()}
                                 on:click={() => focusPlayer(playerIdx)}
+                                on:keydown={(e) => e.key === 'Enter' || e.key === ' ' ? focusPlayer(playerIdx) : null}
                               >
                                 {$players[playerIdx].name || `P${playerIdx + 1}`}
                               </span>
@@ -514,9 +522,13 @@
                       class="insight-card player-insight" 
                       class:needs-attention={insight.level === 'act' || insight.level === 'watch'}
                       data-player-index={insight.playerIndex.toString()}
+                      role="button"
+                      tabindex="0"
+                      aria-label={`Focus on ${$players[insight.playerIndex].name || `Player ${insight.playerIndex + 1}`}`}
                       on:mouseenter={() => highlightPlayer(insight.playerIndex)}
                       on:mouseleave={() => unhighlightPlayer()}
                       on:click={() => focusPlayer(insight.playerIndex)}
+                      on:keydown={(e) => e.key === 'Enter' || e.key === ' ' ? focusPlayer(insight.playerIndex) : null}
                     >
                       <div class="insight-header">
                         <span class="player-dot" style="background-color: {insight.player.color};"></span>

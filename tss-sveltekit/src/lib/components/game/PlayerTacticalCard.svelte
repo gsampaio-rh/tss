@@ -152,11 +152,13 @@
 <div 
   class="player-tactical-card"
   data-player-index={playerIndex.toString()}
-  on:click={handleClick}
-  on:mouseenter={handleMouseEnter}
-  on:mouseleave={handleMouseLeave}
   role="button"
   tabindex="0"
+  aria-label={`Tactical card for ${player.name || `Player ${playerIndex + 1}`}`}
+  on:click={handleClick}
+  on:keydown={(e) => e.key === 'Enter' || e.key === ' ' ? handleClick() : null}
+  on:mouseenter={handleMouseEnter}
+  on:mouseleave={handleMouseLeave}
 >
   <!-- Card Header -->
   <div class="card-header">

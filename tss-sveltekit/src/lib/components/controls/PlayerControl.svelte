@@ -175,9 +175,9 @@
           <div class="pn-control-color" style="background-color: {player.color};"></div>
         </span>
         
-        <label class="col-form-label border col name-input">
+        <div class="col-form-label border col name-input">
           {player.name || `Player ${playerIndex + 1}`}
-        </label>
+        </div>
         
         <span class="input-group-text">
           <div class="pn-control-finish-time">

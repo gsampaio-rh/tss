@@ -198,7 +198,8 @@
     if (!$game || !svgElement) return null;
     
     const particle = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    particle.setAttribute('class', 'pn-wind-particle');
+    // Apply styles directly since we're creating elements dynamically
+    particle.setAttribute('style', 'pointer-events: none; z-index: 1; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; shape-rendering: geometricPrecision;');
     
     // Spawn from edges with some randomness
     const edge = Math.floor(Math.random() * 4);
@@ -443,14 +444,6 @@
 {/if}
 
 <style>
-  .pn-wind-particle {
-    pointer-events: none;
-    z-index: 1;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    shape-rendering: geometricPrecision;
-  }
-  
   svg#wind-indicators {
     will-change: contents;
   }

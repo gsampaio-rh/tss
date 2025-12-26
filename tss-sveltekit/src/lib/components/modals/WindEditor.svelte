@@ -265,8 +265,9 @@
             {/if}
             
             <div class="mb-3">
-              <label class="form-label">Scenario name</label>
+              <label for="scenario-name-input" class="form-label">Scenario name</label>
               <input 
+                id="scenario-name-input"
                 type="text" 
                 class="form-control" 
                 bind:value={scenarioName}
@@ -276,20 +277,24 @@
             </div>
             
             <div class="mb-0">
-              <label class="form-label">
+              <label for="wind-change-textarea" class="form-label">
                 Wind change
-                <a 
+                <button
+                  type="button"
+                  class="btn btn-link p-0 ms-1"
+                  style="color: var(--bs-primary); text-decoration: none; border: none; background: none; padding: 0; margin-left: 0.5rem;"
                   data-bs-toggle="tooltip" 
                   data-bs-title="Enter wind change. Use space, comma or enter as delimiter."
-                  data-bs-placement="right" 
-                  style="color: var(--bs-primary); margin-left: 0.5rem;"
+                  data-bs-placement="right"
+                  aria-label="Help: Enter wind change. Use space, comma or enter as delimiter."
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="bi" width="16" height="16" viewBox="0 0 16 16">
                     <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z" />
                   </svg>
-                </a>
+                </button>
               </label>
               <textarea 
+                id="wind-change-textarea"
                 class="form-control" 
                 rows="7"
                 bind:value={windText}
@@ -309,8 +314,9 @@
             <div class="mb-3">
               <div class="row">
                 <div class="col">
-                  <label class="form-label">Map width</label>
+                  <label for="map-width-input" class="form-label">Map width</label>
                   <input 
+                    id="map-width-input"
                     type="number" 
                     min="5" 
                     max="200" 
@@ -320,8 +326,9 @@
                   />
                 </div>
                 <div class="col">
-                  <label class="form-label">Map height</label>
+                  <label for="map-height-input" class="form-label">Map height</label>
                   <input 
+                    id="map-height-input"
                     type="number" 
                     min="5" 
                     max="200" 
@@ -331,8 +338,9 @@
                   />
                 </div>
                 <div class="col">
-                  <label class="form-label">Start line size</label>
+                  <label for="start-line-size-input" class="form-label">Start line size</label>
                   <input 
+                    id="start-line-size-input"
                     type="number" 
                     min="5" 
                     max="200" 
