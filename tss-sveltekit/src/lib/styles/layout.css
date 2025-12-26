@@ -1,0 +1,155 @@
+/**
+ * Layout Components - Tactical Sailing Simulator
+ * Main layout structure
+ */
+
+/* Main App Layout */
+.app-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--color-bg-tertiary);
+}
+
+/* Sidebar Base */
+.sidebar {
+  background: var(--color-bg-secondary);
+  overflow-y: auto;
+  height: 100vh;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-md);
+  border-right: 1px solid var(--color-border-light);
+  transition: width var(--transition-base);
+}
+
+.sidebar-left {
+  width: var(--sidebar-width-left);
+  min-width: 200px;
+  border-right: 1px solid var(--color-border-light);
+}
+
+.sidebar-right {
+  width: var(--sidebar-width-right);
+  min-width: 250px;
+  border-left: 1px solid var(--color-border-light);
+}
+
+.sidebar-content {
+  padding: var(--spacing-md);
+}
+
+.sidebar-header {
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border-medium);
+  margin-bottom: var(--spacing-md);
+}
+
+.sidebar-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.sidebar-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.sidebar-section.compact {
+  margin-bottom: var(--spacing-md);
+}
+
+.sidebar-section.collapsible {
+  cursor: pointer;
+}
+
+/* Game Stage Container */
+.game-stage-container {
+  width: var(--game-width);
+  height: 100vh;
+  position: relative;
+  background: var(--color-bg-stage);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid var(--color-border-dark);
+  border-right: 1px solid var(--color-border-dark);
+}
+
+.game-field-container {
+  transition: box-shadow var(--transition-slow);
+}
+
+.game-field-container:hover {
+  box-shadow: 
+    inset 0 0 30px rgba(0,0,0,0.08),
+    var(--shadow-lg) !important;
+}
+
+/* Responsive Layout */
+@media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 50vh;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border-light);
+  }
+  
+  .sidebar-left {
+    order: 2;
+  }
+  
+  .sidebar-right {
+    order: 3;
+  }
+  
+  .game-stage-container {
+    width: 100%;
+    order: 1;
+    height: 50vh;
+    min-height: 400px;
+  }
+}
+
+/* Cards */
+.card {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-header {
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border-medium);
+}
+
+.card-body {
+  padding: var(--spacing-sm) 0;
+}
+
+/* Sections */
+.section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.section-title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+.section-content {
+  padding: var(--spacing-sm) 0;
+}
+

@@ -1,0 +1,358 @@
+/**
+ * Component Styles - Tactical Sailing Simulator
+ * Reusable component styles using design tokens
+ */
+
+/* Primary Action Zone */
+.primary-action-zone {
+  background: linear-gradient(135deg, #f8f9fa 0%, var(--color-bg-secondary) 100%);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-primary);
+}
+
+.primary-action-btn {
+  transition: all var(--transition-base);
+}
+
+.primary-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 123, 255, 0.4) !important;
+}
+
+.primary-action-btn:active {
+  transform: translateY(0);
+}
+
+.action-feedback {
+  text-align: center;
+}
+
+/* Section Headers */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.section-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.section-content {
+  padding-top: var(--spacing-sm);
+}
+
+.section-content.compact-players {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* Collapsible Sections */
+.section-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: var(--spacing-sm) 0;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: color var(--transition-base);
+}
+
+.section-toggle:hover {
+  color: var(--color-primary);
+}
+
+.section-toggle .section-title {
+  margin: 0;
+}
+
+.toggle-icon {
+  transition: transform var(--transition-base);
+  color: var(--color-text-muted);
+}
+
+.toggle-icon.expanded {
+  transform: rotate(180deg);
+}
+
+/* Turn Progress */
+.turn-progress {
+  padding: var(--spacing-sm);
+  background: #f8f9fa;
+  border-radius: var(--radius-sm);
+}
+
+/* Players Section */
+.players-section {
+  border-top: 1px solid var(--color-border-medium);
+  padding-top: var(--spacing-md);
+}
+
+.add-player-btn {
+  font-size: var(--font-size-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+/* Turn Selection Section */
+.turn-selection-section {
+  border-top: 1px solid var(--color-border-medium);
+  padding-top: var(--spacing-md);
+}
+
+/* Tactical Insight Panel */
+.tactical-insight-panel.has-alerts .section-title {
+  font-weight: var(--font-weight-semibold);
+}
+
+.alert-indicator {
+  margin-right: var(--spacing-xs);
+  color: #f59e0b;
+  font-weight: var(--font-weight-semibold);
+}
+
+.tactical-insight-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* Insight Cards */
+.insight-card {
+  padding: var(--spacing-md);
+  background: var(--color-bg-secondary);
+  border-left: 2px solid transparent;
+  transition: all var(--transition-base);
+  cursor: pointer;
+}
+
+.insight-card.needs-attention {
+  border-left-color: #f59e0b;
+}
+
+.insight-card:hover {
+  background: #fafafa;
+}
+
+.insight-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+}
+
+/* Player Identity Dot */
+.player-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  margin-top: 0.35rem;
+  cursor: pointer;
+  transition: transform var(--transition-base);
+}
+
+.player-dot:hover {
+  transform: scale(1.3);
+}
+
+/* Insight Icon */
+.insight-icon {
+  color: #f59e0b;
+  font-size: var(--font-size-sm);
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+/* Insight Text */
+.insight-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.insight-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.insight-title-row strong {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.position-text {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-normal);
+}
+
+.insight-message {
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.insight-detail {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-normal);
+}
+
+.insight-action {
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-border-medium);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.insight-action strong {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.insight-action ul {
+  margin: var(--spacing-xs) 0 0 0;
+  padding-left: 1.2rem;
+  list-style-type: disc;
+}
+
+.insight-action li {
+  margin-top: 0.15rem;
+}
+
+/* Grouped Insights */
+.insight-players {
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.player-name-link {
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color var(--transition-base);
+}
+
+.player-name-link:hover {
+  text-decoration-color: var(--color-text-secondary);
+}
+
+/* Technical Details */
+.technical-details {
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+}
+
+.technical-details summary {
+  cursor: pointer;
+  color: var(--color-text-muted);
+  user-select: none;
+  padding: var(--spacing-xs) 0;
+}
+
+.technical-details summary:hover {
+  color: var(--color-text-secondary);
+}
+
+.technical-content {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm) 0 0 var(--spacing-md);
+  border-left: 1px solid var(--color-border-medium);
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  line-height: var(--line-height-relaxed);
+}
+
+.technical-content div {
+  margin-bottom: var(--spacing-xs);
+}
+
+.quiet-state {
+  text-align: center;
+  padding: var(--spacing-md);
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-size: var(--font-size-base);
+}
+
+.wind-deviation {
+  margin-top: var(--spacing-xs);
+  padding-top: var(--spacing-xs);
+  border-top: 1px solid var(--color-border-medium);
+}
+
+.badge-sm {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.65rem;
+}
+
+/* Player Cards */
+.player-card {
+  opacity: 1;
+  transition: opacity var(--transition-slow), transform var(--transition-base), 
+              background-color var(--transition-base), border-color var(--transition-base);
+}
+
+.player-card:hover {
+  background-color: #f8f9fa;
+  border-color: var(--color-primary) !important;
+  transform: translateX(2px);
+}
+
+:global(body[data-focused-player]) .player-card:not([data-player-index]),
+:global(body[data-focused-player]) .player-card-small:not([data-player-index]) {
+  opacity: 0.3;
+}
+
+:global(body[data-hover-player]) .player-card:not([data-player-index]),
+:global(body[data-hover-player]) .player-card-small:not([data-player-index]) {
+  opacity: 0.5;
+}
+
+:global(body[data-focused-player]) .player-card[data-player-index],
+:global(body[data-hover-player]) .player-card[data-player-index],
+:global(body[data-focused-player]) .player-card-small[data-player-index],
+:global(body[data-hover-player]) .player-card-small[data-player-index] {
+  background-color: #e7f3ff;
+  border-color: var(--color-primary) !important;
+  box-shadow: var(--shadow-md);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.alert {
+  animation: fadeIn var(--transition-slow) ease-out;
+}
+
