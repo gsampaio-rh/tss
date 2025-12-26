@@ -21,6 +21,15 @@ export const currentWind = derived(
   }
 );
 
+// Track previous wind for shift detection
+export const previousWind = derived(
+  [game, turnCount],
+  ([$game, $turnCount]) => {
+    if (!$game || $turnCount === 0) return 0;
+    return $game.getWind($turnCount - 1);
+  }
+);
+
 export const gameWidth = derived(game, $game => $game?.width ?? 0);
 export const gameHeight = derived(game, $game => $game?.height ?? 0);
 export const marks = derived(game, $game => $game?.marks ?? []);

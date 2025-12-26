@@ -5,9 +5,10 @@
   import GameCanvas from '$lib/components/game/GameCanvas.svelte';
   import LiftKnockIndicator from '$lib/components/game/LiftKnockIndicator.svelte';
   import { settings } from '$lib/stores/settings';
-  import { game, players, turnCount, isStart, gameActions, currentWind } from '$lib/stores/game';
+  import { game, players, turnCount, isStart, gameActions, currentWind, previousWind } from '$lib/stores/game';
   import { windScenarios, windActions, initializeWindScenarios } from '$lib/stores/wind';
   import { COLORS } from '$lib/types/game';
+  import { calculateLiftHeader, calculateVMGEfficiency, angleDiff, getOptimalHeading } from '$lib/utils/gameLogic';
   import { onMount } from 'svelte';
   
   // Initialize wind scenarios on mount
@@ -31,7 +32,7 @@
   $: tacticalInsights = (() => {
     if (!$game || $isStart) return { hasImportantInsights: false, insights: [], groupedInsights: [] };
     
-    const insights: Array<{
+      const insights: Array<{
       playerIndex: number;
       player: typeof $players[0];
       level: 'advantage' | 'watch' | 'act' | 'optimal' | 'neutral';
@@ -42,14 +43,73 @@
       isAhead: boolean;
       isBehind: boolean;
       relativeToOthers: number;
+      windEvent: 'lift' | 'header' | null;
+      vmgEfficiency: number;
     }> = [];
     
     $players.forEach((player, i) => {
-      const windAngle = $currentWind * 2;
-      const boatHeading = player.rotation;
-      const relativeAngle = ((boatHeading - windAngle + 180) % 360) - 180;
-      const isLifted = relativeAngle > 0;
-      const liftAmount = Math.abs(relativeAngle);
+      // Get windward mark position
+      const windwardMark = $game.marks[2];
+      if (!windwardMark) return;
+      
+      // Calculate lift/header using correct method (relative to course axis)
+      const windDirPrev = $previousWind;
+      const windDirNow = $currentWind;
+      
+      // Only calculate lift/header if we have a previous wind value (not first turn)
+      let liftHeaderResult: { isLift: boolean; isHeader: boolean; errorChange: number; errorBefore: number; errorAfter: number } | null = null;
+      if ($turnCount > 0 && windDirPrev !== windDirNow) {
+        liftHeaderResult = calculateLiftHeader(
+          player,
+          player.x,
+          player.y,
+          windwardMark.x,
+          windwardMark.y,
+          windDirPrev,
+          windDirNow,
+          true // isUpwind
+        );
+        
+        // Validate invariant: lift on one tack = header on other
+        // Calculate for opposite tack to verify
+        const oppositeTack = !player.tack;
+        const oppositeResult = calculateLiftHeader(
+          { ...player, tack: oppositeTack } as typeof player,
+          player.x,
+          player.y,
+          windwardMark.x,
+          windwardMark.y,
+          windDirPrev,
+          windDirNow,
+          true
+        );
+        
+        if (liftHeaderResult.isLift === oppositeResult.isLift) {
+          console.error(`[INVALID WIND SHIFT] Both tacks show same result:`, {
+            currentTack: player.tack ? 'Port' : 'Starboard',
+            currentResult: liftHeaderResult.isLift ? 'LIFT' : 'HEADER',
+            oppositeResult: oppositeResult.isLift ? 'LIFT' : 'HEADER',
+            windDirPrev,
+            windDirNow
+          });
+        }
+      }
+      
+      // Calculate VMG efficiency
+      const vmgEfficiency = calculateVMGEfficiency(
+        player.rotation,
+        player.x,
+        player.y,
+        windwardMark.x,
+        windwardMark.y,
+        1.0, // boat speed
+        true // isUpwind
+      );
+      
+      // Use lift/header result if available, otherwise fall back to angle-based calculation
+      const isLifted = liftHeaderResult ? liftHeaderResult.isLift : false;
+      const isHeader = liftHeaderResult ? liftHeaderResult.isHeader : false;
+      const liftAmount = liftHeaderResult ? liftHeaderResult.errorChange : 0;
       const isSignificant = liftAmount > 5;
       const isSevere = liftAmount > 15;
       
@@ -65,30 +125,45 @@
       let level: 'advantage' | 'watch' | 'act' | 'optimal' | 'neutral' = 'neutral';
       let message = '';
       let detail = '';
+      const windEvent: 'lift' | 'header' | null = liftHeaderResult 
+        ? (liftHeaderResult.isLift ? 'lift' : liftHeaderResult.isHeader ? 'header' : null)
+        : null;
       
       if (player.finished !== false) {
         level = 'neutral';
         message = 'Finished';
-      } else if (isLifted && isSevere) {
+        detail = '';
+      } else if (windEvent === 'lift' && isSevere) {
+        // Wind event: LIFT
         level = 'advantage';
-        message = `Lifted ${liftAmount.toFixed(0)}°`;
-        detail = 'Better angle on this tack — maintain course';
-      } else if (isLifted && isSignificant) {
+        message = `LIFT +${liftAmount.toFixed(0)}°`;
+        detail = 'Angle improved — maintain course';
+      } else if (windEvent === 'lift' && isSignificant) {
         level = 'advantage';
-        message = `Lifted ${liftAmount.toFixed(0)}°`;
-        detail = 'Slight advantage on this tack';
-      } else if (!isLifted && isSevere) {
+        message = `LIFT +${liftAmount.toFixed(0)}°`;
+        detail = 'Slight angle improvement';
+      } else if (windEvent === 'header' && isSevere) {
+        // Wind event: HEADER
         level = 'act';
-        message = `Knocked ${liftAmount.toFixed(0)}°`;
-        detail = 'Consider tacking soon to regain VMG';
-      } else if (!isLifted && isSignificant) {
+        message = `HEADER -${liftAmount.toFixed(0)}°`;
+        detail = 'Angle worsened — consider tacking soon';
+      } else if (windEvent === 'header' && isSignificant) {
         level = 'watch';
-        message = `Knocked ${liftAmount.toFixed(0)}°`;
-        detail = 'Watch angle — may need to tack';
-      } else if (Math.abs(relativeAngle) <= 2) {
+        message = `HEADER -${liftAmount.toFixed(0)}°`;
+        detail = 'Angle worsened — watch and consider tack';
+      } else if (vmgEfficiency < 0.85) {
+        // Performance state: VMG Low
+        level = 'act';
+        message = 'VMG Low';
+        detail = `Efficiency ${(vmgEfficiency * 100).toFixed(0)}% — outside optimal range`;
+      } else if (vmgEfficiency >= 0.95) {
         level = 'optimal';
         message = 'Optimal';
-        detail = 'Close-hauled, maximizing VMG';
+        detail = `VMG efficiency ${(vmgEfficiency * 100).toFixed(0)}% — maximizing progress`;
+      } else {
+        level = 'neutral';
+        message = 'Sailing';
+        detail = `VMG efficiency ${(vmgEfficiency * 100).toFixed(0)}%`;
       }
       
       insights.push({
@@ -98,10 +173,12 @@
         message,
         detail,
         liftAmount,
-        relativeAngle,
+        relativeAngle: liftHeaderResult ? liftHeaderResult.errorChange : 0,
         isAhead,
         isBehind,
-        relativeToOthers
+        relativeToOthers,
+        windEvent,
+        vmgEfficiency
       });
     });
     
@@ -449,10 +526,10 @@
                               <span class="position-text">Trailing by {insight.relativeToOthers.toFixed(1)}</span>
                             {/if}
                           </div>
-                          <!-- Lift/Knock Visual Indicator -->
-                          {#if insight.level !== 'neutral' && insight.level !== 'optimal'}
+                          <!-- Wind Event Visual Indicator -->
+                          {#if insight.windEvent}
                             <LiftKnockIndicator 
-                              relativeAngle={insight.relativeAngle} 
+                              relativeAngle={insight.windEvent === 'lift' ? insight.liftAmount : -insight.liftAmount} 
                               liftAmount={insight.liftAmount} 
                             />
                           {/if}
@@ -476,7 +553,10 @@
                           <div><strong>Position:</strong> ({insight.player.x.toFixed(1)}, {insight.player.y.toFixed(1)})</div>
                           <div><strong>Heading:</strong> {insight.player.rotation.toFixed(0)}º</div>
                           <div><strong>Tack:</strong> {insight.player.tack ? 'Port' : 'Starboard'}</div>
-                          <div><strong>Angle to Wind:</strong> {insight.relativeAngle > 0 ? '+' : ''}{insight.relativeAngle.toFixed(1)}º</div>
+                          {#if insight.windEvent}
+                            <div><strong>Wind Event:</strong> {insight.windEvent.toUpperCase()} {insight.windEvent === 'lift' ? '+' : '-'}{insight.liftAmount.toFixed(1)}°</div>
+                          {/if}
+                          <div><strong>VMG Efficiency:</strong> {(insight.vmgEfficiency * 100).toFixed(1)}%</div>
                         </div>
                       </details>
                     </div>

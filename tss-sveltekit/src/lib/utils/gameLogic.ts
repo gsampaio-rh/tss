@@ -2,6 +2,24 @@ import type { Game } from '../types/game';
 import type { Boat } from '../types/boat';
 import { TurnType } from '../types/game';
 
+// Constants for polar model
+export const OPT_UPWIND_ANGLE = 45; // Optimal upwind angle (degrees)
+export const OPT_DOWNWIND_ANGLE = 155; // Optimal downwind angle (degrees)
+
+/**
+ * Calculate shortest signed angle difference between two angles
+ * Returns value in range [-180°, +180°]
+ * Positive = second angle is clockwise from first
+ * Negative = second angle is counter-clockwise from first
+ */
+export function angleDiff(a: number, b: number): number {
+  let diff = b - a;
+  // Normalize to [-180, 180]
+  while (diff > 180) diff -= 360;
+  while (diff < -180) diff += 360;
+  return diff;
+}
+
 /**
  * Calculate distance between two points
  */
@@ -12,10 +30,118 @@ export function distance(x1: number, y1: number, x2: number, y2: number): number
 }
 
 /**
- * Get rotation angle between two points
+ * Get rotation angle between two points (bearing from point1 to point2)
+ * Returns angle in degrees, 0° = north, clockwise positive
  */
 export function getRotateAngle(x1: number, y1: number, x2: number, y2: number): number {
   return (Math.atan2(x2 - x1, -(y2 - y1)) * 180 / Math.PI);
+}
+
+/**
+ * Calculate course axis (bearing from boat to windward mark)
+ */
+export function getCourseAxis(boatX: number, boatY: number, markX: number, markY: number): number {
+  return getRotateAngle(boatX, boatY, markX, markY);
+}
+
+/**
+ * Calculate optimal heading for a given tack and wind direction
+ * @param tack - true for port, false for starboard
+ * @param windDir - true wind direction in degrees
+ * @param isUpwind - true if sailing upwind, false if downwind
+ * @returns Optimal heading in degrees
+ */
+export function getOptimalHeading(tack: boolean, windDir: number, isUpwind: boolean = true): number {
+  const optAngle = isUpwind ? OPT_UPWIND_ANGLE : OPT_DOWNWIND_ANGLE;
+  
+  if (tack) {
+    // Port tack: wind comes from starboard, sail at +optAngle relative to wind
+    return windDir + optAngle;
+  } else {
+    // Starboard tack: wind comes from port, sail at -optAngle relative to wind
+    return windDir - optAngle;
+  }
+}
+
+/**
+ * Calculate lift/header for a wind shift
+ * Returns: { isLift: boolean, isHeader: boolean, errorChange: number }
+ * 
+ * According to spec: Lift = wind shift allows boat to sail closer to mark
+ * Header = wind shift forces boat away from mark
+ * 
+ * This is calculated relative to course axis, NOT boat's current angle
+ */
+export function calculateLiftHeader(
+  boat: Boat,
+  boatX: number,
+  boatY: number,
+  markX: number,
+  markY: number,
+  windDirPrev: number,
+  windDirNow: number,
+  isUpwind: boolean = true
+): { isLift: boolean; isHeader: boolean; errorChange: number; errorBefore: number; errorAfter: number } {
+  // Calculate course axis (bearing to mark)
+  const courseAxis = getCourseAxis(boatX, boatY, markX, markY);
+  
+  // Calculate optimal headings before and after wind shift
+  const optHeadingBefore = getOptimalHeading(boat.tack, windDirPrev, isUpwind);
+  const optHeadingAfter = getOptimalHeading(boat.tack, windDirNow, isUpwind);
+  
+  // Calculate error from course axis (how far from optimal course to mark)
+  const errBefore = Math.abs(angleDiff(optHeadingBefore, courseAxis));
+  const errAfter = Math.abs(angleDiff(optHeadingAfter, courseAxis));
+  
+  // Lift = error decreased (can sail closer to mark)
+  // Header = error increased (forced away from mark)
+  const errorChange = errAfter - errBefore;
+  const isLift = errorChange < 0;
+  const isHeader = errorChange > 0;
+  
+  return {
+    isLift,
+    isHeader,
+    errorChange: Math.abs(errorChange),
+    errorBefore: errBefore,
+    errorAfter: errAfter
+  };
+}
+
+/**
+ * Calculate VMG (Velocity Made Good) toward the mark
+ * VMG = boatSpeed * cos(angleDiff(heading, courseAxis))
+ */
+export function calculateVMG(
+  boatHeading: number,
+  boatX: number,
+  boatY: number,
+  markX: number,
+  markY: number,
+  boatSpeed: number = 1.0
+): number {
+  const courseAxis = getCourseAxis(boatX, boatY, markX, markY);
+  const headingError = angleDiff(boatHeading, courseAxis);
+  return boatSpeed * Math.cos(headingError * Math.PI / 180);
+}
+
+/**
+ * Calculate VMG efficiency (current VMG / optimal VMG)
+ * Returns value between 0 and 1 (or > 1 if exceeding optimal)
+ */
+export function calculateVMGEfficiency(
+  boatHeading: number,
+  boatX: number,
+  boatY: number,
+  markX: number,
+  markY: number,
+  boatSpeed: number = 1.0,
+  isUpwind: boolean = true
+): number {
+  const currentVMG = calculateVMG(boatHeading, boatX, boatY, markX, markY, boatSpeed);
+  // Optimal VMG is when heading is perfectly aligned with course axis
+  const optimalVMG = boatSpeed; // cos(0°) = 1
+  return currentVMG / optimalVMG;
 }
 
 /**

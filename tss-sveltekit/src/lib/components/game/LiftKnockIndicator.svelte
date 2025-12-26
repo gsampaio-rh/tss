@@ -13,9 +13,9 @@
   $: emptyBars = maxBars - filledBars;
 </script>
 
-<div class="lift-knock-indicator" class:is-lift={isLift} class:is-knock={!isLift}>
+<div class="lift-knock-indicator" class:is-lift={isLift} class:is-header={!isLift}>
   <div class="indicator-label">
-    {isLift ? 'LIFT' : 'KNOCK'}
+    {isLift ? 'LIFT' : 'HEADER'}
   </div>
   <div class="angle-bars">
     {#each Array(filledBars) as _, i}
@@ -48,7 +48,7 @@
     color: #28a745;
   }
   
-  .is-knock .indicator-label {
+  .is-header .indicator-label {
     color: #dc3545;
   }
   
@@ -74,7 +74,7 @@
     background: #28a745;
   }
   
-  .is-knock .bar.filled {
+  .is-header .bar.filled {
     background: #dc3545;
   }
   
@@ -93,7 +93,7 @@
     color: #28a745;
   }
   
-  .is-knock .angle-value {
+  .is-header .angle-value {
     color: #dc3545;
   }
   
