@@ -8,6 +8,7 @@ export interface Settings {
   showWindIndicators: boolean;
   showGrid: boolean;
   showWindZones: boolean;
+  showDirtyAir: boolean;
 }
 
 const defaultSettings: Settings = {
@@ -17,6 +18,7 @@ const defaultSettings: Settings = {
   showWindIndicators: true,
   showGrid: true,
   showWindZones: true,
+  showDirtyAir: false,
 };
 
 const STORAGE_KEY = 'settings';

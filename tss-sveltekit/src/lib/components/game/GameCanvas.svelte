@@ -8,9 +8,10 @@
   import ScaleIndicator from './ScaleIndicator.svelte';
   import GridLabels from './GridLabels.svelte';
   import GridLines from './GridLines.svelte';
-  import BoatTacticalLines from './BoatTacticalLines.svelte';
-  import WindZones from './WindZones.svelte';
-  import { onMount, afterUpdate } from 'svelte';
+import BoatTacticalLines from './BoatTacticalLines.svelte';
+import WindZones from './WindZones.svelte';
+import DirtyAirZones from './DirtyAirZones.svelte';
+import { onMount, afterUpdate } from 'svelte';
   
   let gameArea: HTMLDivElement;
   let gameCont: HTMLDivElement;
@@ -238,7 +239,14 @@
       <!-- Wind Zones (shown when enabled, on boat hover) -->
       {#if $settings.showWindZones}
         {#each $players as player, playerIndex}
-          <WindZones boat={player} {playerIndex} show={true} />
+          <WindZones boat={player} {playerIndex} show={hoveredPlayerIndex === playerIndex.toString()} />
+        {/each}
+      {/if}
+      
+      <!-- Dirty Air Zones (shown for all boats when enabled) -->
+      {#if $settings.showDirtyAir}
+        {#each $players as player, playerIndex}
+          <DirtyAirZones boat={player} {playerIndex} show={true} />
         {/each}
       {/if}
       

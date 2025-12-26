@@ -176,6 +176,28 @@
       </div>
     </label>
 
+    <!-- Show Dirty Air Zones -->
+    <label class="setting-item" class:checked={$settings.showDirtyAir} for="set-show-dirty-air">
+      <input 
+        type="checkbox" 
+        class="btn-check" 
+        id="set-show-dirty-air"
+        checked={$settings.showDirtyAir}
+        onchange={() => toggleSetting('showDirtyAir')}
+      />
+      <div class="setting-content">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" class="setting-icon">
+          <path d="M 8 2 L 8 14 M 4 6 L 8 2 L 12 6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M 3 10 Q 8 8 13 10" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round"/>
+          <path d="M 3 12 Q 8 10 13 12" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div class="setting-label">
+          <strong>Dirty Air</strong>
+          <small>Show turbulent air zones</small>
+        </div>
+      </div>
+    </label>
+
     <!-- Screen Resolution (Info Only) -->
     <div class="setting-item info-item">
       <div class="setting-content">
