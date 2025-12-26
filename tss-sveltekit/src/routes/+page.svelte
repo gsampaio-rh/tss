@@ -5,6 +5,7 @@
   import GameCanvas from '$lib/components/game/GameCanvas.svelte';
   import LiftKnockIndicator from '$lib/components/game/LiftKnockIndicator.svelte';
   import PlayerTacticalCard from '$lib/components/game/PlayerTacticalCard.svelte';
+  import HelpModal from '$lib/components/modals/HelpModal.svelte';
   import { settings } from '$lib/stores/settings';
   import { game, players, turnCount, isStart, gameActions, currentWind, previousWind } from '$lib/stores/game';
   import { windScenarios, windActions, initializeWindScenarios } from '$lib/stores/wind';
@@ -28,6 +29,7 @@
   
   // Sidebar state - collapsible sections
   let settingsExpanded = false;
+  let helpModalOpen = false;
   
   // Compute tactical insights for all players
   $: tacticalInsights = (() => {
@@ -280,8 +282,22 @@
     <div class="sidebar-content">
       <!-- Minimal Header -->
       <div class="sidebar-header">
-        <h5 class="sidebar-title">TSS</h5>
-        <small class="text-muted">Tactical Sailing Simulator</small>
+        <div class="d-flex justify-content-between align-items-center w-100">
+          <div>
+            <h5 class="sidebar-title mb-0">TSS</h5>
+            <small class="text-muted">Tactical Sailing Simulator</small>
+          </div>
+          <button
+            class="btn btn-sm btn-outline-secondary"
+            on:click={() => helpModalOpen = true}
+            title="Help & Documentation"
+            aria-label="Open help modal"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+            </svg>
+          </button>
+        </div>
       </div>
       
       <!-- Wind Selector (always visible, compact) -->
@@ -597,6 +613,9 @@
     </div>
   </div>
 </div>
+
+<!-- Help Modal -->
+<HelpModal bind:isOpen={helpModalOpen} />
 
 <style>
   :global(html, body) {

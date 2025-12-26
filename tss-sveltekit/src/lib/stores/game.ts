@@ -206,7 +206,8 @@ export const gameActions = {
       });
       console.log(`========== [END TURN ${g.turncount}] ==========\n`);
       
-      players.set(g.players);
+      // Create new array reference to trigger reactivity
+      players.set([...g.players]);
       turnCount.set(g.turncount);
       return g;
     });

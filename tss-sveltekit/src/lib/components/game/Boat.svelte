@@ -5,7 +5,7 @@
   export let boat: Boat;
   export let playerIndex: number = 0;
   
-  import { currentWind, isStart, game, gameActions } from '$lib/stores/game';
+  import { currentWind, isStart, game, gameActions, players } from '$lib/stores/game';
   import { onMount, onDestroy } from 'svelte';
   
   let boatElement: HTMLDivElement;
@@ -137,6 +137,13 @@
     return val.toFixed(3) + 'deg';
   }
   
+  // Reactive statements to ensure component updates when boat properties change
+  // Watch the players store to force reactivity when boats move
+  $: currentBoat = $players?.[playerIndex];
+  $: boatX = currentBoat?.x ?? boat?.x ?? 0;
+  $: boatY = currentBoat?.y ?? boat?.y ?? 0;
+  $: boatRotation = currentBoat?.rotation ?? boat?.rotation ?? 0;
+  
   $: sx = boat.tack ? 1 : -1;
   $: boatSvg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="-7 -10 14 20" class="boat-full-svg">
@@ -155,10 +162,10 @@
   data-player-index={playerIndex.toString()}
   role="button"
   tabindex="0"
-  style="
-    left: {formatCssPx(boat.x * GRID_SIZE)};
-    top: {formatCssPx(boat.y * GRID_SIZE)};
-    rotate: {formatCssDeg(boat.rotation)};
+        style="
+          left: {formatCssPx(boatX * GRID_SIZE)};
+          top: {formatCssPx(boatY * GRID_SIZE)};
+          rotate: {formatCssDeg(boatRotation)};
     transform: scaleX({sx});
     color: {getBoatColorHex(boat.color)};
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)) drop-shadow(0 0 8px rgba(255,255,255,0.5));

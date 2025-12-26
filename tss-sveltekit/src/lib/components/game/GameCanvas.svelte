@@ -252,7 +252,7 @@ import { onMount, afterUpdate } from 'svelte';
       
       <!-- Boats -->
       {#if $settings.showBoats}
-        {#each $players as player, playerIndex}
+        {#each $players as player, playerIndex (playerIndex)}
           <Boat boat={player} playerIndex={playerIndex} />
         {/each}
       {/if}

@@ -154,7 +154,7 @@
   data-player-index={playerIndex.toString()}
   role="button"
   tabindex="0"
-  aria-label={`Tactical card for ${player.name || `Player ${playerIndex + 1}`}`}
+  aria-label={`Tactical card for ${boat.name || `Player ${playerIndex + 1}`}`}
   on:click={handleClick}
   on:keydown={(e) => e.key === 'Enter' || e.key === ' ' ? handleClick() : null}
   on:mouseenter={handleMouseEnter}
