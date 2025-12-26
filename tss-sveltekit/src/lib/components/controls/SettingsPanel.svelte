@@ -1,5 +1,27 @@
 <script lang="ts">
   import { settings } from '$lib/stores/settings';
+  import { onMount, onDestroy } from 'svelte';
+  
+  let screenWidth = 0;
+  let screenHeight = 0;
+  
+  function updateScreenSize() {
+    if (typeof window !== 'undefined') {
+      screenWidth = window.innerWidth;
+      screenHeight = window.innerHeight;
+    }
+  }
+  
+  onMount(() => {
+    updateScreenSize();
+    window.addEventListener('resize', updateScreenSize);
+  });
+  
+  onDestroy(() => {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('resize', updateScreenSize);
+    }
+  });
   
   function toggleSetting(key: keyof typeof $settings) {
     settings.update(s => ({
@@ -127,6 +149,19 @@
         </div>
       </div>
     </label>
+
+    <!-- Screen Resolution (Info Only) -->
+    <div class="setting-item info-item">
+      <div class="setting-content">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" class="setting-icon">
+          <path d="M0 0h16v16H0V0zm1 1v6h14V1H1zm0 8v6h14V9H1zm1-7h12v4H2V2zm0 8h12v4H2v-4z"/>
+        </svg>
+        <div class="setting-label">
+          <strong>Screen Resolution</strong>
+          <small>{screenWidth} × {screenHeight} px</small>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -160,6 +195,17 @@
   .setting-item.checked {
     background: #e7f3ff;
     border-color: #007bff;
+  }
+  
+  .setting-item.info-item {
+    cursor: default;
+    background: #f8f9fa;
+    border-color: #dee2e6;
+  }
+  
+  .setting-item.info-item:hover {
+    background: #f8f9fa;
+    border-color: #dee2e6;
   }
   
   .setting-content {

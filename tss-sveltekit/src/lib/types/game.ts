@@ -2,7 +2,7 @@ import type { Boat } from './boat';
 import type { WindScenario } from './wind';
 
 // Constants
-export const GRID_SIZE = 20;
+export const GRID_SIZE = 25; // Increased from 20 to make map elements larger
 export const BOAT_SIZE = 32;
 export const START_LINE_SIZE = 15;
 export const COLORS = [

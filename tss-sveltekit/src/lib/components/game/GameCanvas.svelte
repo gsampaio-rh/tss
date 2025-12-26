@@ -35,28 +35,35 @@
     
     if (w === 0 || h === 0) return; // Container not sized yet
     
-    // Make it square - use the smaller dimension
-    const size = Math.min(w, h);
-    
     let scale: number;
     let left = 0;
     let top = 0;
     
-    // Calculate scale to fit game in square with some padding
-    const padding = 20; // Padding around the game area
-    const availableSize = size - (padding * 2);
+    // Use 95% of available space to ensure map stays within bounds
+    // Leave some padding to prevent overflow into sidebars
+    const padding = Math.min(w * 0.025, h * 0.025); // 2.5% padding on each side
+    const targetWidth = w - (padding * 2);
+    const targetHeight = h - (padding * 2);
+    
     const gameWidthPx = $game.width * GRID_SIZE;
     const gameHeightPx = $game.height * GRID_SIZE;
     
-    const scaleX = availableSize / gameWidthPx;
-    const scaleY = availableSize / gameHeightPx;
+    // Calculate scale to fit within bounds while maintaining aspect ratio
+    const scaleX = targetWidth / gameWidthPx;
+    const scaleY = targetHeight / gameHeightPx;
+    
+    // Use the smaller scale to maintain aspect ratio and ensure it fits
     scale = Math.min(scaleX, scaleY);
     
-    // Center the game area
+    // Center the game area within the container
     const scaledWidth = gameWidthPx * scale;
     const scaledHeight = gameHeightPx * scale;
     left = (w - scaledWidth) / 2;
     top = (h - scaledHeight) / 2;
+    
+    // Ensure position is never negative (prevents overflow)
+    left = Math.max(0, left);
+    top = Math.max(0, top);
     
     gameArea.style.left = formatCssPx(left);
     gameArea.style.top = formatCssPx(top);
@@ -155,11 +162,11 @@
 </script>
 
 {#if $game}
-  <div bind:this={gameCont} id="game-cont" class="position-absolute" style="top: 0; left: 0; right: 0; bottom: 0;">
+  <div bind:this={gameCont} id="game-cont" class="position-absolute" style="top: 0; left: 0; right: 0; bottom: 0; overflow: hidden;">
     <div 
       bind:this={gameArea}
       id="game-area" 
-      style="position: absolute;"
+      style="position: absolute; overflow: hidden;"
       data-show-boats={$settings.showBoats ? 'full' : 'dot'}
     >
       <!-- Background -->
@@ -445,7 +452,7 @@
   }
   
   #game-area {
-    --boat-scale: 1.4;
+    --boat-scale: 1.6; /* Increased from 1.4 to make boats more visible */
   }
   
   /* Wind arrow container handles base rotation */

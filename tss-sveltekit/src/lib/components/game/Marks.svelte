@@ -99,7 +99,7 @@
 
 <style>
   .pn-mark {
-    --mark-scale: 1;
+    --mark-scale: 1.2; /* Increased from 1 to make marks more visible */
     width: 36px;
     height: 36px;
     margin-left: -18px;

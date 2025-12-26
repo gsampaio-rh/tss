@@ -198,7 +198,7 @@
 
 <div class="d-flex h-100" style="overflow: hidden; background: #f0f0f0;">
   <!-- Left Sidebar - Controls and Settings -->
-  <div class="sidebar sidebar-left" style="width: 18%; background: #ffffff; overflow-y: auto; height: 100vh; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); border-right: 1px solid #e0e0e0;">
+  <div class="sidebar sidebar-left" style="width: 20%; background: #ffffff; overflow-y: auto; height: 100vh; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); border-right: 1px solid #e0e0e0;">
     <div class="sidebar-content">
       <!-- Minimal Header -->
       <div class="sidebar-header">
@@ -350,14 +350,12 @@
     </div>
   </div>
 
-  <!-- Game Canvas - 64% width, full height stage -->
-  <div class="game-stage-container" style="width: 64%; height: 100vh; position: relative; background: #d5d5d5; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-left: 1px solid #bbb; border-right: 1px solid #bbb;">
+  <!-- Game Canvas - 60% width, full height stage -->
+  <div class="game-stage-container" style="width: 60%; height: 100vh; position: relative; background: #d5d5d5; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-left: 1px solid #bbb; border-right: 1px solid #bbb;">
     {#if $game}
       <div class="game-field-container" style="
         width: 100%; 
         height: 100%; 
-        max-width: 100vh; 
-        max-height: 100vh; 
         background: #ebeaff; 
         position: relative;
         border: 2px solid rgba(0, 0, 0, 0.15);
@@ -378,8 +376,8 @@
     {/if}
   </div>
 
-  <!-- Right Sidebar - Insights Only, 18% width -->
-  <div class="sidebar sidebar-right" style="width: 18%; background: #ffffff; overflow-y: auto; height: 100vh; flex-shrink: 0; box-shadow: -2px 0 10px rgba(0,0,0,0.1); border-left: 1px solid #e0e0e0;">
+  <!-- Right Sidebar - Insights Only, 20% width -->
+  <div class="sidebar sidebar-right" style="width: 20%; background: #ffffff; overflow-y: auto; height: 100vh; flex-shrink: 0; box-shadow: -2px 0 10px rgba(0,0,0,0.1); border-left: 1px solid #e0e0e0;">
     <div class="sidebar-content">
       <!-- Tactical Insight Panel - Contextual Coach/Referee (Always Expanded) -->
       <div class="sidebar-section tactical-insight-panel" class:has-alerts={tacticalInsights.hasImportantInsights}>
