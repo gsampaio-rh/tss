@@ -192,8 +192,31 @@
           <path d="M 3 12 Q 8 10 13 12" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round"/>
         </svg>
         <div class="setting-label">
-          <strong>Dirty Air</strong>
-          <small>Show turbulent air zones</small>
+          <strong>Dirty Air Zones</strong>
+          <small>Show turbulent air visualization</small>
+        </div>
+      </div>
+    </label>
+
+    <!-- Enable Dirty Air Effects -->
+    <label class="setting-item" class:checked={$settings.enableDirtyAirEffects} for="set-enable-dirty-air-effects">
+      <input 
+        type="checkbox" 
+        class="btn-check" 
+        id="set-enable-dirty-air-effects"
+        checked={$settings.enableDirtyAirEffects}
+        onchange={() => toggleSetting('enableDirtyAirEffects')}
+      />
+      <div class="setting-content">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" class="setting-icon">
+          <path d="M 8 2 L 8 14 M 4 6 L 8 2 L 12 6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M 3 10 Q 8 8 13 10" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          <path d="M 3 12 Q 8 10 13 12" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          <circle cx="12" cy="4" r="2" fill="currentColor" opacity="0.8"/>
+        </svg>
+        <div class="setting-label">
+          <strong>Dirty Air Effects</strong>
+          <small>Apply speed/angle penalties</small>
         </div>
       </div>
     </label>

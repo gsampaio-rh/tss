@@ -5,6 +5,7 @@ import type { WindScenario } from '../types/wind';
 import { executeBoatTurn } from '../utils/gameLogic';
 import { COLORS } from '../types/game';
 import { gameLogs } from './gameLogs';
+import { settings } from './settings';
 
 export const game = writable<Game | null>(null);
 export const players = writable<Boat[]>([]);
@@ -153,8 +154,15 @@ export const gameActions = {
       const currentWind = g.getWind(g.turncount);
       
       // Execute turn for each player
+      // Get current settings to check if dirty air effects are enabled
+      let enableDirtyAirEffects = false;
+      const unsubscribe = settings.subscribe(s => {
+        enableDirtyAirEffects = s.enableDirtyAirEffects;
+      });
+      unsubscribe(); // Immediately unsubscribe after getting value
+      
       for (const player of g.players) {
-        executeBoatTurn(player, g);
+        executeBoatTurn(player, g, enableDirtyAirEffects);
       }
       
       // Log this turn

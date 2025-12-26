@@ -145,6 +145,137 @@ export function calculateVMGEfficiency(
 }
 
 /**
+ * Check if a point is inside a dirty air zone (trapezoid)
+ * Dirty air zones extend leeward (downwind) from a boat
+ */
+export function isPointInDirtyAirZone(
+  pointX: number,
+  pointY: number,
+  sourceBoatX: number,
+  sourceBoatY: number,
+  windDir: number,
+  zoneLength: number = 8,
+  zoneWidthStart: number = 1.5,
+  zoneWidthEnd: number = 4,
+  angleSpread: number = 35
+): { inZone: boolean; intensity: number } {
+  // Calculate leeward direction (opposite to wind)
+  const leewardAngle = (windDir + 180) % 360;
+  const leewardRad = (leewardAngle * Math.PI) / 180;
+  
+  // Vector from source boat to point
+  const dx = pointX - sourceBoatX;
+  const dy = pointY - sourceBoatY;
+  
+  // Distance from source boat
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  
+  // If point is too far, it's not in the zone
+  if (dist > zoneLength * 1.2) {
+    return { inZone: false, intensity: 0 };
+  }
+  
+  // Angle from source boat to point
+  const pointAngle = (Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360;
+  const angleDiffValue = Math.abs(angleDiff(pointAngle, leewardAngle));
+  
+  // Check if point is within the angular spread
+  if (angleDiffValue > angleSpread) {
+    return { inZone: false, intensity: 0 };
+  }
+  
+  // Calculate zone width at this distance
+  const t = Math.min(dist / zoneLength, 1); // Normalized distance (0 to 1)
+  const zoneWidth = zoneWidthStart + (zoneWidthEnd - zoneWidthStart) * t;
+  
+  // Check if point is within the width (perpendicular distance from center line)
+  const centerLineAngle = leewardAngle;
+  const perpAngle = (centerLineAngle + 90) % 360;
+  const perpRad = (perpAngle * Math.PI) / 180;
+  
+  // Project point onto perpendicular line
+  const perpDist = Math.abs(
+    dx * Math.sin(perpRad) - dy * Math.cos(perpRad)
+  );
+  
+  if (perpDist > zoneWidth / 2) {
+    return { inZone: false, intensity: 0 };
+  }
+  
+  // Calculate intensity based on distance and position
+  // Closer to source boat = higher intensity
+  // Closer to center line = higher intensity
+  const distanceFactor = 1 - (dist / zoneLength); // 1 at boat, 0 at end
+  const centerFactor = 1 - (perpDist / (zoneWidth / 2)); // 1 at center, 0 at edge
+  const intensity = Math.max(0, Math.min(1, distanceFactor * centerFactor));
+  
+  return { inZone: true, intensity };
+}
+
+/**
+ * Check if a boat is in dirty air from any other boat
+ * Returns the maximum intensity of dirty air affecting the boat
+ */
+export function getDirtyAirEffect(
+  boat: Boat,
+  boatX: number,
+  boatY: number,
+  allBoats: Boat[],
+  windDir: number
+): { inDirtyAir: boolean; intensity: number; affectedBy: number[] } {
+  let maxIntensity = 0;
+  const affectedBy: number[] = [];
+  
+  for (let i = 0; i < allBoats.length; i++) {
+    const otherBoat = allBoats[i];
+    
+    // Skip self
+    if (otherBoat === boat) continue;
+    
+    // Check leeward zone (main dirty air zone)
+    const leewardCheck = isPointInDirtyAirZone(
+      boatX,
+      boatY,
+      otherBoat.x,
+      otherBoat.y,
+      windDir,
+      8, // zoneLength
+      1.5, // zoneWidthStart
+      4, // zoneWidthEnd
+      35 // angleSpread
+    );
+    
+    // Check windward zone (smaller, affects boats ahead)
+    const windwardCheck = isPointInDirtyAirZone(
+      boatX,
+      boatY,
+      otherBoat.x,
+      otherBoat.y,
+      windDir,
+      3, // zoneLength (shorter)
+      1, // zoneWidthStart
+      2, // zoneWidthEnd
+      25 // angleSpread (narrower)
+    );
+    
+    const intensity = Math.max(leewardCheck.intensity, windwardCheck.intensity);
+    
+    if (leewardCheck.inZone || windwardCheck.inZone) {
+      if (intensity > maxIntensity) {
+        maxIntensity = intensity;
+      }
+      affectedBy.push(i);
+    }
+  }
+  
+  return {
+    inDirtyAir: maxIntensity > 0,
+    intensity: maxIntensity,
+    affectedBy
+  };
+}
+
+/**
  * Calculate distance to a line
  */
 export function distanceToLine(x: number, y: number, lX: number, lY: number, angle: number): number {
@@ -162,8 +293,9 @@ export function distanceToLine(x: number, y: number, lX: number, lY: number, ang
 
 /**
  * Execute a boat's turn
+ * @param enableDirtyAirEffects - Whether to apply dirty air speed/angle penalties
  */
-export function executeBoatTurn(boat: Boat, game: Game): void {
+export function executeBoatTurn(boat: Boat, game: Game, enableDirtyAirEffects: boolean = false): void {
   const initialTack = boat.tack;
   const initialRotation = boat.rotation;
   const initialX = boat.x;
@@ -288,12 +420,47 @@ export function executeBoatTurn(boat: Boat, game: Game): void {
           }
         } else {
           const currentWind = game.getWind(game.turncount);
+          const windDir = currentWind * 2; // Convert to display angle
+          
+          // Calculate base rotation
+          let baseRotation: number;
           if (boat.tack) {
-            boat.rotation = 45 + currentWind;
-            console.log(`  [FORWARD] Port tack: rotation=${boat.rotation.toFixed(1)}° (45 + ${currentWind.toFixed(1)})`);
+            baseRotation = 45 + currentWind;
           } else {
-            boat.rotation = -45 + currentWind;
-            console.log(`  [FORWARD] Starboard tack: rotation=${boat.rotation.toFixed(1)}° (-45 + ${currentWind.toFixed(1)})`);
+            baseRotation = -45 + currentWind;
+          }
+          
+          // Apply dirty air effects (if enabled)
+          if (enableDirtyAirEffects) {
+            const dirtyAirEffect = getDirtyAirEffect(boat, boat.x, boat.y, game.players, windDir);
+            
+            if (dirtyAirEffect.inDirtyAir) {
+            // Dirty air affects:
+            // 1. Speed reduction (15-30% based on intensity)
+            const speedReduction = 0.15 + (dirtyAirEffect.intensity * 0.15); // 15-30% reduction
+            moveDist *= (1 - speedReduction);
+            
+            // 2. Angle adjustment - boat needs to foot off (open angle) to maintain speed
+            // In dirty air, boat can't point as high, needs to sail lower
+            const angleAdjustment = dirtyAirEffect.intensity * 5; // Up to 5° adjustment
+            if (boat.tack) {
+              // Port tack: rotate clockwise (increase angle)
+              baseRotation += angleAdjustment;
+            } else {
+              // Starboard tack: rotate counter-clockwise (decrease angle)
+              baseRotation -= angleAdjustment;
+            }
+            
+              console.log(`  [DIRTY AIR] Intensity: ${(dirtyAirEffect.intensity * 100).toFixed(1)}%, Speed reduction: ${(speedReduction * 100).toFixed(1)}%, Angle adjustment: ${angleAdjustment.toFixed(1)}°`);
+            }
+          }
+          
+          boat.rotation = baseRotation;
+          
+          if (boat.tack) {
+            console.log(`  [FORWARD] Port tack: rotation=${boat.rotation.toFixed(1)}° (base: ${(45 + currentWind).toFixed(1)}°)`);
+          } else {
+            console.log(`  [FORWARD] Starboard tack: rotation=${boat.rotation.toFixed(1)}° (base: ${(-45 + currentWind).toFixed(1)}°)`);
           }
           
           boat.x += Math.sin(boat.rotation * Math.PI / 180) * moveDist;

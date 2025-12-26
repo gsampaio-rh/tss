@@ -239,7 +239,7 @@ import { onMount, afterUpdate } from 'svelte';
       <!-- Wind Zones (shown when enabled, on boat hover) -->
       {#if $settings.showWindZones}
         {#each $players as player, playerIndex}
-          <WindZones boat={player} {playerIndex} show={hoveredPlayerIndex === playerIndex.toString()} />
+          <WindZones boat={player} {playerIndex} show={true} />
         {/each}
       {/if}
       
