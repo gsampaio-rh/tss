@@ -224,33 +224,7 @@
       <!-- Wind Particles -->
       <WindParticles />
       
-      <!-- Equal Lines -->
-      {#if $settings.showEqualLines}
-        <div id="lines-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; rotate: {formatCssDeg(windDisplayAngle)};">
-          <svg 
-            id="lines-svg" 
-            stroke="gray" 
-            class="w-100 h-100" 
-            xmlns="http://www.w3.org/2000/svg"
-            stroke-width="0.003"
-            opacity="0.15"
-            viewBox={formatSvgViewBox(0, 0, $game.width, $game.height)}
-          >
-            <g id="lines-drawing">
-              {#each Array($game.height * 2) as _, i}
-                <line 
-                  x1="0" 
-                  x2={$game.width} 
-                  y1={i / 2} 
-                  y2={i / 2}
-                />
-              {/each}
-            </g>
-          </svg>
-        </div>
-      {/if}
-      
-        <!-- Laylines (from up mark) - Decision-defining elements -->
+      <!-- Laylines (from up mark) - Decision-defining elements -->
         {#if $settings.showLanelines && upMark}
           {@const laylineOpacity = (() => {
             // Calculate relevance based on closest boat distance to laylines

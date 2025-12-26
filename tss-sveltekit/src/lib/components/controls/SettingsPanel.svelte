@@ -102,34 +102,6 @@
       </div>
     </label>
 
-    <!-- Show Equal Lines -->
-    <label class="setting-item" class:checked={$settings.showEqualLines} for="set-show-equal-lines">
-      <input 
-        type="checkbox" 
-        class="btn-check" 
-        id="set-show-equal-lines"
-        checked={$settings.showEqualLines}
-        onchange={() => toggleSetting('showEqualLines')}
-      />
-      <div class="setting-content">
-        <svg viewBox="0 0 16 16" width="18" height="18" xmlns="http://www.w3.org/2000/svg" class="setting-icon">
-          <defs>
-            <path transform="scale(0.3) translate(9, 10) rotate(-15)" id="boat"
-                  d="M -4 7.5 L 4 7.5 C 5 1.5 5 -2.5 2.5 -9 L -2.5 -9 C -5 -2.5 -5 1.5 -4 7.5 Z" stroke="currentColor"
-                  stroke-width="3" fill="none" />
-          </defs>
-          <path d="M 0 15 L 16 11 M 0 11 L 16 7 M 0 7 L 16 3 M 0 3 L 16 -1 M 16 15 L 0 19" fill="none"
-                stroke="currentColor" stroke-width="0.5" />
-          <use href="#boat" transform="translate(-1, 7) rotate(-45)"></use>
-          <use href="#boat" transform="translate(7, 7) rotate(-45)"></use>
-        </svg>
-        <div class="setting-label">
-          <strong>Show Equal Lines</strong>
-          <small>Display equal distance lines</small>
-        </div>
-      </div>
-    </label>
-
     <!-- Show Wind Indicators -->
     <label class="setting-item" class:checked={$settings.showWindIndicators} for="set-show-wind-indicators">
       <input 

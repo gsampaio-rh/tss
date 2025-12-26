@@ -11,7 +11,6 @@ let currentSettings: Settings = {
   showBoats: true,
   showTracks: true,
   showLanelines: true,
-  showEqualLines: true,
   showWindIndicators: true,
 };
 
@@ -54,12 +53,6 @@ export function applySettingsToDOM() {
     } else {
       gameArea.setAttribute('data-show-boats', 'dot');
     }
-  }
-  
-  // Apply showEqualLines
-  const linesContainer = document.getElementById('lines-container');
-  if (linesContainer) {
-    linesContainer.hidden = !s.showEqualLines;
   }
   
   // Apply showWindIndicators

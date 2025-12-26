@@ -5,7 +5,6 @@ export interface Settings {
   showBoats: boolean;
   showTracks: boolean;
   showLanelines: boolean;
-  showEqualLines: boolean;
   showWindIndicators: boolean;
 }
 
@@ -13,7 +12,6 @@ const defaultSettings: Settings = {
   showBoats: true,
   showTracks: true,
   showLanelines: true,
-  showEqualLines: true,
   showWindIndicators: true,
 };
 
