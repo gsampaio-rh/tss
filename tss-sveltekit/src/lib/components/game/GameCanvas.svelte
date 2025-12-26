@@ -9,12 +9,37 @@
   import GridLabels from './GridLabels.svelte';
   import GridLines from './GridLines.svelte';
   import BoatTacticalLines from './BoatTacticalLines.svelte';
+  import WindZones from './WindZones.svelte';
   import { onMount, afterUpdate } from 'svelte';
   
   let gameArea: HTMLDivElement;
   let gameCont: HTMLDivElement;
   let lastGameWidth = 0;
   let lastGameHeight = 0;
+  let hoveredPlayerIndex: string | null = null;
+  
+  // Track hovered player from body attribute - reactive
+  $: {
+    if (typeof document !== 'undefined') {
+      hoveredPlayerIndex = document.body.getAttribute('data-hover-player');
+    }
+  }
+  
+  onMount(() => {
+    // Create a MutationObserver to watch for changes to body attributes
+    const observer = new MutationObserver(() => {
+      hoveredPlayerIndex = document.body.getAttribute('data-hover-player');
+    });
+    
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['data-hover-player']
+    });
+    
+    hoveredPlayerIndex = document.body.getAttribute('data-hover-player');
+    
+    return () => observer.disconnect();
+  });
   
   function formatCssPx(val: number): string {
     return val.toFixed(3) + 'px';
@@ -205,10 +230,17 @@
       <!-- Marks -->
       <Marks marks={$marks} />
       
-      <!-- Tactical Lines (Course Axis, Wind Axis, Target Angles) -->
+      <!-- Tactical Lines (Course Axis, Wind Axis) -->
       {#each $players as player, playerIndex}
         <BoatTacticalLines boat={player} {playerIndex} />
       {/each}
+      
+      <!-- Wind Zones (shown when enabled, on boat hover) -->
+      {#if $settings.showWindZones}
+        {#each $players as player, playerIndex}
+          <WindZones boat={player} {playerIndex} show={true} />
+        {/each}
+      {/if}
       
       <!-- Boats -->
       {#if $settings.showBoats}

@@ -7,6 +7,7 @@ export interface Settings {
   showLanelines: boolean;
   showWindIndicators: boolean;
   showGrid: boolean;
+  showWindZones: boolean;
 }
 
 const defaultSettings: Settings = {
@@ -15,6 +16,7 @@ const defaultSettings: Settings = {
   showLanelines: true,
   showWindIndicators: true,
   showGrid: true,
+  showWindZones: true,
 };
 
 const STORAGE_KEY = 'settings';

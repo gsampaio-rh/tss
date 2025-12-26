@@ -4,6 +4,7 @@ import { Boat } from '../types/boat';
 import type { WindScenario } from '../types/wind';
 import { executeBoatTurn } from '../utils/gameLogic';
 import { COLORS } from '../types/game';
+import { gameLogs } from './gameLogs';
 
 export const game = writable<Game | null>(null);
 export const players = writable<Boat[]>([]);
@@ -58,6 +59,15 @@ export const gameActions = {
     isStart.set(true);
     turnCount.set(0);
     currentWindScenario.set(windscenario);
+    
+    // Start logging
+    gameLogs.startLog(
+      newGame.name || windscenario.name || 'Untitled Game',
+      windscenario,
+      newGame.players,
+      newGame.width,
+      newGame.height
+    );
   },
 
   addPlayer: (colors: string[]) => {
@@ -140,11 +150,15 @@ export const gameActions = {
       });
       
       g.turncount++;
+      const currentWind = g.getWind(g.turncount);
       
       // Execute turn for each player
       for (const player of g.players) {
         executeBoatTurn(player, g);
       }
+      
+      // Log this turn
+      gameLogs.logTurn(g.turncount, currentWind, g.players);
       
       // Log all boat states after turn
       console.log(`[GAME TURN] After turn ${g.turncount}:`);

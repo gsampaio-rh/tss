@@ -1,9 +1,18 @@
 <script lang="ts">
   import { settings } from '$lib/stores/settings';
+  import { gameLogs } from '$lib/stores/gameLogs';
   import { onMount, onDestroy } from 'svelte';
   
   let screenWidth = 0;
   let screenHeight = 0;
+  
+  function handleExportLogs() {
+    if ($gameLogs) {
+      gameLogs.downloadLog();
+    }
+  }
+  
+  $: hasLogs = $gameLogs !== null;
   
   function updateScreenSize() {
     if (typeof window !== 'undefined') {
@@ -145,6 +154,28 @@
       </div>
     </label>
 
+    <!-- Show Wind Zones -->
+    <label class="setting-item" class:checked={$settings.showWindZones} for="set-show-wind-zones">
+      <input 
+        type="checkbox" 
+        class="btn-check" 
+        id="set-show-wind-zones"
+        checked={$settings.showWindZones}
+        onchange={() => toggleSetting('showWindZones')}
+      />
+      <div class="setting-content">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" class="setting-icon">
+          <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1" fill="none"/>
+          <line x1="8" y1="8" x2="8" y2="2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M 6 4 L 8 2 L 10 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="setting-label">
+          <strong>Wind Zones</strong>
+          <small>Show sailing zones on hover</small>
+        </div>
+      </div>
+    </label>
+
     <!-- Screen Resolution (Info Only) -->
     <div class="setting-item info-item">
       <div class="setting-content">
@@ -156,6 +187,22 @@
           <small>{screenWidth} × {screenHeight} px</small>
         </div>
       </div>
+    </div>
+
+    <!-- Export Game Logs -->
+    <div class="setting-item action-item">
+      <button 
+        class="btn btn-outline-primary btn-sm w-100"
+        onclick={handleExportLogs}
+        disabled={!hasLogs}
+        title="Export game logs as JSON"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 0.5rem;">
+          <path d="M8.5 6.5a.5.5 0 0 0-1 0v3.793L6.854 9.146a.5.5 0 1 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L8.5 10.293V6.5z"/>
+          <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+        </svg>
+        Export Logs
+      </button>
     </div>
   </div>
 </div>
@@ -201,6 +248,24 @@
   .setting-item.info-item:hover {
     background: #f8f9fa;
     border-color: #dee2e6;
+  }
+  
+  .setting-item.action-item {
+    padding: 0.5rem;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    background: #ffffff;
+  }
+  
+  .setting-item.action-item button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .setting-item.action-item button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
   
   .setting-content {

@@ -88,59 +88,7 @@
 >
   {@html boatSvg}
   
-  <!-- Wind Angle Arc (shown on hover) -->
-  {#if hovered}
-    <svg 
-      class="wind-angle-indicator"
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 100 100"
-      style="
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        width: 60px;
-        height: 60px;
-        pointer-events: none;
-        z-index: 102;
-      "
-    >
-      <!-- Wind direction line -->
-      <line 
-        x1="50" 
-        y1="50" 
-        x2="50" 
-        y2="10"
-        stroke="#666"
-        stroke-width="1"
-        stroke-dasharray="2 2"
-        opacity="0.5"
-        transform="rotate({windAngle} 50 50)"
-      />
-      <!-- Boat heading line -->
-      <line 
-        x1="50" 
-        y1="50" 
-        x2="50" 
-        y2="10"
-        stroke={boat.color}
-        stroke-width="2"
-        opacity="0.8"
-        transform="rotate({boatHeading} 50 50)"
-      />
-      <!-- Angle arc (simplified) -->
-      {#if Math.abs(relativeAngle) > 2}
-        <path 
-          d={getArcPath(50, 50, 40, 0, relativeAngle)}
-          fill={relativeAngle > 0 ? 'rgba(40, 167, 69, 0.2)' : 'rgba(220, 53, 69, 0.2)'}
-          stroke={relativeAngle > 0 ? '#28a745' : '#dc3545'}
-          stroke-width="1"
-          opacity="0.6"
-          transform="rotate({windAngle} 50 50)"
-        />
-      {/if}
-    </svg>
-  {/if}
+  <!-- Wind Angle Arc removed - now using WindZones component instead -->
 </div>
 
 <style>
