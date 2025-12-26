@@ -2,7 +2,7 @@
 
 A tactical sailing race simulator built with SvelteKit and TypeScript.
 
-**Version 1.0.0** - Core features complete and stable.
+**Version 1.1.0** - Wind mechanics improvements and layout enhancements.
 
 ## Quick Start
 
@@ -40,14 +40,14 @@ npm run preview
 
 ## Documentation
 
-- [Release Notes](./RELEASE_NOTES.md) - Version 1.0 release notes
-- [Product Backlog](./BACKLOG.md) - Future features and enhancements
-- [Migration Status](./MIGRATION_STATUS.md) - Migration completion summary
-- [Migration Guide](../docs/MIGRATION_GUIDE.md) - Historical migration documentation
+- [Release Notes](./RELEASE_NOTES.md) - Version history and release notes
+- [Product Backlog](./BACKLOG.md) - Feature backlog and sprint planning
+- [Wind Dynamics](../docs/WIND_DYNAMICS.md) - Wind mechanics explanation
+- [Wind Mechanics Spec](../docs/WIND_MECHANICS_SPEC.md) - Complete wind mechanics specification
 
 ## Version
 
-**1.0.0** - Core features complete and stable.
+**1.1.0** - Wind mechanics improvements and layout enhancements.
 
 ---
 
