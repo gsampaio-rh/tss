@@ -1,11 +1,35 @@
 # Product Backlog
 
-**Version**: 1.0.0  
+**Version**: 1.1.0  
 **Last Updated**: 2024
 
 ## 🎯 Product Vision
 
 Enhance the Tactical Sailing Simulator with additional features and polish to improve user experience and functionality.
+
+---
+
+## ✅ Version 1.1.0 - Completed (2024)
+
+### Wind Mechanics & Tactical Analysis
+- ✅ **Correct Lift/Header Calculation**: Implemented proper lift/header calculation relative to course axis (not boat angle)
+- ✅ **VMG Calculation**: Added VMG (Velocity Made Good) and efficiency tracking
+- ✅ **Wind Shift Detection**: Track wind shifts and calculate tactical impact correctly
+- ✅ **Invariant Validation**: Validate that lift on one tack = header on other (with error logging)
+- ✅ **UI Terminology**: Updated to use correct sailing terms (HEADER instead of KNOCK)
+- ✅ **Separation of Concerns**: Separated wind events (LIFT/HEADER) from performance states (VMG)
+
+### Layout & UX Improvements
+- ✅ **Three-Panel Layout**: Reorganized to 20% left (controls), 60% center (game), 20% right (insights)
+- ✅ **Increased Map Scale**: GRID_SIZE 20→25, boat scale 1.4→1.6, mark scale 1.0→1.2
+- ✅ **Screen Resolution Display**: Added screen resolution info in settings panel
+- ✅ **Map Containment**: Fixed map to stay within center area boundaries
+- ✅ **Optimized Scaling**: Map uses 95% of container space with proper padding
+
+### Documentation
+- ✅ **Wind Dynamics Documentation**: Comprehensive guide on wind mechanics
+- ✅ **Wind Mechanics Specification**: Complete spec for correct lift/header calculation
+- ✅ **Implementation Plan**: Detailed plan for wind mechanics implementation
 
 ---
 
@@ -176,9 +200,14 @@ Enhance the Tactical Sailing Simulator with additional features and polish to im
 
 ## 📊 Sprint Planning
 
-### Sprint 1 (Current)
+### Sprint 1 (Completed)
 - ✅ Core migration complete
 - ✅ Version 1.0 released
+
+### Sprint 2 (Completed - Version 1.1)
+- ✅ Correct wind mechanics implementation
+- ✅ Layout improvements
+- ✅ Map scale optimization
 
 ### Sprint 2 (Next)
 - Cup Modal
