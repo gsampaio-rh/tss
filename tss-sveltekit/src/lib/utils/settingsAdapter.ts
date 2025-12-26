@@ -12,6 +12,7 @@ let currentSettings: Settings = {
   showTracks: true,
   showLanelines: true,
   showWindIndicators: true,
+  showGrid: true,
 };
 
 // Subscribe to store changes and update local object

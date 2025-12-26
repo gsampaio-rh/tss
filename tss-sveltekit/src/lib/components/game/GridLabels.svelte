@@ -1,5 +1,6 @@
 <script lang="ts">
   import { GRID_SIZE } from '$lib/types/game';
+  import { settings } from '$lib/stores/settings';
   
   export let gameWidth: number;
   export let gameHeight: number;
@@ -31,6 +32,7 @@
 </script>
 
 <!-- Grid Reference Labels (only major lines, edges only) -->
+{#if $settings.showGrid}
 <svg 
   xmlns="http://www.w3.org/2000/svg" 
   viewBox={formatSvgViewBox(0, 0, gameWidth, gameHeight)}
@@ -68,3 +70,4 @@
     </text>
   {/each}
 </svg>
+{/if}

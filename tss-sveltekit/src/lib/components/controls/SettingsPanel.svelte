@@ -122,6 +122,29 @@
       </div>
     </label>
 
+    <!-- Show Grid -->
+    <label class="setting-item" class:checked={$settings.showGrid} for="set-show-grid">
+      <input 
+        type="checkbox" 
+        class="btn-check" 
+        id="set-show-grid"
+        checked={$settings.showGrid}
+        onchange={() => toggleSetting('showGrid')}
+      />
+      <div class="setting-content">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" class="setting-icon">
+          <path d="M 0 0 L 16 0 M 0 4 L 16 4 M 0 8 L 16 8 M 0 12 L 16 12 M 0 16 L 16 16" 
+                stroke="currentColor" stroke-width="0.5" fill="none"/>
+          <path d="M 0 0 L 0 16 M 4 0 L 4 16 M 8 0 L 8 16 M 12 0 L 12 16 M 16 0 L 16 16" 
+                stroke="currentColor" stroke-width="0.5" fill="none"/>
+        </svg>
+        <div class="setting-label">
+          <strong>Show Grid</strong>
+          <small>Display tactical grid reference</small>
+        </div>
+      </div>
+    </label>
+
     <!-- Screen Resolution (Info Only) -->
     <div class="setting-item info-item">
       <div class="setting-content">

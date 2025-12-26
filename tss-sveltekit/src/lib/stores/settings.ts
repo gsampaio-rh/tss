@@ -6,6 +6,7 @@ export interface Settings {
   showTracks: boolean;
   showLanelines: boolean;
   showWindIndicators: boolean;
+  showGrid: boolean;
 }
 
 const defaultSettings: Settings = {
@@ -13,6 +14,7 @@ const defaultSettings: Settings = {
   showTracks: true,
   showLanelines: true,
   showWindIndicators: true,
+  showGrid: true,
 };
 
 const STORAGE_KEY = 'settings';

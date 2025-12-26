@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { settings } from '$lib/stores/settings';
+  
   export let gameWidth: number;
   export let gameHeight: number;
   
@@ -52,6 +54,7 @@
 </script>
 
 <!-- Grid Lines -->
+{#if $settings.showGrid}
 <svg 
   xmlns="http://www.w3.org/2000/svg" 
   viewBox={formatSvgViewBox(0, 0, gameWidth, gameHeight)}
@@ -107,3 +110,4 @@
     {/each}
   </g>
 </svg>
+{/if}
