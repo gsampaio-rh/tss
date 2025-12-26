@@ -7,13 +7,11 @@
   export let playerIndex: number;
   
   let playerName: string = player.name || '';
-  let selectedStartPos: number = player.startPos ?? 1; // 0=left, 1=middle, 2=right
   let selectedTurn: TurnType = player.turntype || TurnType.Forward;
   
   // Update local state when player changes
   $: if (player) {
     playerName = player.name || '';
-    selectedStartPos = player.startPos ?? 1;
     selectedTurn = player.turntype || TurnType.Forward;
   }
   
@@ -24,15 +22,6 @@
   // Update player name reactively
   $: if (playerName !== player.name) {
     player.name = playerName || `Player ${playerIndex + 1}`;
-  }
-  
-  function handleStartPosChange(pos: number) {
-    selectedStartPos = pos;
-    player.startPos = pos;
-    // Update start priority
-    if ($isStart && gameActions.updateStartPriority) {
-      gameActions.updateStartPriority(playerIndex, pos);
-    }
   }
   
   function handleTurnChange(turnType: TurnType) {
@@ -73,45 +62,6 @@
         bind:value={playerName}
         on:blur={handleNameChange}
       />
-      
-      <!-- Start Position Radio Buttons -->
-      <div class="btn-group" role="group">
-        <input 
-          type="radio" 
-          class="btn-check" 
-          id="start-left-{playerIndex}"
-          name="start-pos-{playerIndex}"
-          checked={selectedStartPos === 0}
-          on:change={() => handleStartPosChange(0)}
-        />
-        <label class="btn btn-outline-primary label-control" for="start-left-{playerIndex}" title="Start Left">
-          L
-        </label>
-        
-        <input 
-          type="radio" 
-          class="btn-check" 
-          id="start-middle-{playerIndex}"
-          name="start-pos-{playerIndex}"
-          checked={selectedStartPos === 1}
-          on:change={() => handleStartPosChange(1)}
-        />
-        <label class="btn btn-outline-primary label-control" for="start-middle-{playerIndex}" title="Start Middle">
-          M
-        </label>
-        
-        <input 
-          type="radio" 
-          class="btn-check" 
-          id="start-right-{playerIndex}"
-          name="start-pos-{playerIndex}"
-          checked={selectedStartPos === 2}
-          on:change={() => handleStartPosChange(2)}
-        />
-        <label class="btn btn-outline-primary label-control" for="start-right-{playerIndex}" title="Start Right">
-          R
-        </label>
-      </div>
       
       <button 
         class="btn btn-outline-danger delete-btn" 

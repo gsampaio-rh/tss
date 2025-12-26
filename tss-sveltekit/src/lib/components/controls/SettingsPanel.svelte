@@ -190,7 +190,7 @@
           <path d="M 8 2 L 8 14 M 4 6 L 8 2 L 12 6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M 3 10 Q 8 8 13 10" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round"/>
           <path d="M 3 12 Q 8 10 13 12" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round"/>
-        </svg>
+      </svg>
         <div class="setting-label">
           <strong>Dirty Air Zones</strong>
           <small>Show turbulent air visualization</small>
@@ -213,7 +213,7 @@
           <path d="M 3 10 Q 8 8 13 10" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
           <path d="M 3 12 Q 8 10 13 12" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
           <circle cx="12" cy="4" r="2" fill="currentColor" opacity="0.8"/>
-        </svg>
+      </svg>
         <div class="setting-label">
           <strong>Dirty Air Effects</strong>
           <small>Apply speed/angle penalties</small>
