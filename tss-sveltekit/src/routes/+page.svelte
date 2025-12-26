@@ -4,6 +4,7 @@
   import WindSelector from '$lib/components/controls/WindSelector.svelte';
   import GameCanvas from '$lib/components/game/GameCanvas.svelte';
   import LiftKnockIndicator from '$lib/components/game/LiftKnockIndicator.svelte';
+  import PlayerTacticalCard from '$lib/components/game/PlayerTacticalCard.svelte';
   import { settings } from '$lib/stores/settings';
   import { game, players, turnCount, isStart, gameActions, currentWind, previousWind } from '$lib/stores/game';
   import { windScenarios, windActions, initializeWindScenarios } from '$lib/stores/wind';
@@ -444,6 +445,20 @@
   <!-- Right Sidebar - Insights Only, 20% width -->
   <div class="sidebar sidebar-right">
     <div class="sidebar-content">
+      <!-- Player Tactical Cards - Always visible during race -->
+      {#if $game && !$isStart}
+        <div class="sidebar-section">
+          <div class="section-header">
+            <h6 class="section-title">Boat Tactical Data</h6>
+          </div>
+          <div class="section-content">
+            {#each $players as player, i}
+              <PlayerTacticalCard boat={player} playerIndex={i} />
+            {/each}
+          </div>
+        </div>
+      {/if}
+      
       <!-- Tactical Insight Panel - Contextual Coach/Referee (Always Expanded) -->
       <div class="sidebar-section tactical-insight-panel" class:has-alerts={tacticalInsights.hasImportantInsights}>
         <div class="section-header">
