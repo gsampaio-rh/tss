@@ -1,0 +1,214 @@
+/**
+ * Game Canvas Styles - Tactical Sailing Simulator
+ * Simplified, clean structure
+ */
+
+/* Game Canvas Wrapper - fills game-stage-container */
+.game-canvas-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  /* Match game background color to eliminate gray areas */
+  background-color: var(--color-bg-primary);
+  /* Ensure content doesn't overflow into sidebars */
+  contain: layout style paint;
+}
+
+/* Game Area - actual game content with scaling */
+.game-area {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  --boat-scale: 1.6;
+}
+
+/* Game Background */
+.game-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-bg-primary);
+}
+
+/* Game Tracks SVG */
+.game-tracks {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Game Laylines SVG */
+.game-laylines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 15;
+}
+
+/* Game Start Line SVG */
+.game-start-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 25;
+}
+
+/* Wind Indicator Group */
+.wind-indicator-group {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  z-index: 100;
+  transition: box-shadow var(--transition-base);
+}
+
+.wind-indicator-group:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+/* Wind Arrow Container */
+.wind-arrow-container {
+  width: 24px;
+  height: 32px;
+  flex-shrink: 0;
+  transform-origin: center bottom;
+}
+
+/* Wind Arrow SVG */
+.wind-arrow-animated {
+  width: 24px;
+  height: 32px;
+  display: block;
+  animation: windPulse 3s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+@keyframes windPulse {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
+}
+
+/* Wind Label */
+.wind-label {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Game Elements Base */
+.game-elem {
+  position: absolute;
+}
+
+/* SVG Round Line */
+.svg-round-line {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Laylines */
+.laylines {
+  z-index: 15;
+}
+
+.laylines line {
+  filter: drop-shadow(0 0 1px rgba(0,0,0,0.2));
+}
+
+.layline-proximity-indicator {
+  position: absolute;
+  transition: opacity var(--transition-base);
+}
+
+/* Focus/Hover Effects */
+:global(body[data-focused-player]) .pn-boat:not([data-player-index]) {
+  opacity: 0.3;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2)) !important;
+}
+
+:global(body[data-focused-player]) .player-track:not([data-player-index]) {
+  opacity: 0.2;
+}
+
+:global(body[data-hover-player]) .pn-boat:not([data-player-index]) {
+  opacity: 0.5;
+}
+
+:global(body[data-hover-player]) .player-track:not([data-player-index]) {
+  opacity: 0.3;
+}
+
+:global(body[data-focused-player]) .pn-boat[data-player-index],
+:global(body[data-hover-player]) .pn-boat[data-player-index] {
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4)) drop-shadow(0 0 16px rgba(255,255,255,0.8)) !important;
+  z-index: 101;
+}
+
+:global(body[data-focused-player]) .player-track[data-player-index],
+:global(body[data-hover-player]) .player-track[data-player-index] {
+  opacity: 1 !important;
+  stroke-width: 0.12 !important;
+}
+
+/* Start Line Animation */
+:global(body:not(.start)) .game-start-line .start-line {
+  animation: startLinePulse 0.8s ease-out;
+}
+
+@keyframes startLinePulse {
+  0% {
+    stroke-width: 0.12;
+    opacity: 0.7;
+  }
+  50% {
+    stroke-width: 0.2;
+    opacity: 1;
+  }
+  100% {
+    stroke-width: 0.12;
+    opacity: 0.7;
+  }
+}
+
+/* Boat Hover Enhancement */
+.pn-boat.hovered {
+  animation: boatHoverPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes boatHoverPulse {
+  0%, 100% {
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)) drop-shadow(0 0 8px rgba(255,255,255,0.5));
+  }
+  50% {
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4)) drop-shadow(0 0 16px rgba(255,255,255,0.8));
+  }
+}
+

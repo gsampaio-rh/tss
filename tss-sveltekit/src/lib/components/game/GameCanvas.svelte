@@ -47,8 +47,9 @@
     const scaleX = w / gameWidthPx;
     const scaleY = h / gameHeightPx;
     
-    // Use the larger scale to fill the container completely
-    const scale = Math.max(scaleX, scaleY);
+    // Use the smaller scale to ensure content fits completely within container
+    // This prevents overflow-x into sidebars
+    const scale = Math.min(scaleX, scaleY);
     
     // Center the game-area within the container
     const scaledWidth = gameWidthPx * scale;
@@ -57,6 +58,7 @@
     const top = (h - scaledHeight) / 2;
     
     // Apply transform to scale and position
+    // The overflow: hidden on game-canvas-wrapper and game-stage-container will clip any overflow
     gameArea.style.transform = `translate(${left}px, ${top}px) scale(${scale})`;
     gameArea.style.transformOrigin = 'top left';
   }
@@ -151,18 +153,19 @@
 </script>
 
 {#if $game}
-  <div bind:this={gameCont} id="game-cont" class="position-absolute" style="top: 0; left: 0; right: 0; bottom: 0; overflow: hidden;">
+  <div 
+    bind:this={gameCont} 
+    class="game-canvas-wrapper"
+    data-show-boats={$settings.showBoats ? 'full' : 'dot'}
+  >
     <div 
       bind:this={gameArea}
-      id="game-area" 
-      style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden;"
-      data-show-boats={$settings.showBoats ? 'full' : 'dot'}
+      class="game-area"
     >
       <!-- Background -->
       <svg 
         viewBox={formatSvgViewBox(0, 0, $game.width, $game.height)} 
-        id="background" 
-        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #F4F6F8;"
+        class="game-background"
       ></svg>
       
       <!-- Grid Lines (visual grid for spatial reference - major/minor structure) -->
@@ -177,10 +180,8 @@
       <!-- Tracks -->
       {#if $settings.showTracks}
         <svg 
-          id="track" 
           xmlns="http://www.w3.org/2000/svg" 
-          class="game-elem svg-round-line" 
-          style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+          class="game-tracks" 
           viewBox={formatSvgViewBox(0, 0, $game.width, $game.height)}
         >
           {#each $players as player, playerIndex}
@@ -219,17 +220,7 @@
           <svg 
             xmlns="http://www.w3.org/2000/svg" 
             viewBox={formatSvgViewBox(0, 0, $game.width, $game.height)}
-            class="pn-lines game-elem laylines" 
-            id="upmarklines"
-            style="
-              position: absolute;
-              top: 0;
-              left: 0;
-              width: 100%;
-              height: 100%;
-              pointer-events: none;
-              z-index: 15;
-            "
+            class="game-laylines"
           >
             <!-- Laylines: boundaries of the approach corridor -->
             <!-- Extend FROM the mark BACKWARD (downwind) toward the start area -->
@@ -311,9 +302,8 @@
       <!-- Start Line (dotted) -->
       <svg 
         xmlns="http://www.w3.org/2000/svg" 
-        id="start-line-svg"
+        class="game-start-line"
         viewBox={formatSvgViewBox(0, 0, $game.width, $game.height)}
-        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 25;"
       >
         <line 
           id="start-line" 
@@ -329,184 +319,29 @@
       </svg>
     </div>
     
-    <!-- Wind Indicator Group -->
-    <div 
-      class="wind-indicator-group"
-      style="
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        background: rgba(255, 255, 255, 0.95);
-        padding: 8px 12px;
-        border-radius: 6px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        z-index: 100;
-      "
-    >
+    <!-- Wind Indicator Group - positioned outside game-area to avoid transform issues -->
+    <div class="wind-indicator-group">
       <!-- Wind Arrow Container (base rotation) -->
       <div
         class="wind-arrow-container"
-        style="
-          rotate: {formatCssDeg(windDisplayAngle)};
-          width: 24px;
-          height: 32px;
-          flex-shrink: 0;
-        "
+        style="rotate: {formatCssDeg(windDisplayAngle)};"
       >
         <!-- Wind Arrow (with subtle animation) -->
         <svg 
           xmlns="http://www.w3.org/2000/svg" 
           viewBox="0 0 12 32" 
-          id="wind"
           class="wind-arrow-animated"
-          style="
-            width: 24px;
-            height: 32px;
-          "
         >
           <path d="M 1 14 L 6 22 L 11 14 M 4 2 V 15 M 8 2 V 15" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
         </svg>
       </div>
       
       <!-- Wind Label -->
-      <span 
-        id="wind-label"
-        style="
-          font-size: 1.1rem;
-          font-weight: 600;
-          color: #333;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        "
-      >
+      <span class="wind-label">
         {windLabel}
       </span>
     </div>
   </div>
 {/if}
 
-<style>
-  .game-elem {
-    position: absolute;
-  }
-  
-  .svg-round-line {
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-  
-  #game-area {
-    --boat-scale: 1.6; /* Increased from 1.4 to make boats more visible */
-  }
-  
-  /* Wind arrow container handles base rotation */
-  .wind-arrow-container {
-    transform-origin: center bottom;
-  }
-  
-  /* Wind arrow subtle animation - adds gentle pendulum movement */
-  .wind-arrow-animated {
-    animation: windPulse 3s ease-in-out infinite;
-    transform-origin: center bottom;
-    display: block;
-  }
-  
-  @keyframes windPulse {
-    0%, 100% {
-      transform: rotate(0deg);
-    }
-    50% {
-      transform: rotate(2deg);
-    }
-  }
-  
-  /* Make wind indicator feel alive */
-  .wind-indicator-group {
-    transition: box-shadow 0.3s ease;
-  }
-  
-  .wind-indicator-group:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  }
-  
-  /* Focus/highlight effects */
-  :global(body[data-focused-player]) .pn-boat:not([data-player-index]) {
-    opacity: 0.3;
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2)) !important;
-  }
-  
-  :global(body[data-focused-player]) .player-track:not([data-player-index]) {
-    opacity: 0.2;
-  }
-  
-  :global(body[data-hover-player]) .pn-boat:not([data-player-index]) {
-    opacity: 0.5;
-  }
-  
-  :global(body[data-hover-player]) .player-track:not([data-player-index]) {
-    opacity: 0.3;
-  }
-  
-  :global(body[data-focused-player]) .pn-boat[data-player-index],
-  :global(body[data-hover-player]) .pn-boat[data-player-index] {
-    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4)) drop-shadow(0 0 16px rgba(255,255,255,0.8)) !important;
-    z-index: 101;
-  }
-  
-  :global(body[data-focused-player]) .player-track[data-player-index],
-  :global(body[data-hover-player]) .player-track[data-player-index] {
-    opacity: 1 !important;
-    stroke-width: 0.12 !important;
-  }
-  
-  /* Start line animation on race start */
-  :global(body:not(.start)) .start-line-svg .start-line {
-    animation: startLinePulse 0.8s ease-out;
-  }
-  
-  @keyframes startLinePulse {
-    0% {
-      stroke-width: 0.12;
-      opacity: 0.7;
-    }
-    50% {
-      stroke-width: 0.2;
-      opacity: 1;
-    }
-    100% {
-      stroke-width: 0.12;
-      opacity: 0.7;
-    }
-  }
-  
-  /* Boat hover enhancement */
-  .pn-boat.hovered {
-    animation: boatHoverPulse 1.5s ease-in-out infinite;
-  }
-  
-  @keyframes boatHoverPulse {
-    0%, 100% {
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)) drop-shadow(0 0 8px rgba(255,255,255,0.5));
-    }
-    50% {
-      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4)) drop-shadow(0 0 16px rgba(255,255,255,0.8));
-    }
-  }
-  
-  /* Laylines - unique visual language, distinct from grid */
-  .laylines {
-    z-index: 15;
-  }
-  
-  .laylines line {
-    /* Thicker, darker, dashed - decision-defining, not reference geometry */
-    filter: drop-shadow(0 0 1px rgba(0,0,0,0.2));
-  }
-  
-  .layline-proximity-indicator {
-    position: absolute;
-    transition: opacity 0.3s ease;
-  }
-</style>
+<!-- Styles moved to game.css -->

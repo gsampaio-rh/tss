@@ -430,19 +430,7 @@
   <!-- Game Canvas - 60% width, full height stage -->
   <div class="game-stage-container">
     {#if $game}
-      <div class="game-field-container" style="
-        width: 100%; 
-        height: 100%; 
-        background: #ebeaff; 
-        position: relative;
-        border: 2px solid rgba(0, 0, 0, 0.15);
-        border-radius: 4px;
-        box-shadow: 
-          inset 0 0 30px rgba(0,0,0,0.08),
-          0 2px 8px rgba(0,0,0,0.1);
-      ">
-        <GameCanvas />
-      </div>
+      <GameCanvas />
     {:else}
       <div class="d-flex align-items-center justify-content-center h-100">
         <div class="text-center">

@@ -3,6 +3,7 @@
 @import './lib/styles/grid.css';
 @import './lib/styles/layout.css';
 @import './lib/styles/components.css';
+@import './lib/styles/game.css';
 
 /* Bootstrap CSS */
 @import 'bootstrap/dist/css/bootstrap.min.css';
