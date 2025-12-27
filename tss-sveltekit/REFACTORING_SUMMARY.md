@@ -48,6 +48,7 @@
 - ✅ **GameEntity** - Proper domain entity with encapsulation and domain events
 - ✅ WindDirection as value object
 - ✅ **Domain Events Infrastructure** - Event-driven architecture implemented
+- ✅ **Repository Pattern Interfaces** - Data access abstraction layer
 
 **Files Created**:
 - `src/lib/domain/entities/Boat.ts`
@@ -57,6 +58,10 @@
 - `src/lib/domain/events/DomainEvent.ts` - **NEW**: Domain event bus and base classes
 - `src/lib/domain/events/GameEvents.ts` - **NEW**: Game-specific domain events
 - `src/lib/domain/services/GameSetupService.ts` - **NEW**: Boat placement logic extracted
+- `src/lib/domain/repositories/IRepository.ts` - **NEW**: Base repository interface
+- `src/lib/domain/repositories/IGameRepository.ts` - **NEW**: Game repository interface
+- `src/lib/domain/repositories/IBoatRepository.ts` - **NEW**: Boat repository interface
+- `src/lib/domain/repositories/IWindScenarioRepository.ts` - **NEW**: Wind scenario repository interface
 
 #### Domain Services ✅
 - ✅ **GameEngineService** - Core game loop and turn execution (~100 lines)
@@ -99,13 +104,22 @@
 - ✅ **PlayerService** - Manages players
 - ✅ **WindScenarioService** - Manages wind scenarios
 - ✅ **TacticalInsightsService** - Provides tactical insights
-- ⏳ Use cases pattern - Future enhancement
+- ✅ **Use Cases Pattern** - Application-specific business operations
 
 **Files Created**:
 - `src/lib/application/services/GameService.ts`
 - `src/lib/application/services/PlayerService.ts`
 - `src/lib/application/services/WindScenarioService.ts`
 - `src/lib/application/services/TacticalInsightsService.ts`
+- `src/lib/application/use-cases/IUseCase.ts` - **NEW**: Base use case interface
+- `src/lib/application/use-cases/CreateGameUseCase.ts` - **NEW**: Create game use case
+- `src/lib/application/use-cases/ExecuteTurnUseCase.ts` - **NEW**: Execute turn use case
+- `src/lib/application/use-cases/AddPlayerUseCase.ts` - **NEW**: Add player use case
+- `src/lib/application/use-cases/RemovePlayerUseCase.ts` - **NEW**: Remove player use case
+- `src/lib/application/use-cases/StartRaceUseCase.ts` - **NEW**: Start race use case
+- `src/lib/application/use-cases/BackTurnUseCase.ts` - **NEW**: Back turn use case
+- `src/lib/application/use-cases/ResetGameUseCase.ts` - **NEW**: Reset game use case
+- `src/lib/application/use-cases/UpdatePlayerStartPositionUseCase.ts` - **NEW**: Update start position use case
 
 #### DTOs & Mappers ✅
 - ✅ GameDTO, BoatDTO, WindScenarioDTO
@@ -240,10 +254,10 @@
 2. **Domain Layer Enhancements** (2 days)
    - [x] Complete Game entity refactoring ✅
    - [x] Implement domain events pattern ✅
-   - [ ] Add repository pattern interfaces
+   - [x] Add repository pattern interfaces ✅
 
 3. **Application Layer Enhancements** (1 day)
-   - [ ] Implement use cases pattern
+   - [x] Implement use cases pattern ✅
 
 4. **Presentation Layer Enhancements** (3 days)
    - [ ] Create shared components library (buttons, cards, form components)
