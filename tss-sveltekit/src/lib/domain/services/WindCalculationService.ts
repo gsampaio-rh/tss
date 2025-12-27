@@ -27,20 +27,40 @@ export class WindCalculationService {
 	/**
 	 * Create wind array from scenario
 	 * Wind always starts at 0 degrees
+	 * Preserves the relative pattern of the scenario
 	 */
 	static createWindFromScenario(windscenario: WindScenario): number[] {
 		const wind: number[] = [];
 		const stepscount = windscenario.stepscount || 50;
-		const firstWindValue = windscenario.wind.length > 0 ? windscenario.wind[0] : 0;
+		
+		if (windscenario.wind.length === 0) {
+			// No wind values, return all zeros
+			return new Array(stepscount).fill(0);
+		}
 
 		// First turn always has wind = 0
 		wind[0] = 0;
 
-		// Subsequent turns use relative shifts from the scenario
+		// Handle single-value scenarios (static wind)
+		// For "static +5" with wind=[5], we want all turns to be +5, not 0
+		if (windscenario.wind.length === 1) {
+			const staticValue = windscenario.wind[0];
+			// If the static value is 0, all turns stay 0
+			// Otherwise, apply the offset starting from turn 1
+			for (let i = 1; i < stepscount; i++) {
+				wind[i] = staticValue;
+			}
+			return wind;
+		}
+
+		// Multi-value scenarios: preserve the pattern relative to first value
+		const firstWindValue = windscenario.wind[0];
 		for (let i = 1; i < stepscount; i++) {
-			const scenarioIndex = i % windscenario.wind.length;
+			// Use (i-1) to start from scenario index 0 for turn 1
+			const scenarioIndex = (i - 1) % windscenario.wind.length;
 			const scenarioWind = windscenario.wind[scenarioIndex];
 			// Calculate relative shift from first value
+			// This ensures wind always starts at 0, but preserves the pattern
 			wind[i] = scenarioWind - firstWindValue;
 		}
 
