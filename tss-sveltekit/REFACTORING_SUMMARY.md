@@ -144,7 +144,7 @@
 
 ---
 
-### ✅ Phase 4: Presentation Layer Refactoring (85% Complete)
+### ✅ Phase 4: Presentation Layer Refactoring (100% Complete)
 
 #### Component Organization ✅
 - ✅ **AppLayout.svelte** - Main layout orchestrator
@@ -152,8 +152,8 @@
 - ✅ **RightSidebar.svelte** - Right sidebar with tactical insights
 - ✅ **GameStage.svelte** - Game canvas container
 - ✅ **PrimaryActionZone.svelte** - Action buttons
-- ⏳ Shared components library - Deferred to Sprint 6
-- ⏳ Component documentation - Deferred to Sprint 6
+- ✅ **Shared Components Library** - Complete component library
+- ✅ **Component Documentation** - Comprehensive README
 
 **Files Created**:
 - `src/lib/presentation/components/layout/AppLayout.svelte`
@@ -161,26 +161,37 @@
 - `src/lib/presentation/components/layout/RightSidebar.svelte`
 - `src/lib/presentation/components/layout/GameStage.svelte`
 - `src/lib/presentation/components/layout/PrimaryActionZone.svelte`
+- `src/lib/presentation/components/shared/Button.svelte`
+- `src/lib/presentation/components/shared/Card.svelte`
+- `src/lib/presentation/components/shared/FormInput.svelte`
+- `src/lib/presentation/components/shared/Modal.svelte` - **NEW**: Modal component
+- `src/lib/presentation/components/shared/Select.svelte` - **NEW**: Select component
+- `src/lib/presentation/components/shared/Textarea.svelte` - **NEW**: Textarea component
+- `src/lib/presentation/components/shared/ErrorBoundary.svelte`
+- `src/lib/presentation/components/shared/README.md` - **NEW**: Component documentation
 
 #### State Management Refactoring ✅
 - ✅ **gameStore.ts** - State only (~50 lines)
 - ✅ **gameActions.ts** - Actions delegating to services (~250 lines)
 - ✅ Refactored stores using application services
 - ✅ Derived stores (currentWind, previousWind, gameWidth, gameHeight, marks)
-- ⏳ Store composition pattern - Deferred to Sprint 6
-- ⏳ Store middleware - Deferred to Sprint 6
+- ✅ **Store Composition Pattern** - Utilities for composing stores
+- ✅ **Store Middleware** - Logging, persistence, error handling
 
 **Files Created**:
 - `src/lib/stores/gameStore.ts`
 - `src/lib/stores/gameActions.ts`
 - `src/lib/infrastructure/stores/middleware.ts` (infrastructure)
+- `src/lib/infrastructure/stores/composition.ts` - **NEW**: Store composition utilities
 
 #### Hooks/Composables ✅
 - ✅ **useGame()** - Game state hook
 - ✅ **useBoat()** - Boat operations hook
 - ✅ **useWind()** - Wind operations hook
 - ✅ **useTactical()** - Tactical analysis hook
-- ⏳ Extract component logic to hooks - Deferred to Sprint 6
+- ✅ **useModal()** - **NEW**: Modal state management hook
+- ✅ **useCollapse()** - **NEW**: Collapse/expand state hook
+- ✅ **useForm()** - **NEW**: Form state and validation hook
 
 **Files Created**:
 - `src/lib/presentation/hooks/useGame.ts`
@@ -265,11 +276,11 @@
    - [x] Implement use cases pattern ✅
 
 4. **Presentation Layer Enhancements** (3 days)
-   - [ ] Create shared components library (buttons, cards, form components)
-   - [ ] Add component documentation
-   - [ ] Extract component logic to hooks
-   - [ ] Implement store composition pattern
-   - [ ] Add store middleware (logging, persistence, error handling)
+   - [x] Create shared components library (buttons, cards, form components) ✅
+   - [x] Add component documentation ✅
+   - [x] Extract component logic to hooks ✅
+   - [x] Implement store composition pattern ✅
+   - [x] Add store middleware (logging, persistence, error handling) ✅
 
 **Deliverables**:
 - Complete error tracking integration

@@ -3,5 +3,6 @@
  */
 
 export * from './middleware';
+export * from './composition';
 
 

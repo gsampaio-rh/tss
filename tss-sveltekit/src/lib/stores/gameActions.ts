@@ -12,7 +12,6 @@ import { gameLogs } from './gameLogs';
 import { settings } from './settings';
 import { COLORS } from '$lib/types/game';
 import type { WindScenario } from '$lib/types/wind';
-import { executeBoatTurn } from '$lib/utils/gameLogic';
 import { TurnType } from '$lib/types/game';
 import { logger } from '$lib/infrastructure/logging/logger';
 
