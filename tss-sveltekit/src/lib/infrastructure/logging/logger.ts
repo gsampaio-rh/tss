@@ -167,3 +167,4 @@ export const logError = (
 ) => {
 	logger.error(message, error, category, context);
 };
+

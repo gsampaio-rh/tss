@@ -8,4 +8,5 @@ export { DirtyAirService } from './DirtyAirService';
 export { BoatMovementService } from './BoatMovementService';
 export { WindCalculationService } from './WindCalculationService';
 export { GameEngineService } from './GameEngineService';
+export { GameSetupService } from './GameSetupService';
 

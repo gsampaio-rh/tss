@@ -31,3 +31,4 @@ export interface WindPresetDTO {
 	type?: string;
 }
 
+

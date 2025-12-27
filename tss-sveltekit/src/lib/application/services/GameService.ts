@@ -5,6 +5,8 @@
 
 import { GameEngineService } from '$lib/domain/services/GameEngineService';
 import { WindCalculationService } from '$lib/domain/services/WindCalculationService';
+import { GameEntity } from '$lib/domain/entities/Game';
+import { gameEntityToLegacyGame } from '$lib/domain/entities/GameAdapter';
 import { Game, COLORS } from '$lib/types/game';
 import type { WindScenario } from '$lib/types/wind';
 import { Boat } from '$lib/types/boat';
@@ -31,39 +33,44 @@ export class GameService {
 			}
 		);
 
-		logger.debug('[GameService] Creating new Game instance', 'GameService');
-		const game = new Game();
-		game.players = [];
+		logger.debug('[GameService] Creating new GameEntity', 'GameService');
+		const gameEntity = new GameEntity();
 		
-		logger.debug('[GameService] Setting wind from scenario', 'GameService');
-		game.setWindFromScenario(windScenario);
+		// Create wind array
+		const windArray = WindCalculationService.createWindFromScenario(windScenario);
+		
+		// Initialize game entity from scenario (this publishes GameCreatedEvent)
+		gameEntity.initializeFromScenario(windScenario, windArray);
+		
 		logger.debug(
-			'[GameService] Wind set',
+			'[GameService] GameEntity initialized',
 			'GameService',
 			{
-				windArrayLength: game.wind?.length,
-				firstWindValue: game.wind?.[0],
-				gameWidth: game.width,
-				gameHeight: game.height,
-				marksCount: game.marks?.length
-			}
-		);
-		
-		game.name = windScenario.name;
-		game.currentStartPriority = 0;
-		logger.debug(
-			'[GameService] Game initialized',
-			'GameService',
-			{
-				gameName: game.name,
-				currentStartPriority: game.currentStartPriority
+				gameId: gameEntity.id,
+				gameName: gameEntity.name,
+				gameWidth: gameEntity.width,
+				gameHeight: gameEntity.height,
+				marksCount: gameEntity.marks.length,
+				windArrayLength: gameEntity.wind.length
 			}
 		);
 
 		logger.debug('[GameService] Creating initial players', 'GameService', { playerCount });
 		// Create initial players
+		const players: Boat[] = [];
 		for (let i = 0; i < playerCount; i++) {
-			const color = game.findFreeColor(colors) || colors[i % colors.length];
+			// Find a color that hasn't been used yet in the players array we're building
+			let color: string | null = null;
+			for (const availableColor of colors) {
+				if (!players.find(p => p.color === availableColor)) {
+					color = availableColor;
+					break;
+				}
+			}
+			// Fallback to cycling through colors if all are used
+			if (!color) {
+				color = colors[i % colors.length];
+			}
 			logger.debug(
 				'[GameService] Creating player',
 				'GameService',
@@ -73,39 +80,47 @@ export class GameService {
 			boat.name = `Player ${i + 1}`;
 			boat.startPos = 1; // Middle
 			boat.startPriority = i;
-			game.players.push(boat);
+			players.push(boat);
 		}
+		
+		// Set players on game entity
+		gameEntity.setPlayers(players);
+		
 		logger.debug(
 			'[GameService] Players created',
 			'GameService',
 			{
-				playersCount: game.players.length,
-				players: game.players.map(p => ({ name: p.name, color: p.color, startPos: p.startPos }))
+				playersCount: players.length,
+				players: players.map(p => ({ name: p.name, color: p.color, startPos: p.startPos }))
 			}
 		);
 
 		logger.debug('[GameService] Placing boats on start line', 'GameService');
-		game.placeBoatsOnStart();
+		gameEntity.placeBoatsOnStart();
 		logger.debug(
 			'[GameService] Boats placed',
 			'GameService',
 			{
-				boats: game.players.map(p => ({ name: p.name, x: p.x, y: p.y }))
+				boats: players.map(p => ({ name: p.name, x: p.x, y: p.y }))
 			}
 		);
+		
+		// Convert to legacy Game format for backward compatibility
+		const legacyGame = gameEntityToLegacyGame(gameEntity);
 		
 		logger.info(
 			'[GameService] Game created successfully',
 			'GameService',
 			{
-				gameName: game.name,
-				playersCount: game.players.length,
-				gameWidth: game.width,
-				gameHeight: game.height
+				gameId: gameEntity.id,
+				gameName: legacyGame.name,
+				playersCount: legacyGame.players.length,
+				gameWidth: legacyGame.width,
+				gameHeight: legacyGame.height
 			}
 		);
 		
-		return game;
+		return legacyGame;
 	}
 
 	/**

@@ -32,3 +32,4 @@ export const gameWidth = derived(game, $game => $game?.width ?? 0);
 export const gameHeight = derived(game, $game => $game?.height ?? 0);
 export const marks = derived(game, $game => $game?.marks ?? []);
 
+

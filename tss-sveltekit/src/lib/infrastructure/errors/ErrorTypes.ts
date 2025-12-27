@@ -87,3 +87,4 @@ export class ApplicationError extends Error implements AppError {
 		this.context = context;
 	}
 }
+
