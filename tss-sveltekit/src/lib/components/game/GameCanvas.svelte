@@ -19,13 +19,16 @@
 	import BoatTacticalLines from './BoatTacticalLines.svelte';
 	import WindZones from './WindZones.svelte';
 	import DirtyAirZones from './DirtyAirZones.svelte';
-	import { onMount, afterUpdate } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 
 	let gameArea: HTMLDivElement;
 	let gameCont: HTMLDivElement;
 	let lastGameWidth = 0;
 	let lastGameHeight = 0;
 	let hoveredPlayerIndex: string | null = null;
+	let mutationObserver: MutationObserver | null = null;
+	let resizeHandler: (() => void) | null = null;
+	let orientationHandler: (() => void) | null = null;
 
 	// Track hovered player from body attribute - reactive
 	$: {
@@ -33,22 +36,6 @@
 			hoveredPlayerIndex = document.body.getAttribute('data-hover-player');
 		}
 	}
-
-	onMount(() => {
-		// Create a MutationObserver to watch for changes to body attributes
-		const observer = new MutationObserver(() => {
-			hoveredPlayerIndex = document.body.getAttribute('data-hover-player');
-		});
-
-		observer.observe(document.body, {
-			attributes: true,
-			attributeFilter: ['data-hover-player']
-		});
-
-		hoveredPlayerIndex = document.body.getAttribute('data-hover-player');
-
-		return () => observer.disconnect();
-	});
 
 	function formatCssPx(val: number): string {
 		return val.toFixed(3) + 'px';
@@ -110,27 +97,62 @@
 		}
 	}
 
-	afterUpdate(() => {
-		if ($game && gameCont && gameArea) {
-			requestAnimationFrame(() => {
-				renderGridSize();
-			});
-		}
-	});
+	// Only re-render when container size changes (removed afterUpdate to prevent constant reflows)
+	// Container size changes are handled by resize event listener
 
 	onMount(() => {
+		// Create a MutationObserver to watch for changes to body attributes
+		mutationObserver = new MutationObserver(() => {
+			hoveredPlayerIndex = document.body.getAttribute('data-hover-player');
+		});
+
+		mutationObserver.observe(document.body, {
+			attributes: true,
+			attributeFilter: ['data-hover-player']
+		});
+
+		hoveredPlayerIndex = document.body.getAttribute('data-hover-player');
+
 		// Initial render after a short delay to ensure container is sized
 		setTimeout(() => {
 			renderGridSize();
 		}, 0);
 
-		window.addEventListener('resize', renderGridSize);
-		window.addEventListener('orientationchange', renderGridSize);
-
-		return () => {
-			window.removeEventListener('resize', renderGridSize);
-			window.removeEventListener('orientationchange', renderGridSize);
+		// Throttle resize handler to prevent excessive reflows
+		let resizeTimeout: number | null = null;
+		resizeHandler = () => {
+			if (resizeTimeout !== null) {
+				cancelAnimationFrame(resizeTimeout);
+			}
+			resizeTimeout = requestAnimationFrame(() => {
+				renderGridSize();
+			});
 		};
+
+		orientationHandler = () => {
+			// Use setTimeout for orientation change to allow browser to finish
+			setTimeout(() => {
+				renderGridSize();
+			}, 100);
+		};
+
+		window.addEventListener('resize', resizeHandler, { passive: true });
+		window.addEventListener('orientationchange', orientationHandler);
+	});
+
+	onDestroy(() => {
+		if (mutationObserver) {
+			mutationObserver.disconnect();
+			mutationObserver = null;
+		}
+		if (resizeHandler) {
+			window.removeEventListener('resize', resizeHandler);
+			resizeHandler = null;
+		}
+		if (orientationHandler) {
+			window.removeEventListener('orientationchange', orientationHandler);
+			orientationHandler = null;
+		}
 	});
 
 	// Generate track points for a player

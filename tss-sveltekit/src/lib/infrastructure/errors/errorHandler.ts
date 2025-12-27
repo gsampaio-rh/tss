@@ -4,6 +4,7 @@
 
 import type { AppError } from './ErrorTypes';
 import { logError } from '../logging/logger';
+import { captureException, isSentryEnabled } from './sentry';
 
 /**
  * Wraps an async function with error handling
@@ -31,12 +32,27 @@ export function handleError(error: unknown, context?: string): void {
 	if (error instanceof Error) {
 		logError(errorMessage, error, 'ErrorHandler');
 
-		// TODO: Integrate with error tracking service (e.g., Sentry)
-		// if (isAppError(error) && error.severity === ErrorSeverity.CRITICAL) {
-		//   errorTrackingService.captureException(error);
-		// }
+		// Report to Sentry if enabled
+		if (isSentryEnabled()) {
+			const errorContext = isAppError(error)
+				? {
+						category: error.category,
+						severity: error.severity,
+						code: error.code,
+						...error.context
+					}
+				: { context: errorMessage };
+
+			captureException(error, errorContext);
+		}
 	} else {
-		logError(errorMessage, new Error(String(error)), 'ErrorHandler');
+		const stringError = new Error(String(error));
+		logError(errorMessage, stringError, 'ErrorHandler');
+
+		// Report to Sentry if enabled
+		if (isSentryEnabled()) {
+			captureException(stringError, { context: errorMessage, originalError: String(error) });
+		}
 	}
 }
 

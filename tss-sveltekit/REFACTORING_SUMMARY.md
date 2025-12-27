@@ -30,13 +30,18 @@
 - ✅ Error boundary component
 - ✅ Error types and handling utilities
 - ✅ Structured logging with context support
-- ⏳ Error tracking (Sentry) - Deferred to Sprint 6
+- ✅ **Sentry Error Tracking** - Integrated with error handler
 
 **Files Created**:
 - `src/lib/infrastructure/logging/logger.ts`
 - `src/lib/presentation/components/shared/ErrorBoundary.svelte`
 - `src/lib/infrastructure/errors/ErrorTypes.ts`
 - `src/lib/infrastructure/errors/errorHandler.ts`
+- `src/lib/infrastructure/errors/sentry.ts` - **NEW**: Sentry integration service
+- `src/lib/infrastructure/errors/index.ts` - **NEW**: Error infrastructure exports
+- `src/hooks.client.ts` - **NEW**: Client-side Sentry initialization
+- `src/hooks.server.ts` - **NEW**: Server-side Sentry initialization
+- `docs/SENTRY_SETUP.md` - **NEW**: Sentry setup documentation
 
 ---
 
@@ -249,7 +254,7 @@
 
 #### Tasks:
 1. **Error Tracking Integration** (1 day)
-   - [ ] Integrate Sentry or similar error tracking service
+   - [x] Integrate Sentry or similar error tracking service ✅
 
 2. **Domain Layer Enhancements** (2 days)
    - [x] Complete Game entity refactoring ✅

@@ -330,8 +330,21 @@
 	function initParticles() {
 		if (!$game || !$settings.showWindIndicators) return;
 
+		// Clean up all existing particles and gradients
+		particles.forEach(particle => {
+			const gradientId = particle.element.getAttribute('data-gradient-id');
+			if (gradientId && defsElement) {
+				const gradient = defsElement.querySelector(`#${gradientId}`);
+				if (gradient) {
+					gradient.remove();
+				}
+			}
+			particle.element.remove();
+		});
 		particles = [];
+		
 		if (svgElement) {
+			// Remove all children including defs
 			while (svgElement.firstChild) {
 				svgElement.removeChild(svgElement.firstChild);
 			}
@@ -398,6 +411,14 @@
 				particle.y > $game.height + margin;
 
 			if (shouldRemove) {
+				// Clean up gradient before removing particle
+				const gradientId = particle.element.getAttribute('data-gradient-id');
+				if (gradientId && defsElement) {
+					const gradient = defsElement.querySelector(`#${gradientId}`);
+					if (gradient) {
+						gradient.remove();
+					}
+				}
 				particle.element.remove();
 				particles.splice(i, 1);
 			}
@@ -415,6 +436,14 @@
 				(oldest, p, idx) => (p.age > oldest.age ? { p, age: p.age, idx } : oldest),
 				{ p: particles[0], age: particles[0].age, idx: 0 }
 			);
+			// Clean up gradient before removing particle
+			const gradientId = oldest.p.element.getAttribute('data-gradient-id');
+			if (gradientId && defsElement) {
+				const gradient = defsElement.querySelector(`#${gradientId}`);
+				if (gradient) {
+					gradient.remove();
+				}
+			}
 			oldest.p.element.remove();
 			particles.splice(oldest.idx, 1);
 		}
@@ -440,12 +469,25 @@
 		initParticles();
 	} else {
 		stopAnimation();
+		// Clean up all particles and gradients
+		particles.forEach(particle => {
+			const gradientId = particle.element.getAttribute('data-gradient-id');
+			if (gradientId && defsElement) {
+				const gradient = defsElement.querySelector(`#${gradientId}`);
+				if (gradient) {
+					gradient.remove();
+				}
+			}
+			particle.element.remove();
+		});
+		particles = [];
 		if (svgElement) {
 			while (svgElement.firstChild) {
 				svgElement.removeChild(svgElement.firstChild);
 			}
 		}
-		particles = [];
+		defsElement = null;
+		gradientIdCounter = 0;
 	}
 
 	$: if ($currentWind !== undefined && particles.length > 0) {
@@ -454,6 +496,25 @@
 
 	onDestroy(() => {
 		stopAnimation();
+		// Clean up all particles and gradients
+		particles.forEach(particle => {
+			const gradientId = particle.element.getAttribute('data-gradient-id');
+			if (gradientId && defsElement) {
+				const gradient = defsElement.querySelector(`#${gradientId}`);
+				if (gradient) {
+					gradient.remove();
+				}
+			}
+			particle.element.remove();
+		});
+		particles = [];
+		if (svgElement) {
+			while (svgElement.firstChild) {
+				svgElement.removeChild(svgElement.firstChild);
+			}
+		}
+		defsElement = null;
+		gradientIdCounter = 0;
 	});
 </script>
 
