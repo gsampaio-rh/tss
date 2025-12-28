@@ -24,7 +24,7 @@
 	}
 
 	// Update particle system when game or settings change
-	$: if (particleSystem) {
+	$: if (particleSystem && svgElement) {
 		particleSystem.updateConfig({
 			game: $game ? { width: $game.width, height: $game.height } : null,
 			currentWind: $currentWind || 0,

@@ -147,20 +147,44 @@ Component handles multiple responsibilities:
 
 ---
 
-### 3. Refactor WindParticles.svelte (536 lines)
+### 3. Refactor WindParticles.svelte (536 lines → 69 lines) ✅ COMPLETED
 
 **Priority**: 🟡 Medium  
-**Status**: Not Started  
+**Status**: ✅ Completed  
 **Estimated Effort**: 1-2 days  
-**Current Size**: 536 lines
+**Original Size**: 536 lines  
+**Current Size**: 69 lines  
+**Reduction**: 87% (467 lines removed)
 
 #### Problem
 Large component with complex particle system logic.
 
-#### Proposed Refactoring
-- Extract particle system logic to `WindParticleSystem.ts`
-- Separate rendering from logic
-- Optimize performance with object pooling
+#### Completed Refactoring
+
+**3.1 Extract Particle System Logic** ✅ COMPLETED
+- Created `WindParticleSystem.ts` service class (domain layer)
+- Encapsulated all particle lifecycle management
+- Separated physics calculations from rendering
+- **Result**: Reusable, testable particle system service
+
+**3.2 Extract SVG Utilities** ✅ COMPLETED
+- Created `windParticleUtils.ts` for SVG path/gradient utilities
+- Extracted `createTeardropPath()` function
+- Extracted `createGradient()` function
+- Extracted `formatSvgViewBox()` function
+- **Result**: Reusable SVG utilities
+
+**3.3 Separate Rendering from Logic** ✅ COMPLETED
+- Component now only handles:
+  - SVG element binding
+  - Lifecycle management (onMount/onDestroy)
+  - Connecting stores to particle system
+- All particle logic moved to service
+- **Result**: Component reduced from 536 to 69 lines (87% reduction)
+
+#### Files Created
+- `src/lib/domain/services/WindParticleSystem.ts` - Particle system service
+- `src/lib/utils/windParticleUtils.ts` - SVG utilities
 
 ---
 
