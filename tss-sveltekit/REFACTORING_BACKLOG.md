@@ -44,11 +44,11 @@ This document tracks refactoring tasks to improve code quality, maintainability,
 - Props: `isPinching`, `isFooting`, `leewardColor`, `windwardColor`
 - **Estimated**: 0.5 days
 
-**1.4 Extract History Tracking into Composable Hook**
-- Create `useMetricHistory.ts` composable
-- Handles history tracking logic for any metric
-- Reusable across VMG, ATW, Heading, Tack Advantage
-- **Estimated**: 0.5 days
+**1.4 Extract History Tracking into Composable Hook** ✅ COMPLETED
+- Created `useMetricHistory.ts` composable
+- Generic history tracker with TypeScript generics
+- Refactored all modal components to use the composable
+- **Result**: Eliminated code duplication, consistent tracking logic
 
 **1.5 Extract Tactical Calculations into Service**
 - Create `TacticalCardService.ts` in domain/application layer
