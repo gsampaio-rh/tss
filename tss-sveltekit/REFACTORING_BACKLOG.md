@@ -38,11 +38,11 @@ This document tracks refactoring tasks to improve code quality, maintainability,
 - Each card handles its own display logic and CSS
 - **Result**: Reduced PlayerTacticalCard by 166 lines
 
-**1.3 Extract Tell Tales into Separate Component**
-- Create `TellTales.svelte` component
-- Move all tell tale logic, animations, and SVG paths
-- Props: `isPinching`, `isFooting`, `leewardColor`, `windwardColor`
-- **Estimated**: 0.5 days
+**1.3 Extract Tell Tales into Separate Component** ✅ COMPLETED
+- Created `TellTales.svelte` component
+- Moved all tell tale logic, animations, and SVG paths
+- Props: `isPinching`, `isFooting` (colors calculated internally)
+- **Result**: Encapsulated tell tales visualization with animated SVG paths
 
 **1.4 Extract History Tracking into Composable Hook** ✅ COMPLETED
 - Created `useMetricHistory.ts` composable
