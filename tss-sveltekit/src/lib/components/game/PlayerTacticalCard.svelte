@@ -233,22 +233,6 @@
 	// Windward tell tale: red and down when pinching, green and sideways otherwise
 	$: windwardColor = isPinching ? '#dc3545' : '#28a745';
 	$: windwardDirection = isPinching ? 'down' : 'sideways';
-	
-	// Debug logs for tell tales
-	$: {
-		if (windwardDirection === 'down') {
-			console.log('[Tell Tales Debug]', {
-				mode,
-				isPinching,
-				isFooting,
-				windwardDirection,
-				leewardDirection,
-				atw,
-				targetATW,
-				atwDelta
-			});
-		}
-	}
 
 	// 7. Tack Advantage
 	$: oppositeTack = !boat.tack;
