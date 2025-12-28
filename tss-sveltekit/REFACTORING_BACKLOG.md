@@ -26,11 +26,11 @@ This document tracks refactoring tasks to improve code quality, maintainability,
 
 #### Proposed Refactoring
 
-**1.1 Extract Metric Modals into Separate Components**
-- Create `MetricModal.svelte` base component
-- Extract `VMGModal.svelte`, `ATWModal.svelte`, `HeadingModal.svelte`, `TackAdvantageModal.svelte`
+**1.1 Extract Metric Modals into Separate Components** ✅ COMPLETED
+- Created `VMGModal.svelte`, `ATWModal.svelte`, `HeadingModal.svelte`, `TackAdvantageModal.svelte`
 - Each modal handles its own state and history tracking
-- **Estimated**: 1 day
+- Each modal contains its own CSS
+- **Result**: Reduced PlayerTacticalCard by 473 lines
 
 **1.2 Extract Metric Cards into Reusable Components**
 - Create `MetricCard.svelte` base component
