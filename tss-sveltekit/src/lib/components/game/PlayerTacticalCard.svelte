@@ -368,33 +368,76 @@
 		<!-- Tell Tales Indicators -->
 		<div class="tell-tales-container">
 			<div class="tell-tale-label">Tell Tales</div>
-			<div class="tell-tales">
-				<!-- Leeward Tell Tale -->
-				<div class="tell-tale" class:ok={leewardColor === '#28a745'} class:bad={leewardColor === '#dc3545'}>
-					<svg width="16" height="16" viewBox="0 0 16 16" class="tell-tale-icon">
-						{#if leewardDirection === 'sideways'}
-							<!-- Green triangle pointing right (leeward) -->
-							<polygon points="4,8 12,4 12,12" fill={leewardColor} />
-						{:else}
-							<!-- Red triangle pointing down (when pinching) -->
-							<polygon points="4,4 12,4 8,12" fill={leewardColor} />
-						{/if}
-					</svg>
-					<span class="tell-tale-label-small">Leeward</span>
-				</div>
-				<!-- Windward Tell Tale -->
-				<div class="tell-tale" class:ok={windwardColor === '#28a745'} class:bad={windwardColor === '#dc3545'}>
-					<svg width="16" height="16" viewBox="0 0 16 16" class="tell-tale-icon">
-						{#if windwardDirection === 'sideways'}
-							<!-- Green triangle pointing left (windward) -->
-							<polygon points="12,8 4,4 4,12" fill={windwardColor} />
-						{:else}
-							<!-- Red triangle pointing down (when footing) -->
-							<polygon points="4,4 12,4 8,12" fill={windwardColor} />
-						{/if}
-					</svg>
-					<span class="tell-tale-label-small">Windward</span>
-				</div>
+			<div class="tell-tales-perspective">
+				<svg width="200" height="80" viewBox="0 0 200 80" class="tell-tales-sail-view">
+					<!-- Leeward tell tale (outside/downwind side) - Top -->
+					{#if leewardDirection === 'sideways'}
+						<line
+							x1="20"
+							y1="30"
+							x2="100"
+							y2="30"
+							stroke={leewardColor}
+							stroke-width="2"
+							stroke-linecap="round"
+							class="tell-tale-path flowing"
+						/>
+					{:else}
+						<!-- Stalled: first half horizontal, second half drops down -->
+						<path
+							d="M 20,30 L 60,30 L 100,45"
+							stroke={leewardColor}
+							stroke-width="2"
+							fill="none"
+							stroke-linecap="round"
+							class="tell-tale-path stalled"
+						/>
+					{/if}
+					<text
+						x="105"
+						y="33"
+						font-size="10"
+						fill={leewardColor}
+						font-weight="500"
+						class="tell-tale-label"
+					>
+						Leeward
+					</text>
+					
+					<!-- Windward tell tale (inside/upwind side) - Bottom -->
+					{#if windwardDirection === 'sideways'}
+						<line
+							x1="20"
+							y1="50"
+							x2="100"
+							y2="50"
+							stroke={windwardColor}
+							stroke-width="2"
+							stroke-linecap="round"
+							class="tell-tale-path flowing"
+						/>
+					{:else}
+						<!-- Stalled: first half horizontal, second half drops down -->
+						<path
+							d="M 20,50 L 60,50 L 100,65"
+							stroke={windwardColor}
+							stroke-width="2"
+							fill="none"
+							stroke-linecap="round"
+							class="tell-tale-path stalled"
+						/>
+					{/if}
+					<text
+						x="105"
+						y="53"
+						font-size="10"
+						fill={windwardColor}
+						font-weight="500"
+						class="tell-tale-label"
+					>
+						Windward
+					</text>
+				</svg>
 			</div>
 		</div>
 
@@ -1179,42 +1222,65 @@
 		font-weight: var(--font-weight-semibold);
 	}
 
-	.tell-tales {
-		display: flex;
-		gap: var(--spacing-md);
-		align-items: center;
-		justify-content: center;
-	}
-
-	.tell-tale {
+	.tell-tales-perspective {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 4px;
+		gap: 8px;
 	}
 
-	.tell-tale-icon {
-		transition: transform 0.2s ease;
+	.tell-tales-sail-view {
+		display: block;
+		margin: 0 auto;
 	}
 
-	.tell-tale.ok .tell-tale-icon {
-		filter: drop-shadow(0 0 2px rgba(40, 167, 69, 0.5));
+	.tell-tale-path {
+		transition: d 0.3s ease, stroke 0.3s ease;
+		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 	}
 
-	.tell-tale.bad .tell-tale-icon {
-		filter: drop-shadow(0 0 2px rgba(220, 53, 69, 0.5));
-		animation: shake 0.5s ease-in-out;
+	.tell-tale-path.flowing {
+		stroke-dasharray: 4, 2;
+		animation: flow 2s linear infinite;
 	}
 
-	@keyframes shake {
-		0%, 100% { transform: translateX(0); }
-		25% { transform: translateX(-2px); }
-		75% { transform: translateX(2px); }
+	.tell-tale-path.stalled {
+		stroke-dasharray: none;
+		opacity: 0.7;
+		animation: drop 0.5s ease-out;
+	}
+
+	@keyframes flow {
+		0% {
+			stroke-dashoffset: 0;
+		}
+		100% {
+			stroke-dashoffset: 6;
+		}
+	}
+
+	@keyframes drop {
+		0% {
+			transform: translateY(0);
+			opacity: 1;
+		}
+		100% {
+			transform: translateY(5px);
+			opacity: 0.7;
+		}
+	}
+
+	.tell-tales-labels {
+		display: flex;
+		gap: var(--spacing-md);
+		justify-content: center;
+		align-items: center;
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
 	}
 
 	.tell-tale-label-small {
 		font-size: var(--font-size-xs);
-		color: var(--color-text-muted);
 		font-weight: var(--font-weight-medium);
 	}
 
