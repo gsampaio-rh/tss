@@ -8,7 +8,7 @@
 <div class="metric-card">
 	<div class="metric-label">
 		<span>{label}</span>
-		{#if showInfoIcon && onInfoClick}
+		{#if onInfoClick}
 			<button
 				type="button"
 				class="info-icon"
