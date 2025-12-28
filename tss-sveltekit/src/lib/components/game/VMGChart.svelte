@@ -1,5 +1,5 @@
 <script lang="ts">
-	export let history: Array<{ time: number; vmg: number; efficiency: number }>;
+	export let history: Array<{ time: number; vmg: number; efficiency: number; turn?: number }>;
 	export let optimalVMG: number;
 	export let currentStatusColor: string;
 	export let currentVMG: number;
@@ -25,23 +25,23 @@
 		: optimalVMG * 1.1;
 	$: vmgRange = maxVMG - minVMG || 1;
 
-	// Calculate time range for X-axis
+	// Calculate turn range for X-axis
 	$: if (history.length > 0) {
-		const times = history.map(h => h.time);
-		const minTime = Math.min(...times);
-		const maxTime = Math.max(...times);
-		timeRange = maxTime - minTime || 1;
-		timeStart = minTime;
+		const turns = history.map(h => h.turn ?? 0);
+		const minTurn = Math.min(...turns);
+		const maxTurn = Math.max(...turns);
+		turnRange = maxTurn - minTurn || 1;
+		turnStart = minTurn;
 	} else {
-		timeRange = 1;
-		timeStart = Date.now();
+		turnRange = 1;
+		turnStart = 0;
 	}
-	let timeRange = 1;
-	let timeStart = Date.now();
+	let turnRange = 1;
+	let turnStart = 0;
 
-	// Convert data point to chart coordinates
-	function toChartCoords(time: number, vmg: number): [number, number] {
-		const x = ((time - timeStart) / timeRange) * chartWidth + CHART_PADDING.left;
+	// Convert data point to chart coordinates (using turn number for X-axis)
+	function toChartCoords(turn: number, vmg: number): [number, number] {
+		const x = ((turn - turnStart) / turnRange) * chartWidth + CHART_PADDING.left;
 		const y =
 			CHART_HEIGHT -
 			CHART_PADDING.bottom -
@@ -53,11 +53,13 @@
 	$: vmgPath = (() => {
 		if (history.length === 0) return '';
 		if (history.length === 1) {
-			const [x, y] = toChartCoords(history[0].time, history[0].vmg);
+			const turn = history[0].turn ?? 0;
+			const [x, y] = toChartCoords(turn, history[0].vmg);
 			return `M ${x} ${y} L ${x} ${y}`;
 		}
 		const points = history.map(h => {
-			const [x, y] = toChartCoords(h.time, h.vmg);
+			const turn = h.turn ?? 0;
+			const [x, y] = toChartCoords(turn, h.vmg);
 			return `${x},${y}`;
 		});
 		return `M ${points[0]} L ${points.slice(1).join(' L ')}`;
@@ -65,10 +67,10 @@
 
 	// Generate efficiency bands (only if we have data)
 	$: excellentBandY = history.length > 0 
-		? toChartCoords(timeStart, optimalVMG * 0.95)[1] 
+		? toChartCoords(turnStart, optimalVMG * 0.95)[1] 
 		: CHART_PADDING.top;
 	$: goodBandY = history.length > 0 
-		? toChartCoords(timeStart, optimalVMG * 0.85)[1] 
+		? toChartCoords(turnStart, optimalVMG * 0.85)[1] 
 		: CHART_HEIGHT - CHART_PADDING.bottom;
 	$: poorBandY = CHART_HEIGHT - CHART_PADDING.bottom;
 </script>
@@ -110,7 +112,7 @@
 
 	<!-- Optimal VMG reference line (dashed) -->
 	{#if history.length > 0}
-		{@const optimalY = toChartCoords(timeStart, optimalVMG)[1]}
+		{@const optimalY = toChartCoords(turnStart, optimalVMG)[1]}
 		<line
 			x1={CHART_PADDING.left}
 			y1={optimalY}
@@ -121,29 +123,30 @@
 			stroke-dasharray="4 4"
 			opacity="0.6"
 		/>
-		<!-- Optimal VMG legend (inside chart area) -->
-		<g transform="translate({CHART_PADDING.left + chartWidth - 80}, {optimalY - 8})">
-			<line
-				x1="0"
-				y1="4"
-				x2="20"
-				y2="4"
-				stroke="#6b7280"
-				stroke-width="1.5"
-				stroke-dasharray="4 4"
-				opacity="0.6"
-			/>
-			<text
-				x="24"
-				y="4"
-				font-size="10"
-				fill="#6b7280"
-				alignment-baseline="middle"
-			>
-				Optimal VMG
-			</text>
-		</g>
 	{/if}
+
+	<!-- Optimal VMG Legend (top-right) -->
+	<g transform="translate({CHART_PADDING.left + chartWidth - 85}, {CHART_PADDING.top - 5})">
+		<line
+			x1="0"
+			y1="4"
+			x2="20"
+			y2="4"
+			stroke="#6b7280"
+			stroke-width="1.5"
+			stroke-dasharray="4 4"
+			opacity="0.6"
+		/>
+		<text
+			x="24"
+			y="4"
+			font-size="10"
+			fill="#6b7280"
+			alignment-baseline="middle"
+		>
+			Optimal VMG
+		</text>
+	</g>
 
 	<!-- VMG line -->
 	{#if history.length > 0}
@@ -157,10 +160,33 @@
 		/>
 	{/if}
 
+	<!-- Historical data points -->
+	{#if history.length > 0}
+		{@const lastPoint = history[history.length - 1]}
+		{#each history.slice(0, -1) as point}
+			{@const turn = point.turn ?? 0}
+			{@const [x, y] = toChartCoords(turn, point.vmg)}
+			{@const pointEfficiency = Math.round(point.efficiency * 100)}
+			{@const pointStatusColor = pointEfficiency >= 95 ? '#28a745' : pointEfficiency >= 85 ? '#ffc107' : '#dc3545'}
+			{@const turnDiff = (lastPoint.turn ?? 0) - turn}
+			{@const opacity = Math.max(0.3, 1 - (turnDiff / 60) * 0.5)}
+			<circle
+				cx={x}
+				cy={y}
+				r="2.5"
+				fill={pointStatusColor}
+				stroke="#fff"
+				stroke-width="1"
+				opacity={opacity}
+			/>
+		{/each}
+	{/if}
+
 	<!-- Current point (if data exists) -->
 	{#if history.length > 0}
 		{@const lastPoint = history[history.length - 1]}
-		{@const [x, y] = toChartCoords(lastPoint.time, lastPoint.vmg)}
+		{@const turn = lastPoint.turn ?? 0}
+		{@const [x, y] = toChartCoords(turn, lastPoint.vmg)}
 		<circle
 			cx={x}
 			cy={y}

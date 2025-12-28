@@ -23,37 +23,32 @@
 	let showVMGModal = false;
 	let showChartExplanation = false;
 
-	// VMG history tracking (last 60 seconds, sampled every turn)
-	let vmgHistory: Array<{ time: number; vmg: number; efficiency: number }> = [];
-	const MAX_HISTORY_SECONDS = 60; // Track last 60 seconds
-	let lastHistoryUpdate = 0;
+	// VMG history tracking (last 60 turns, sampled every turn)
+	// History persists across modal opens/closes
+	let vmgHistory: Array<{ time: number; vmg: number; efficiency: number; turn: number }> = [];
+	const MAX_HISTORY_TURNS = 60; // Track last 60 turns
+	let lastTrackedTurn = -1;
 	
-	// Track VMG history (sample every turn, not every reactive update)
-	$: if (windwardMark && vmg > 0 && $turnCount !== undefined) {
+	// Track VMG history (sample every turn)
+	$: if (windwardMark && vmg > 0 && $turnCount !== undefined && $turnCount !== lastTrackedTurn) {
 		const now = Date.now();
-		// Only add new point if enough time has passed (or turn changed)
-		if (now - lastHistoryUpdate > 1000 || vmgHistory.length === 0) {
-			vmgHistory.push({
-				time: now,
-				vmg: vmg,
-				efficiency: vmgEfficiency
-			});
-			lastHistoryUpdate = now;
-			
-			// Remove old data (older than MAX_HISTORY_SECONDS)
-			const cutoffTime = now - MAX_HISTORY_SECONDS * 1000;
-			vmgHistory = vmgHistory.filter(point => point.time >= cutoffTime);
+		// Add new point for this turn
+		vmgHistory.push({
+			time: now,
+			vmg: vmg,
+			efficiency: vmgEfficiency,
+			turn: $turnCount
+		});
+		lastTrackedTurn = $turnCount;
+		
+		// Remove old data (keep only last MAX_HISTORY_TURNS turns)
+		if (vmgHistory.length > MAX_HISTORY_TURNS) {
+			vmgHistory = vmgHistory.slice(-MAX_HISTORY_TURNS);
 		}
 	}
 	
 	// Calculate optimal VMG (always BOAT_SPEED when perfectly aligned)
 	$: optimalVMG = BOAT_SPEED;
-	
-	// Reset history when modal closes
-	$: if (!showVMGModal) {
-		vmgHistory = [];
-		lastHistoryUpdate = 0;
-	}
 
 	// Calculate distance to mark
 	function distance(x1: number, y1: number, x2: number, y2: number): number {
@@ -426,7 +421,10 @@
 <Modal open={showVMGModal} title="VMG (Velocity Made Good)" size="md" on:close={() => (showVMGModal = false)}>
 	<div class="vmg-info-content">
 		<!-- Subtitle -->
-		<p class="vmg-subtitle">Your speed toward the mark</p>
+		<p class="vmg-subtitle">
+			Your speed toward the mark. VMG measures how effectively you're closing the distance,
+			not just how fast you're sailing. A boat sailing fast but away from the mark has low VMG.
+		</p>
 
 		<!-- Hero Stat: VMG Value -->
 		<div class="vmg-hero">
@@ -456,8 +454,22 @@
 		{#if vmgHistory.length > 0}
 			<div class="vmg-chart-container">
 				<div class="chart-header">
-					<div class="chart-title">VMG over last 60s</div>
+					<div class="chart-title">VMG over last {Math.min(vmgHistory.length, 60)} turns</div>
 					<div class="chart-subtitle">Compared to optimal VMG for this wind angle</div>
+				</div>
+				<div class="chart-scale-legend">
+					<span class="scale-item">
+						<span class="scale-color" style="background-color: rgba(40, 167, 69, 0.2); border-left: 3px solid #28a745;"></span>
+						<span class="scale-label">≥95% Excellent</span>
+					</span>
+					<span class="scale-item">
+						<span class="scale-color" style="background-color: rgba(255, 193, 7, 0.2); border-left: 3px solid #ffc107;"></span>
+						<span class="scale-label">85-95% Good</span>
+					</span>
+					<span class="scale-item">
+						<span class="scale-color" style="background-color: rgba(220, 53, 69, 0.2); border-left: 3px solid #dc3545;"></span>
+						<span class="scale-label">&lt;85% Poor</span>
+					</span>
 				</div>
 				<VMGChart
 					history={vmgHistory}
@@ -983,7 +995,7 @@
 		font-size: var(--font-size-sm);
 		color: #6b7280;
 		font-weight: var(--font-weight-normal);
-		line-height: var(--line-height-normal);
+		line-height: var(--line-height-relaxed);
 	}
 
 	/* Hero Stat: VMG Value */
@@ -1157,6 +1169,35 @@
 		font-size: var(--font-size-xs);
 		color: var(--color-text-muted);
 		font-weight: var(--font-weight-normal);
+	}
+
+	.chart-scale-legend {
+		display: flex;
+		gap: var(--spacing-md);
+		margin-bottom: var(--spacing-sm);
+		flex-wrap: wrap;
+		align-items: center;
+	}
+
+	.scale-item {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-xs);
+		font-size: var(--font-size-xs);
+		color: var(--color-text-secondary);
+	}
+
+	.scale-color {
+		display: inline-block;
+		width: 20px;
+		height: 12px;
+		border-radius: 2px;
+		flex-shrink: 0;
+	}
+
+	.scale-label {
+		font-weight: var(--font-weight-normal);
+		white-space: nowrap;
 	}
 
 	.chart-explanation-toggle {
