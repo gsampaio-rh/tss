@@ -89,8 +89,9 @@ Add contextual help icons (ℹ️) next to every insight/metric in the race insi
 ### 1. Tell Tales Indicators
 
 **Priority**: 🔴 High  
-**Status**: Not Started  
-**Estimated Effort**: 2-3 days
+**Status**: ✅ Completed  
+**Estimated Effort**: 2-3 days  
+**Actual Effort**: ~2 days
 
 #### Description
 Add tell tales indicators to the player tactical card. Tell tales are visual indicators that show wind flow and help sailors optimize sail trim and heading. They provide immediate visual feedback about whether the boat is sailing efficiently.
@@ -117,25 +118,50 @@ Add tell tales indicators to the player tactical card. Tell tales are visual ind
   - Show real-time feedback as conditions change
 
 #### Acceptance Criteria
-- [ ] Tell tales visible on player tactical card
-- [ ] Visual indicators show wind flow direction
-- [ ] Color coding reflects sail efficiency
-- [ ] Updates in real-time with wind/heading changes
-- [ ] Clear visual feedback for sail trim adjustments
-- [ ] Accessible and easy to understand
+- [x] Tell tales visible on player tactical card
+- [x] Visual indicators show wind flow direction
+- [x] Color coding reflects sail efficiency
+- [x] Updates in real-time with wind/heading changes
+- [x] Clear visual feedback for sail trim adjustments
+- [x] Accessible and easy to understand
+- [x] Realistic snake-like wave animations
+- [x] Fixed bands prevent tell tales from crossing
+- [x] Gradual collapse when stalled
 
 #### Technical Notes
-- Add tell tales component to `PlayerTacticalCard.svelte`
-- Calculate wind flow angle relative to boat heading
-- Use ATW and wind direction to determine tell tale state
-- Consider using small animated indicators for wind flow
-- May integrate with existing wind visualization
+- ✅ Added tell tales to `PlayerTacticalCard.svelte`
+- ✅ Uses ATW and mode (PINCHING/FOOTING) to determine tell tale state
+- ✅ SVG path morphing for realistic snake-like wave animations
+- ✅ Fixed bands: Leeward at y=30, Windward at y=55
+- ✅ Phase shift between leeward and windward for realistic turbulence
+- ✅ Separate animations for flowing and stalled states
 
 #### UI/UX Considerations
-- Keep tell tales compact but visible
-- Use intuitive visual language (arrows, ribbons, or flow lines)
-- Color coding should match existing efficiency indicators
-- Consider tooltip/explanation for new users
+- ✅ Compact horizontal lines stacked vertically
+- ✅ Snake-like wave animations simulate ribbon-in-wind effect
+- ✅ Color coding: green when OK, red when stalled
+- ✅ Labels positioned next to each tell tale
+- ✅ Stalled tell tales collapse downward gradually
+
+#### Implementation Details
+- **Leeward Tell Tale**:
+  - Centered at y=30, amplitude ±6px (24-36)
+  - 4 complete waves between x=20 and x=100
+  - Red and drops when footing (too wide)
+  - Green and flows when OK
+  
+- **Windward Tell Tale**:
+  - Centered at y=55, amplitude ±6px (49-61)
+  - 4 complete waves with 0.2s phase shift
+  - Red and drops when pinching (too close to wind)
+  - Green and flows when OK
+  - Never invades leeward band (stays >= 53 when stalled)
+
+- **Animations**:
+  - Flowing: `snakeWave` / `snakeWaveWindward` (1.1s ease-in-out)
+  - Stalled: `stallWiggle` / `stallWiggleWindward` (1.8s ease-in-out)
+  - Path morphing creates organic, continuous motion
+  - No translateX/Y - pure path animation for realism
 
 ---
 
