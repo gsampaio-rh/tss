@@ -1,149 +1,98 @@
 <script lang="ts">
 	import type { Boat } from '$lib/types/boat';
-	import { GRID_SIZE } from '$lib/types/game';
-	import { currentWind, marks } from '$lib/stores/game';
+	import { currentWind, marks, previousWind } from '$lib/stores/game';
 	import {
-		angleDiff,
-		getOptimalHeading,
-		calculateVMG,
-		calculateVMGEfficiency,
-		getCourseAxis,
-		calculateLiftHeader,
-		OPT_UPWIND_ANGLE,
-		OPT_DOWNWIND_ANGLE
-	} from '$lib/utils/gameLogic';
+		calculateTacticalMetrics,
+		calculateVMGTrend,
+		calculateTimeSinceShift,
+		type TacticalMetrics
+	} from '$lib/application/services/TacticalCardService';
+	import { getClockPosition } from '$lib/utils/clockPosition';
 
 	export let boat: Boat;
 	export let playerIndex: number;
 	export let showAlways: boolean = true;
 
 	// Constants
-	const BOAT_SPEED = 1.0; // Normalized speed
 	const RADIUS = 50; // Distance from boat center in pixels
 
 	// Get windward mark
 	$: windwardMark = $marks && $marks.length > 2 ? $marks[2] : null;
 
-	// Current wind direction (true wind)
-	$: windDir = ($currentWind || 0) * 2; // Convert from game units to degrees
+	// Current wind direction (convert from game units to degrees)
+	$: windDir = ($currentWind || 0) * 2;
+	$: previousWindDir = ($previousWind || 0) * 2;
 
-	// 1. Angle to True Wind (ATW)
-	$: atw = Math.abs(angleDiff(boat.rotation, windDir));
-	$: targetATW = OPT_UPWIND_ANGLE;
-	$: atwDelta = atw - targetATW;
-	$: atwColor = Math.abs(atwDelta) <= 2 ? 'green' : Math.abs(atwDelta) <= 5 ? 'yellow' : 'red';
-
-	// 2. VMG
-	$: vmg = windwardMark
-		? calculateVMG(boat.rotation, boat.x, boat.y, windwardMark.x, windwardMark.y, BOAT_SPEED)
-		: 0;
-	$: optimalVMG = BOAT_SPEED;
-	$: vmgEfficiency = windwardMark
-		? calculateVMGEfficiency(
-				boat.rotation,
-				boat.x,
-				boat.y,
-				windwardMark.x,
-				windwardMark.y,
-				BOAT_SPEED,
-				true
-			)
-		: 0;
-	$: vmgPercent = Math.round(vmgEfficiency * 100);
-
-	// VMG trend
-	let previousVMG = vmg;
-	$: vmgTrend = vmg > previousVMG ? 'up' : vmg < previousVMG ? 'down' : 'stable';
-	$: if (vmg !== previousVMG) previousVMG = vmg;
-
-	// 3. Heading vs Lift/Knock
-	let previousWindDir = windDir;
-	$: liftHeaderResult =
-		windDir !== previousWindDir && windwardMark
-			? calculateLiftHeader(
-					boat,
-					boat.x,
-					boat.y,
-					windwardMark.x,
-					windwardMark.y,
-					previousWindDir,
-					windDir,
-					true
-				)
-			: null;
-	$: if (windDir !== previousWindDir) previousWindDir = windDir;
-
-	$: isLift = liftHeaderResult?.isLift ?? false;
-	$: isHeader = liftHeaderResult?.isHeader ?? false;
-	$: liftAmount = liftHeaderResult?.errorChange ?? 0;
-
-	// 4. Target Heading Indicator
-	$: optimalHeading = getOptimalHeading(boat.tack, windDir, true);
-	$: headingDelta = angleDiff(boat.rotation, optimalHeading);
-
-	// 5. Speed vs Target Speed
-	$: currentSpeed = BOAT_SPEED;
-	$: targetSpeed = BOAT_SPEED;
-	$: speedDelta = currentSpeed - targetSpeed;
-
-	// 6. Mode Indicator
-	$: mode = (() => {
-		if (atw < targetATW - 3) return 'PINCHING';
-		if (atw > targetATW + 5) return 'FOOTING';
-		if (Math.abs(headingDelta) < 3) return 'VMG MODE';
-		if (headingDelta < -3) return 'POINTING';
-		return 'FOOTING';
-	})();
-
-	// 7. Tack Symmetry
-	$: oppositeTack = !boat.tack;
-	$: oppositeOptHeading = getOptimalHeading(oppositeTack, windDir, true);
-	$: currentCourseAxis = windwardMark
-		? getCourseAxis(boat.x, boat.y, windwardMark.x, windwardMark.y)
-		: 0;
-	$: currentError = windwardMark ? Math.abs(angleDiff(boat.rotation, currentCourseAxis)) : 0;
-	$: oppositeError = windwardMark ? Math.abs(angleDiff(oppositeOptHeading, currentCourseAxis)) : 0;
-	$: tackAdvantage =
-		currentError < oppositeError ? oppositeError - currentError : -(currentError - oppositeError);
-	$: tackAdvantagePercent =
-		currentError + oppositeError > 0
-			? Math.round((1 - currentError / (currentError + oppositeError)) * 100)
-			: 0;
-
-	// 8. Time Since Last Shift
+	// Calculate all tactical metrics using service
+	let previousVMG: number | undefined = undefined;
 	let lastShiftTime = Date.now();
-	$: if (liftHeaderResult && Math.abs(liftAmount) > 5) {
-		lastShiftTime = Date.now();
+	let metrics: TacticalMetrics | null = null;
+
+	$: {
+		if (boat && windwardMark) {
+			metrics = calculateTacticalMetrics({
+				boat,
+				windwardMark,
+				windDir,
+				previousWindDir,
+				previousVMG
+			});
+			// Update previousVMG for next calculation
+			if (metrics) {
+				previousVMG = metrics.vmg;
+			}
+		} else {
+			metrics = null;
+		}
 	}
-	$: timeSinceShift = Math.floor((Date.now() - lastShiftTime) / 1000);
 
-	// 9. Heel/Load Proxy
-	$: powerState = (() => {
-		if (atw < targetATW - 5) return 'UNDERPOWERED';
-		if (atw > targetATW + 8) return 'OVERPOWERED';
-		return 'POWERED';
-	})();
-	$: powerLevel = Math.max(0, Math.min(1, 1 - Math.abs(atwDelta) / 10));
+	// Extract metrics for easier access
+	$: atw = metrics?.atw ?? 0;
+	$: targetATW = metrics?.targetATW ?? 45;
+	$: atwDelta = metrics?.atwDelta ?? 0;
+	$: atwColor = metrics?.atwColor ?? 'red';
 
-	// 10. Immediate Decision Flag
-	$: decisionFlag = (() => {
-		if (isHeader && Math.abs(liftAmount) > 15 && vmgEfficiency < 0.85) return 'TACK NOW';
-		if (isHeader && Math.abs(liftAmount) > 8 && vmgEfficiency < 0.9) return 'TACK SOON';
-		if (tackAdvantage < -5 && vmgEfficiency < 0.9) return 'TACK SOON';
-		return 'HOLD';
-	})();
+	$: vmg = metrics?.vmg ?? 0;
+	$: vmgEfficiency = metrics?.vmgEfficiency ?? 0;
+	$: vmgPercent = metrics?.vmgPercent ?? 0;
+	$: vmgTrend = calculateVMGTrend(vmg, previousVMG);
+
+	$: isLift = metrics?.isLift ?? false;
+	$: isHeader = metrics?.isHeader ?? false;
+	$: liftAmount = metrics?.liftAmount ?? 0;
+
+	$: optimalHeading = metrics?.optimalHeading ?? 0;
+	$: headingDelta = metrics?.headingDelta ?? 0;
+
+	$: currentSpeed = metrics?.currentSpeed ?? 1.0;
+	$: targetSpeed = metrics?.targetSpeed ?? 1.0;
+	$: speedDelta = metrics?.speedDelta ?? 0;
+
+	$: mode = metrics?.mode ?? 'FOOTING';
+
+	$: tackAdvantage = metrics?.tackAdvantage ?? 0;
+	$: tackAdvantagePercent = metrics?.tackAdvantagePercent ?? 0;
+
+	$: powerState = metrics?.powerState ?? 'POWERED';
+	$: powerLevel = metrics?.powerLevel ?? 0;
+
+	$: decisionFlag = metrics?.decisionFlag ?? 'HOLD';
+
+	// Calculate time since last shift
+	let timeSinceShift = 0;
+	$: {
+		if (metrics && liftAmount !== undefined) {
+			const liftHeaderResult = { errorChange: liftAmount };
+			const result = calculateTimeSinceShift(liftHeaderResult, lastShiftTime);
+			lastShiftTime = result.newLastShiftTime;
+			timeSinceShift = result.timeSinceShift;
+		} else {
+			timeSinceShift = Math.floor((Date.now() - lastShiftTime) / 1000);
+		}
+	}
 
 	// Only show indicators if we have valid data
 	$: hasValidData = windwardMark && windwardMark.x !== undefined && windwardMark.y !== undefined;
-
-	// Clock position helper - converts hour (0-11) to x,y offset
-	function getClockPosition(hour: number, radius: number): { x: number; y: number } {
-		const angle = ((hour * 30 - 90) * Math.PI) / 180; // Convert to radians, -90 to start at top
-		return {
-			x: Math.cos(angle) * radius,
-			y: Math.sin(angle) * radius
-		};
-	}
 
 	function formatCssDeg(val: number): string {
 		return val.toFixed(0) + '°';
