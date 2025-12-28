@@ -11,8 +11,9 @@ This document tracks upcoming features and improvements for the Tactical Sailing
 ### 0. Contextual Help for Race Insights
 
 **Priority**: 🔴 Critical  
-**Status**: Not Started  
-**Estimated Effort**: 2-3 days
+**Status**: ✅ Completed  
+**Estimated Effort**: 2-3 days  
+**Actual Effort**: ~2 days
 
 #### Description
 Add contextual help icons (ℹ️) next to every insight/metric in the race insights panel. When users hover over the icon, they should see a tooltip explaining what that metric means and how to interpret it.
@@ -44,27 +45,42 @@ Add contextual help icons (ℹ️) next to every insight/metric in the race insi
   - Tack indicator
 
 #### Acceptance Criteria
-- [ ] Info icon (ℹ️) appears next to each metric
-- [ ] Tooltip shows on hover (desktop)
-- [ ] Tooltip shows on tap (mobile/touch)
-- [ ] Explanations are clear and concise
-- [ ] Tooltips don't interfere with UI interactions
-- [ ] Accessible (keyboard navigation, screen readers)
-- [ ] Consistent styling across all metrics
+- [x] Info icon (ℹ️) appears next to each metric
+- [x] Modal shows on click (desktop and mobile)
+- [x] Explanations are clear and concise
+- [x] Modals don't interfere with UI interactions
+- [x] Accessible (keyboard navigation, screen readers)
+- [x] Consistent styling across all metrics
+- [x] History charts for VMG, ATW, Heading, and Tack Advantage
+- [x] Context-aware guidance based on current status
 
 #### Technical Notes
-- Create reusable `InfoTooltip` component
-- Use Svelte's built-in tooltip or custom implementation
-- Consider using `title` attribute as fallback
-- May want to use a tooltip library (e.g., Floating UI) for better positioning
-- Ensure tooltips work on mobile devices
-- Add ARIA labels for accessibility
+- ✅ Created reusable `Modal` component (already existed)
+- ✅ Used click-based modals (better for mobile than hover)
+- ✅ Created chart components: `VMGChart`, `ATWChart`, `HeadingChart`, `TackAdvantageChart`
+- ✅ History tracking for all metrics (60 turns)
+- ✅ Turn-based X-axis (not time-based)
+- ✅ Performance bands with color coding
+- ✅ ARIA labels and keyboard navigation implemented
 
 #### UI/UX Considerations
-- Tooltip should appear near the icon (not cover important content)
-- Consider delay before showing (e.g., 500ms) to avoid accidental triggers
-- Tooltip should disappear when mouse moves away or after a timeout
-- On mobile, consider a modal/dialog instead of hover tooltip
+- ✅ Modal appears on click (works on all devices)
+- ✅ Modal can be closed via backdrop, Escape key, or close button
+- ✅ Charts show historical trends over last 60 turns
+- ✅ Context-aware guidance updates based on current status
+- ✅ Consistent visual hierarchy across all modals
+
+#### Completed Metrics
+- ✅ **VMG (Velocity Made Good)**: Full modal with history chart, performance bands, optimal VMG reference line
+- ✅ **ATW (Angle to Wind)**: Full modal with history chart, target angle reference, pinching/footing guidance
+- ✅ **Heading**: Full modal with history chart showing heading vs optimal, wind shift awareness
+- ✅ **Tack Advantage**: Full modal with history chart showing advantage percentage, positive/negative zones
+
+#### Implementation Details
+- All modals follow consistent pattern: Hero stat → Supporting indicators → History chart → Guidance
+- Charts use SVG for performance and scalability
+- History persists across modal opens/closes
+- Turn-based tracking ensures accurate representation for turn-based gameplay
 
 ---
 
@@ -111,7 +127,7 @@ Improve the visual design of wind zones. The current circle/arc visualization is
 
 ---
 
-### 2. Speed-Based Movement System
+### 3. Speed-Based Movement System
 
 **Priority**: 🔴 High  
 **Status**: Not Started  
@@ -148,7 +164,7 @@ Implement speed variations based on sailing angle relative to optimal power. Boa
 
 ---
 
-### 2. Racing Rules Implementation
+### 4. Racing Rules Implementation
 
 **Priority**: 🔴 High  
 **Status**: Not Started  
@@ -191,7 +207,7 @@ Implement sailing racing rules, particularly right-of-way rules. Boats on starbo
 
 ---
 
-### 3. Enhanced Game Statistics & Visualization
+### 5. Enhanced Game Statistics & Visualization
 
 **Priority**: 🟡 Medium  
 **Status**: Not Started  
@@ -408,11 +424,12 @@ To request a new feature:
 ## 🎯 Current Sprint Focus
 
 **Sprint Goals** (Next 2 weeks):
-1. **Contextual help for race insights** - Add info icons with tooltips to all metrics
-2. **Wind zones UI improvements** - Reduce circle size, improve visual design
-3. Speed-based movement system
-4. Racing rules implementation
-5. Enhanced game statistics
+1. ✅ **Contextual help for race insights** - Completed: Info modals with history charts for VMG, ATW, Heading, and Tack Advantage
+2. **Tell tales indicators** - Add visual wind flow indicators to player tactical card
+3. **Wind zones UI improvements** - Reduce circle size, improve visual design
+4. Speed-based movement system
+5. Racing rules implementation
+6. Enhanced game statistics
 
 ---
 
