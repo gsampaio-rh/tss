@@ -11,9 +11,13 @@
 		OPT_UPWIND_ANGLE
 	} from '$lib/utils/gameLogic';
 	import { getBoatColorHex } from '$lib/types/game';
+	import Modal from '$lib/presentation/components/shared/Modal.svelte';
 
 	export let boat: Boat;
 	export let playerIndex: number;
+
+	// Modal state for VMG info
+	let showVMGModal = false;
 
 	// Calculate distance to mark
 	function distance(x1: number, y1: number, x2: number, y2: number): number {
@@ -274,7 +278,17 @@
 
 			<!-- VMG (Top Right) -->
 			<div class="metric-card vmg-metric">
-				<div class="metric-label">VMG</div>
+				<div class="metric-label">
+					<span>VMG</span>
+					<button
+						type="button"
+						class="info-icon"
+						on:click|stopPropagation={() => (showVMGModal = true)}
+						aria-label="Learn more about VMG"
+					>
+						ℹ️
+					</button>
+				</div>
 				<div class="metric-value">{vmg.toFixed(2)} kt</div>
 				<div class="vmg-bar-mini">
 					<div
@@ -363,6 +377,69 @@
 		</div>
 	</div>
 {/if}
+
+<!-- VMG Info Modal -->
+<Modal open={showVMGModal} title="VMG (Velocity Made Good)" size="md" on:close={() => (showVMGModal = false)}>
+	<div class="vmg-info-content">
+		<div class="info-intro">
+			<strong>Your speed toward the mark.</strong> This is the most important metric for measuring
+			your progress!
+		</div>
+
+		<div class="info-section">
+			<h4>📊 Display</h4>
+			<ul class="info-list">
+				<li>
+					<span class="info-term">VMG Value:</span>
+					<span class="info-desc">Speed toward mark in knots</span>
+				</li>
+				<li>
+					<span class="info-term">Percentage:</span>
+					<span class="info-desc">Efficiency compared to optimal</span>
+				</li>
+				<li>
+					<span class="info-term">Bar:</span>
+					<span class="info-desc">
+						<span class="color-badge color-good"></span> 95%+ (excellent) •
+						<span class="color-badge color-ok"></span> 85-95% (good) •
+						<span class="color-badge color-poor"></span> &lt;85% (poor)
+					</span>
+				</li>
+			</ul>
+		</div>
+
+		<div class="info-section">
+			<h4>📈 Trend</h4>
+			<ul class="info-list">
+				<li>
+					<span class="trend-arrow trend-up">▲</span>
+					<span class="info-desc">Increasing (getting better)</span>
+				</li>
+				<li>
+					<span class="trend-arrow trend-down">▼</span>
+					<span class="info-desc">Decreasing (getting worse)</span>
+				</li>
+			</ul>
+		</div>
+
+		<div class="info-section">
+			<h4>💡 Meaning</h4>
+			<ul class="info-list">
+				<li><strong>High VMG</strong> = Good progress toward mark</li>
+				<li><strong>Low VMG</strong> = Poor progress (even if boat speed is high)</li>
+			</ul>
+		</div>
+
+		<div class="info-section-action">
+			<h4>🎯 Action</h4>
+			<ul class="action-list">
+				<li>Aim for 95%+ VMG efficiency</li>
+				<li>If &lt;85%, check heading and tack</li>
+				<li>Watch trend - dropping means change needed</li>
+			</ul>
+		</div>
+	</div>
+</Modal>
 
 <style>
 	.player-tactical-card {
@@ -648,6 +725,35 @@
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
 		margin-bottom: 4px;
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+
+	.info-icon {
+		background: none;
+		border: none;
+		cursor: pointer;
+		font-size: 14px;
+		padding: 2px 4px;
+		line-height: 1;
+		opacity: 0.6;
+		transition: opacity 0.2s ease;
+		border-radius: var(--border-radius-sm);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.info-icon:hover {
+		opacity: 1;
+		background: var(--color-bg-secondary);
+	}
+
+	.info-icon:focus {
+		outline: 2px solid var(--color-primary);
+		outline-offset: 2px;
+		opacity: 1;
 	}
 
 	.metric-value {
@@ -786,5 +892,167 @@
 	}
 	.info-value.overpowered {
 		color: #ffc107;
+	}
+
+	/* VMG Info Modal Styles */
+	.vmg-info-content {
+		line-height: var(--line-height-normal);
+		color: var(--color-text-primary);
+		max-height: 70vh;
+		overflow-y: auto;
+	}
+
+	.info-intro {
+		padding: var(--spacing-sm) var(--spacing-md);
+		background: linear-gradient(135deg, rgba(0, 123, 255, 0.05) 0%, rgba(0, 123, 255, 0.02) 100%);
+		border-radius: var(--radius-md);
+		border-left: 3px solid var(--color-primary);
+		margin-bottom: var(--spacing-md);
+		font-size: var(--font-size-sm);
+		line-height: var(--line-height-normal);
+	}
+
+	.info-intro strong {
+		color: var(--color-primary);
+		font-weight: var(--font-weight-semibold);
+	}
+
+	.info-section {
+		margin-bottom: var(--spacing-md);
+		padding-bottom: var(--spacing-sm);
+		border-bottom: 1px solid var(--color-border-light);
+	}
+
+	.info-section:last-of-type {
+		border-bottom: none;
+		margin-bottom: 0;
+		padding-bottom: 0;
+	}
+
+	.info-section h4 {
+		margin: 0 0 var(--spacing-sm) 0;
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-semibold);
+		color: var(--color-text-primary);
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-xs);
+	}
+
+	.info-list {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.info-list > li {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		margin-bottom: var(--spacing-xs);
+		font-size: var(--font-size-sm);
+		line-height: var(--line-height-normal);
+	}
+
+	.info-list > li:last-child {
+		margin-bottom: 0;
+	}
+
+	.info-term {
+		font-weight: var(--font-weight-semibold);
+		color: var(--color-text-primary);
+		min-width: 90px;
+		flex-shrink: 0;
+	}
+
+	.info-desc {
+		color: var(--color-text-secondary);
+		flex: 1;
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-xs);
+		flex-wrap: wrap;
+	}
+
+	.color-badge {
+		display: inline-block;
+		width: 12px;
+		height: 12px;
+		border-radius: 2px;
+		vertical-align: middle;
+		border: 1px solid rgba(0, 0, 0, 0.1);
+	}
+
+	.color-badge.color-good {
+		background: #28a745;
+	}
+
+	.color-badge.color-ok {
+		background: #ffc107;
+	}
+
+	.color-badge.color-poor {
+		background: #dc3545;
+	}
+
+	.trend-arrow {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 20px;
+		height: 20px;
+		border-radius: 3px;
+		font-size: 12px;
+		font-weight: var(--font-weight-bold);
+		flex-shrink: 0;
+	}
+
+	.trend-arrow.trend-up {
+		background: rgba(40, 167, 69, 0.1);
+		color: #28a745;
+	}
+
+	.trend-arrow.trend-down {
+		background: rgba(220, 53, 69, 0.1);
+		color: #dc3545;
+	}
+
+	.info-section-action {
+		background: linear-gradient(135deg, rgba(40, 167, 69, 0.05) 0%, rgba(40, 167, 69, 0.02) 100%);
+		padding: var(--spacing-sm) var(--spacing-md);
+		border-radius: var(--radius-md);
+		border-left: 3px solid var(--color-success);
+		margin-top: var(--spacing-sm);
+	}
+
+	.info-section-action h4 {
+		margin-bottom: var(--spacing-xs);
+	}
+
+	.action-list {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.action-list li {
+		position: relative;
+		padding-left: var(--spacing-md);
+		margin-bottom: var(--spacing-xs);
+		font-size: var(--font-size-sm);
+		line-height: var(--line-height-normal);
+		color: var(--color-text-secondary);
+	}
+
+	.action-list li:last-child {
+		margin-bottom: 0;
+	}
+
+	.action-list li::before {
+		content: '→';
+		position: absolute;
+		left: 0;
+		color: var(--color-success);
+		font-weight: var(--font-weight-bold);
 	}
 </style>
