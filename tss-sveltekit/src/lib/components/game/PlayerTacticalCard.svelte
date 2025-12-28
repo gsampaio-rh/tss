@@ -15,6 +15,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { turnCount } from '$lib/stores/game';
 	import VMGChart from './VMGChart.svelte';
+	import ATWChart from './ATWChart.svelte';
 
 	export let boat: Boat;
 	export let playerIndex: number;
@@ -22,6 +23,10 @@
 	// Modal state for VMG info
 	let showVMGModal = false;
 	let showChartExplanation = false;
+	
+	// Modal state for ATW info
+	let showATWModal = false;
+	let showATWChartExplanation = false;
 
 	// VMG history tracking (last 60 turns, sampled every turn)
 	// History persists across modal opens/closes
@@ -81,6 +86,30 @@
 	$: targetATW = OPT_UPWIND_ANGLE;
 	$: atwDelta = atw - targetATW;
 	$: atwColor = Math.abs(atwDelta) <= 2 ? 'green' : Math.abs(atwDelta) <= 5 ? 'yellow' : 'red';
+	$: atwStatus = Math.abs(atwDelta) <= 2 ? 'excellent' : Math.abs(atwDelta) <= 5 ? 'good' : 'poor';
+	$: atwStatusColor = Math.abs(atwDelta) <= 2 ? '#28a745' : Math.abs(atwDelta) <= 5 ? '#ffc107' : '#dc3545';
+	$: atwStatusLabel = Math.abs(atwDelta) <= 2 ? 'Excellent' : Math.abs(atwDelta) <= 5 ? 'Good' : 'Needs Adjustment';
+	
+	// ATW history tracking (last 60 turns, sampled every turn)
+	let atwHistory: Array<{ time: number; atw: number; delta: number; turn: number }> = [];
+	let lastATWTrackedTurn = -1;
+	
+	// Track ATW history (sample every turn)
+	$: if ($turnCount !== undefined && $turnCount !== lastATWTrackedTurn) {
+		const now = Date.now();
+		atwHistory.push({
+			time: now,
+			atw: atw,
+			delta: atwDelta,
+			turn: $turnCount
+		});
+		lastATWTrackedTurn = $turnCount;
+		
+		// Remove old data (keep only last MAX_HISTORY_TURNS turns)
+		if (atwHistory.length > MAX_HISTORY_TURNS) {
+			atwHistory = atwHistory.slice(-MAX_HISTORY_TURNS);
+		}
+	}
 
 	// 2. VMG
 	$: vmg = windwardMark
@@ -302,7 +331,17 @@
 		<div class="metrics-grid">
 			<!-- ATW (Top Left) -->
 			<div class="metric-card atw-metric">
-				<div class="metric-label">Angle to Wind</div>
+				<div class="metric-label">
+					<span>Angle to Wind</span>
+					<button
+						type="button"
+						class="info-icon"
+						on:click|stopPropagation={() => (showATWModal = true)}
+						aria-label="Learn more about Angle to Wind"
+					>
+						ℹ️
+					</button>
+				</div>
 				<div
 					class="metric-value"
 					class:green={atwColor === 'green'}
@@ -523,6 +562,113 @@
 						Aim for 95%+ efficiency — adjust heading and tack.
 					{:else}
 						Aim for 95%+ efficiency.
+					{/if}
+				</div>
+			</div>
+		</div>
+	</div>
+</Modal>
+
+<!-- ATW Info Modal -->
+<Modal open={showATWModal} title="Angle to Wind (ATW)" size="md" on:close={() => (showATWModal = false)}>
+	<div class="vmg-info-content">
+		<!-- Subtitle -->
+		<p class="vmg-subtitle">
+			The angle between your boat's heading and the wind direction.
+			Maintaining the optimal angle (45° for upwind) maximizes your VMG.
+		</p>
+
+		<!-- Hero Stat: ATW Value -->
+		<div class="vmg-hero">
+			<div class="vmg-value">{formatCssDeg(atw)}</div>
+			<div class="vmg-unit">°</div>
+			<div class="vmg-label">ATW</div>
+		</div>
+
+		<!-- Supporting Indicators -->
+		<div class="vmg-indicators">
+			<div class="vmg-efficiency">
+				<span class="efficiency-label">Target</span>
+				<span class="efficiency-value">{formatCssDeg(targetATW)}</span>
+				<span class="efficiency-badge" style="background-color: {atwStatus === 'excellent' ? 'rgba(40, 167, 69, 0.12)' : atwStatus === 'good' ? 'rgba(255, 193, 7, 0.12)' : 'rgba(220, 53, 69, 0.12)'}; color: {atwStatusColor}">
+					{atwStatusLabel}
+				</span>
+				<span class="trend-inline" style="color: {atwStatusColor}">
+					<span class="metric-delta">{atwDelta > 0 ? '+' : ''}{formatCssDeg(atwDelta)}</span>
+				</span>
+			</div>
+		</div>
+
+		<!-- ATW History Chart -->
+		{#if atwHistory.length > 0}
+			<div class="vmg-chart-container">
+				<div class="chart-header">
+					<div class="chart-title">ATW over last {Math.min(atwHistory.length, 60)} turns</div>
+					<div class="chart-subtitle">Compared to optimal angle ({formatCssDeg(targetATW)})</div>
+				</div>
+				<div class="chart-scale-legend">
+					<span class="scale-item">
+						<span class="scale-color" style="background-color: rgba(40, 167, 69, 0.2); border-left: 3px solid #28a745;"></span>
+						<span class="scale-label">±2° Excellent</span>
+					</span>
+					<span class="scale-item">
+						<span class="scale-color" style="background-color: rgba(255, 193, 7, 0.2); border-left: 3px solid #ffc107;"></span>
+						<span class="scale-label">±5° Good</span>
+					</span>
+					<span class="scale-item">
+						<span class="scale-color" style="background-color: rgba(220, 53, 69, 0.2); border-left: 3px solid #dc3545;"></span>
+						<span class="scale-label">&gt;5° Needs Adjustment</span>
+					</span>
+				</div>
+				<ATWChart
+					history={atwHistory}
+					targetATW={targetATW}
+					currentStatusColor={atwStatusColor}
+					currentATW={atw}
+					currentDelta={atwDelta}
+				/>
+				<button
+					type="button"
+					class="chart-explanation-toggle"
+					on:click={() => (showATWChartExplanation = !showATWChartExplanation)}
+				>
+					How to read this chart {showATWChartExplanation ? '▾' : '▸'}
+				</button>
+				{#if showATWChartExplanation}
+					<div class="chart-explanation">
+						<p>
+							ATW over time shows how consistently you're maintaining the optimal angle.
+							The dashed line is your target angle ({formatCssDeg(targetATW)}).
+							Staying in the green zone means you're sailing at the optimal angle for maximum VMG.
+						</p>
+					</div>
+				{/if}
+			</div>
+		{/if}
+
+		<!-- Divider -->
+		<hr class="vmg-divider" />
+
+		<!-- Context-Aware Guidance -->
+		<div class="vmg-guidance">
+			<div class="guidance-section">
+				<h4 class="guidance-title">What this means</h4>
+				<ul class="guidance-list">
+					<li><strong>Too low (&lt;{formatCssDeg(targetATW - 3)})</strong> = Pinching (sailing too close to wind)</li>
+					<li><strong>Too high (&gt;{formatCssDeg(targetATW + 5)})</strong> = Footing (sailing too wide)</li>
+					<li><strong>Just right ({formatCssDeg(targetATW)})</strong> = Optimal VMG angle</li>
+				</ul>
+			</div>
+
+			<div class="guidance-section">
+				<h4 class="guidance-title">What to do</h4>
+				<div class="contextual-guidance" style="color: {atwStatusColor}">
+					{#if atwStatus === 'poor'}
+						Adjust your heading toward {formatCssDeg(targetATW)} — you're {atwDelta > 0 ? 'footing' : 'pinching'}.
+					{:else if atwStatus === 'good'}
+						Good angle — maintain course and watch for wind shifts.
+					{:else}
+						Excellent angle — you're sailing efficiently at the optimal VMG angle.
 					{/if}
 				</div>
 			</div>
