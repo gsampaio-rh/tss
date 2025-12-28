@@ -35,8 +35,8 @@
 	const BROAD_REACH = 150; // ±150° from wind
 	const RUNNING = 180; // ±180° from wind - downwind
 
-	// Arc radius (in game units) - increased for better visibility
-	const ARC_RADIUS = 6;
+	// Arc radius (in game units) - reduced for less intrusive visualization
+	const ARC_RADIUS = 3.5;
 
 	// Calculate arc path for a sector
 	function getSectorPath(
@@ -56,24 +56,24 @@
 		return `M ${centerX} ${centerY} L ${startX} ${startY} A ${radius} ${radius} 0 ${largeArc} 1 ${endX} ${endY} Z`;
 	}
 
-	// Zone colors (more visible for testing)
+	// Zone colors - reduced opacity for more subtle visualization
 	const ZONE_COLORS = {
-		deadZone: 'rgba(200, 50, 50, 0.4)', // Red - cannot sail
-		closeHauled: 'rgba(40, 167, 69, 0.5)', // Green - optimal upwind
-		closeReach: 'rgba(74, 144, 226, 0.4)', // Blue
-		beamReach: 'rgba(108, 117, 125, 0.4)', // Gray
-		broadReach: 'rgba(255, 193, 7, 0.4)', // Yellow
-		running: 'rgba(220, 53, 69, 0.4)' // Red - downwind
+		deadZone: 'rgba(200, 50, 50, 0.25)', // Red - cannot sail
+		closeHauled: 'rgba(40, 167, 69, 0.3)', // Green - optimal upwind
+		closeReach: 'rgba(74, 144, 226, 0.25)', // Blue
+		beamReach: 'rgba(108, 117, 125, 0.25)', // Gray
+		broadReach: 'rgba(255, 193, 7, 0.25)', // Yellow
+		running: 'rgba(220, 53, 69, 0.25)' // Red - downwind
 	};
 
-	// Zone stroke colors (for borders)
+	// Zone stroke colors (for borders) - reduced opacity for subtlety
 	const ZONE_STROKES = {
-		deadZone: 'rgba(200, 50, 50, 0.8)',
-		closeHauled: 'rgba(40, 167, 69, 0.9)',
-		closeReach: 'rgba(74, 144, 226, 0.8)',
-		beamReach: 'rgba(108, 117, 125, 0.8)',
-		broadReach: 'rgba(255, 193, 7, 0.8)',
-		running: 'rgba(220, 53, 69, 0.8)'
+		deadZone: 'rgba(200, 50, 50, 0.5)',
+		closeHauled: 'rgba(40, 167, 69, 0.6)',
+		closeReach: 'rgba(74, 144, 226, 0.5)',
+		beamReach: 'rgba(108, 117, 125, 0.5)',
+		broadReach: 'rgba(255, 193, 7, 0.5)',
+		running: 'rgba(220, 53, 69, 0.5)'
 	};
 
 	function formatSvgViewBox(left: number, top: number, width: number, height: number): string {
@@ -105,8 +105,8 @@
 			y1={boat.y}
 			x2={boat.x + ARC_RADIUS * 0.8 * Math.sin((windDir * Math.PI) / 180)}
 			y2={boat.y - ARC_RADIUS * 0.8 * Math.cos((windDir * Math.PI) / 180)}
-			stroke="rgba(123, 104, 238, 0.6)"
-			stroke-width="0.08"
+			stroke="rgba(123, 104, 238, 0.4)"
+			stroke-width="0.06"
 			stroke-dasharray="0.2 0.2"
 		/>
 
@@ -137,7 +137,7 @@
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir - DEAD_ZONE, windDir + DEAD_ZONE)}
 			fill={ZONE_COLORS.deadZone}
 			stroke={ZONE_STROKES.deadZone}
-			stroke-width="0.05"
+			stroke-width="0.04"
 			class="wind-zone dead-zone"
 		/>
 
@@ -146,14 +146,14 @@
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir - CLOSE_HAULED, windDir - DEAD_ZONE)}
 			fill={ZONE_COLORS.closeHauled}
 			stroke={ZONE_STROKES.closeHauled}
-			stroke-width="0.05"
+			stroke-width="0.04"
 			class="wind-zone close-hauled"
 		/>
 		<path
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir + DEAD_ZONE, windDir + CLOSE_HAULED)}
 			fill={ZONE_COLORS.closeHauled}
 			stroke={ZONE_STROKES.closeHauled}
-			stroke-width="0.05"
+			stroke-width="0.04"
 			class="wind-zone close-hauled"
 		/>
 
@@ -162,14 +162,14 @@
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir - CLOSE_REACH, windDir - CLOSE_HAULED)}
 			fill={ZONE_COLORS.closeReach}
 			stroke={ZONE_STROKES.closeReach}
-			stroke-width="0.05"
+			stroke-width="0.04"
 			class="wind-zone close-reach"
 		/>
 		<path
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir + CLOSE_HAULED, windDir + CLOSE_REACH)}
 			fill={ZONE_COLORS.closeReach}
 			stroke={ZONE_STROKES.closeReach}
-			stroke-width="0.05"
+			stroke-width="0.04"
 			class="wind-zone close-reach"
 		/>
 
@@ -178,14 +178,14 @@
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir - BEAM_REACH, windDir - CLOSE_REACH)}
 			fill={ZONE_COLORS.beamReach}
 			stroke={ZONE_STROKES.beamReach}
-			stroke-width="0.05"
+			stroke-width="0.04"
 			class="wind-zone beam-reach"
 		/>
 		<path
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir + CLOSE_REACH, windDir + BEAM_REACH)}
 			fill={ZONE_COLORS.beamReach}
 			stroke={ZONE_STROKES.beamReach}
-			stroke-width="0.05"
+			stroke-width="0.04"
 			class="wind-zone beam-reach"
 		/>
 
@@ -194,14 +194,14 @@
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir - BROAD_REACH, windDir - BEAM_REACH)}
 			fill={ZONE_COLORS.broadReach}
 			stroke={ZONE_STROKES.broadReach}
-			stroke-width="0.05"
+			stroke-width="0.04"
 			class="wind-zone broad-reach"
 		/>
 		<path
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir + BEAM_REACH, windDir + BROAD_REACH)}
 			fill={ZONE_COLORS.broadReach}
 			stroke={ZONE_STROKES.broadReach}
-			stroke-width="0.05"
+			stroke-width="0.04"
 			class="wind-zone broad-reach"
 		/>
 
@@ -210,14 +210,14 @@
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir - RUNNING, windDir - BROAD_REACH)}
 			fill={ZONE_COLORS.running}
 			stroke={ZONE_STROKES.running}
-			stroke-width="0.05"
+			stroke-width="0.04"
 			class="wind-zone running"
 		/>
 		<path
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir + BROAD_REACH, windDir + RUNNING)}
 			fill={ZONE_COLORS.running}
 			stroke={ZONE_STROKES.running}
-			stroke-width="0.05"
+			stroke-width="0.04"
 			class="wind-zone running"
 		/>
 	</svg>
