@@ -56,10 +56,11 @@ This document tracks refactoring tasks to improve code quality, maintainability,
 - Component is now presentation-only
 - **Result**: Reduced PlayerTacticalCard by 72 lines (from 747 to 675)
 
-**1.6 Extract CSS into Separate Stylesheet**
-- Move CSS to `PlayerTacticalCard.module.css` or separate `<style>` files
-- Use CSS modules or scoped styles
-- **Estimated**: 0.5 days
+**1.6 Extract CSS into Separate Stylesheet** ✅ COMPLETED
+- Created `PlayerTacticalCard.css` in tactical directory
+- Moved all CSS from component to external stylesheet
+- Imported CSS file in component
+- **Result**: Reduced PlayerTacticalCard from 676 to 348 lines (328 lines removed)
 
 #### Target Structure
 ```
