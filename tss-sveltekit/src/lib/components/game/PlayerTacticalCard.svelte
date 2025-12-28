@@ -14,54 +14,20 @@
 	import Modal from '$lib/presentation/components/shared/Modal.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import { turnCount } from '$lib/stores/game';
-	import VMGChart from './VMGChart.svelte';
-	import ATWChart from './ATWChart.svelte';
-	import HeadingChart from './HeadingChart.svelte';
-	import TackAdvantageChart from './TackAdvantageChart.svelte';
 	import TellTales from './tactical/TellTales.svelte';
+	import VMGModal from './tactical/modals/VMGModal.svelte';
+	import ATWModal from './tactical/modals/ATWModal.svelte';
+	import HeadingModal from './tactical/modals/HeadingModal.svelte';
+	import TackAdvantageModal from './tactical/modals/TackAdvantageModal.svelte';
 
 	export let boat: Boat;
 	export let playerIndex: number;
 
-	// Modal state for VMG info
+	// Modal state
 	let showVMGModal = false;
-	let showChartExplanation = false;
-	
-	// Modal state for ATW info
 	let showATWModal = false;
-	let showATWChartExplanation = false;
-	
-	// Modal state for Heading info
 	let showHeadingModal = false;
-	let showHeadingChartExplanation = false;
-	
-	// Modal state for Tack Advantage info
 	let showTackAdvantageModal = false;
-	let showTackAdvantageChartExplanation = false;
-
-	// VMG history tracking (last 60 turns, sampled every turn)
-	// History persists across modal opens/closes
-	let vmgHistory: Array<{ time: number; vmg: number; efficiency: number; turn: number }> = [];
-	const MAX_HISTORY_TURNS = 60; // Track last 60 turns
-	let lastTrackedTurn = -1;
-	
-	// Track VMG history (sample every turn)
-	$: if (windwardMark && vmg > 0 && $turnCount !== undefined && $turnCount !== lastTrackedTurn) {
-		const now = Date.now();
-		// Add new point for this turn
-		vmgHistory.push({
-			time: now,
-			vmg: vmg,
-			efficiency: vmgEfficiency,
-			turn: $turnCount
-		});
-		lastTrackedTurn = $turnCount;
-		
-		// Remove old data (keep only last MAX_HISTORY_TURNS turns)
-		if (vmgHistory.length > MAX_HISTORY_TURNS) {
-			vmgHistory = vmgHistory.slice(-MAX_HISTORY_TURNS);
-		}
-	}
 	
 	// Calculate optimal VMG (always BOAT_SPEED when perfectly aligned)
 	$: optimalVMG = BOAT_SPEED;
@@ -97,30 +63,10 @@
 	$: targetATW = OPT_UPWIND_ANGLE;
 	$: atwDelta = atw - targetATW;
 	$: atwColor = Math.abs(atwDelta) <= 2 ? 'green' : Math.abs(atwDelta) <= 5 ? 'yellow' : 'red';
-	$: atwStatus = Math.abs(atwDelta) <= 2 ? 'excellent' : Math.abs(atwDelta) <= 5 ? 'good' : 'poor';
+	$: atwStatus = (Math.abs(atwDelta) <= 2 ? 'excellent' : Math.abs(atwDelta) <= 5 ? 'good' : 'poor') as 'excellent' | 'good' | 'poor';
 	$: atwStatusColor = Math.abs(atwDelta) <= 2 ? '#28a745' : Math.abs(atwDelta) <= 5 ? '#ffc107' : '#dc3545';
 	$: atwStatusLabel = Math.abs(atwDelta) <= 2 ? 'Excellent' : Math.abs(atwDelta) <= 5 ? 'Good' : 'Needs Adjustment';
 	
-	// ATW history tracking (last 60 turns, sampled every turn)
-	let atwHistory: Array<{ time: number; atw: number; delta: number; turn: number }> = [];
-	let lastATWTrackedTurn = -1;
-	
-	// Track ATW history (sample every turn)
-	$: if ($turnCount !== undefined && $turnCount !== lastATWTrackedTurn) {
-		const now = Date.now();
-		atwHistory.push({
-			time: now,
-			atw: atw,
-			delta: atwDelta,
-			turn: $turnCount
-		});
-		lastATWTrackedTurn = $turnCount;
-		
-		// Remove old data (keep only last MAX_HISTORY_TURNS turns)
-		if (atwHistory.length > MAX_HISTORY_TURNS) {
-			atwHistory = atwHistory.slice(-MAX_HISTORY_TURNS);
-		}
-	}
 
 	// 2. VMG
 	$: vmg = windwardMark
@@ -138,7 +84,7 @@
 			)
 		: 0;
 	$: vmgPercent = Math.round(vmgEfficiency * 100);
-	$: vmgStatus = vmgPercent >= 95 ? 'excellent' : vmgPercent >= 85 ? 'good' : 'poor';
+	$: vmgStatus = (vmgPercent >= 95 ? 'excellent' : vmgPercent >= 85 ? 'good' : 'poor') as 'excellent' | 'good' | 'poor';
 	$: vmgStatusColor = vmgPercent >= 95 ? '#28a745' : vmgPercent >= 85 ? '#ffc107' : '#dc3545';
 	$: vmgStatusLabel = vmgPercent >= 95 ? 'Excellent' : vmgPercent >= 85 ? 'Good' : 'Poor';
 	$: vmgStatusBgColor = vmgPercent >= 95 
@@ -149,7 +95,7 @@
 
 	// VMG trend
 	let previousVMG = vmg;
-	$: vmgTrend = vmg > previousVMG ? 'up' : vmg < previousVMG ? 'down' : 'stable';
+	$: vmgTrend = (vmg > previousVMG ? 'up' : vmg < previousVMG ? 'down' : 'stable') as 'up' | 'down' | 'stable';
 	$: if (vmg !== previousVMG) previousVMG = vmg;
 
 	// 3. Lift/Header
@@ -182,30 +128,10 @@
 	// 4. Target Heading
 	$: optimalHeading = getOptimalHeading(boat.tack, windDir, true);
 	$: headingDelta = angleDiff(boat.rotation, optimalHeading);
-	$: headingStatus = Math.abs(headingDelta) <= 3 ? 'excellent' : Math.abs(headingDelta) <= 5 ? 'good' : 'poor';
+	$: headingStatus = (Math.abs(headingDelta) <= 3 ? 'excellent' : Math.abs(headingDelta) <= 5 ? 'good' : 'poor') as 'excellent' | 'good' | 'poor';
 	$: headingStatusColor = Math.abs(headingDelta) <= 3 ? '#28a745' : Math.abs(headingDelta) <= 5 ? '#ffc107' : '#dc3545';
 	$: headingStatusLabel = Math.abs(headingDelta) <= 3 ? 'On Course' : Math.abs(headingDelta) <= 5 ? 'Close' : 'Off Course';
 	
-	// Heading history tracking
-	let headingHistory: Array<{ time: number; heading: number; optimalHeading: number; delta: number; turn: number }> = [];
-	let lastHeadingTrackedTurn = -1;
-	
-	// Track Heading history
-	$: if ($turnCount !== undefined && $turnCount !== lastHeadingTrackedTurn) {
-		const now = Date.now();
-		headingHistory.push({
-			time: now,
-			heading: boat.rotation,
-			optimalHeading: optimalHeading,
-			delta: headingDelta,
-			turn: $turnCount
-		});
-		lastHeadingTrackedTurn = $turnCount;
-		
-		if (headingHistory.length > MAX_HISTORY_TURNS) {
-			headingHistory = headingHistory.slice(-MAX_HISTORY_TURNS);
-		}
-	}
 
 	// 5. Speed
 	$: currentSpeed = BOAT_SPEED;
@@ -239,29 +165,10 @@
 		currentError + oppositeError > 0
 			? Math.round((1 - currentError / (currentError + oppositeError)) * 100)
 			: 0;
-	$: tackAdvantageStatus = tackAdvantage < 0 ? 'advantage' : 'disadvantage';
+	$: tackAdvantageStatus = (tackAdvantage < 0 ? 'advantage' : 'disadvantage') as 'advantage' | 'disadvantage';
 	$: tackAdvantageStatusColor = tackAdvantage < 0 ? '#28a745' : '#dc3545';
 	$: tackAdvantageStatusLabel = tackAdvantage < 0 ? 'Better' : 'Worse';
 	
-	// Tack Advantage history tracking
-	let tackAdvantageHistory: Array<{ time: number; advantage: number; percent: number; turn: number }> = [];
-	let lastTackAdvantageTrackedTurn = -1;
-	
-	// Track Tack Advantage history
-	$: if (windwardMark && $turnCount !== undefined && $turnCount !== lastTackAdvantageTrackedTurn) {
-		const now = Date.now();
-		tackAdvantageHistory.push({
-			time: now,
-			advantage: tackAdvantage,
-			percent: tackAdvantagePercent,
-			turn: $turnCount
-		});
-		lastTackAdvantageTrackedTurn = $turnCount;
-		
-		if (tackAdvantageHistory.length > MAX_HISTORY_TURNS) {
-			tackAdvantageHistory = tackAdvantageHistory.slice(-MAX_HISTORY_TURNS);
-		}
-	}
 
 	// 8. Time Since Last Shift
 	let lastShiftTime = Date.now();
@@ -542,430 +449,50 @@
 {/if}
 
 <!-- VMG Info Modal -->
-<Modal open={showVMGModal} title="VMG (Velocity Made Good)" size="md" on:close={() => (showVMGModal = false)}>
-	<div class="vmg-info-content">
-		<!-- Subtitle -->
-		<p class="vmg-subtitle">
-			Your speed toward the mark. VMG measures how effectively you're closing the distance,
-			not just how fast you're sailing. A boat sailing fast but away from the mark has low VMG.
-		</p>
+<VMGModal
+	bind:open={showVMGModal}
+	{vmg}
+	{vmgPercent}
+	{vmgStatus}
+	{vmgStatusColor}
+	{vmgStatusLabel}
+	{vmgStatusBgColor}
+	{vmgTrend}
+	{optimalVMG}
+	windwardMark={windwardMark}
+/>
 
-		<!-- Hero Stat: VMG Value -->
-		<div class="vmg-hero">
-			<div class="vmg-value">{vmg.toFixed(1)}</div>
-			<div class="vmg-unit">kn</div>
-			<div class="vmg-label">VMG</div>
-		</div>
+<ATWModal
+	bind:open={showATWModal}
+	{atw}
+	{targetATW}
+	{atwDelta}
+	{atwStatus}
+	{atwStatusColor}
+	{atwStatusLabel}
+/>
 
-		<!-- Supporting Indicators -->
-		<div class="vmg-indicators">
-			<div class="vmg-efficiency">
-				<span class="efficiency-label">Efficiency</span>
-				<span class="efficiency-value">{vmgPercent}%</span>
-				<span class="efficiency-badge" style="background-color: {vmgStatusBgColor}; color: {vmgStatusColor}">
-					{vmgStatusLabel}
-				</span>
-				{#if vmgTrend !== 'stable'}
-					<span class="trend-inline" style="color: {vmgStatusColor}">
-						<span class="trend-arrow-inline">{vmgTrend === 'up' ? '▲' : '▼'}</span>
-						<span class="trend-label">{vmgTrend === 'up' ? 'Improving' : 'Declining'}</span>
-					</span>
-				{/if}
-			</div>
-		</div>
+<HeadingModal
+	bind:open={showHeadingModal}
+	{boat}
+	{optimalHeading}
+	{headingDelta}
+	{headingStatus}
+	{headingStatusColor}
+	{headingStatusLabel}
+/>
 
-		<!-- VMG History Chart -->
-		{#if vmgHistory.length > 0}
-			<div class="vmg-chart-container">
-				<div class="chart-header">
-					<div class="chart-title">VMG over last {Math.min(vmgHistory.length, 60)} turns</div>
-					<div class="chart-subtitle">Compared to optimal VMG for this wind angle</div>
-				</div>
-				<div class="chart-scale-legend">
-					<span class="scale-item">
-						<span class="scale-color" style="background-color: rgba(40, 167, 69, 0.2); border-left: 3px solid #28a745;"></span>
-						<span class="scale-label">≥95% Excellent</span>
-					</span>
-					<span class="scale-item">
-						<span class="scale-color" style="background-color: rgba(255, 193, 7, 0.2); border-left: 3px solid #ffc107;"></span>
-						<span class="scale-label">85-95% Good</span>
-					</span>
-					<span class="scale-item">
-						<span class="scale-color" style="background-color: rgba(220, 53, 69, 0.2); border-left: 3px solid #dc3545;"></span>
-						<span class="scale-label">&lt;85% Poor</span>
-					</span>
-				</div>
-				<VMGChart
-					history={vmgHistory}
-					optimalVMG={optimalVMG}
-					currentStatusColor={vmgStatusColor}
-					currentVMG={vmg}
-					currentEfficiency={vmgPercent}
-				/>
-				<button
-					type="button"
-					class="chart-explanation-toggle"
-					on:click={() => (showChartExplanation = !showChartExplanation)}
-				>
-					How to read this chart {showChartExplanation ? '▾' : '▸'}
-				</button>
-				{#if showChartExplanation}
-					<div class="chart-explanation">
-						<p>
-							VMG over time shows how fast you're closing the distance to the mark.
-							The dashed line is your optimal VMG at this wind angle.
-							Staying in the green zone means you're sailing efficiently toward the mark.
-						</p>
-					</div>
-				{/if}
-			</div>
-		{/if}
+<TackAdvantageModal
+	bind:open={showTackAdvantageModal}
+	{boat}
+	{tackAdvantage}
+	{tackAdvantagePercent}
+	{tackAdvantageStatus}
+	{tackAdvantageStatusColor}
+	{tackAdvantageStatusLabel}
+	{vmgEfficiency}
+/>
 
-		<!-- Divider -->
-		<hr class="vmg-divider" />
-
-		<!-- Context-Aware Guidance -->
-		<div class="vmg-guidance">
-			<div class="guidance-section">
-				<h4 class="guidance-title">What this means</h4>
-				<ul class="guidance-list">
-					<li><strong>High VMG</strong> = good progress toward mark</li>
-					<li><strong>Low VMG</strong> = poor progress (even if boat speed is high)</li>
-				</ul>
-			</div>
-
-			<div class="guidance-section">
-				<h4 class="guidance-title">What to do</h4>
-				<div class="contextual-guidance" style="color: {vmgStatusColor}">
-					{#if vmgStatus === 'poor' && vmgTrend === 'down'}
-						You're sailing fast but not toward the mark — adjust heading or tack.
-					{:else if vmgStatus === 'good' && vmgTrend === 'up'}
-						Improving efficiency — hold course.
-					{:else if vmgStatus === 'excellent' && vmgTrend === 'stable'}
-						Optimal VMG — maintain trim and angle.
-					{:else if vmgStatus === 'poor'}
-						Aim for 95%+ efficiency — adjust heading and tack.
-					{:else}
-						Aim for 95%+ efficiency.
-					{/if}
-				</div>
-			</div>
-		</div>
-	</div>
-</Modal>
-
-<!-- ATW Info Modal -->
-<Modal open={showATWModal} title="Angle to Wind (ATW)" size="md" on:close={() => (showATWModal = false)}>
-	<div class="vmg-info-content">
-		<!-- Subtitle -->
-		<p class="vmg-subtitle">
-			The angle between your boat's heading and the wind direction.
-			Maintaining the optimal angle (45° for upwind) maximizes your VMG.
-		</p>
-
-		<!-- Hero Stat: ATW Value -->
-		<div class="vmg-hero">
-			<div class="vmg-value">{formatCssDeg(atw)}</div>
-			<div class="vmg-unit">°</div>
-			<div class="vmg-label">ATW</div>
-		</div>
-
-		<!-- Supporting Indicators -->
-		<div class="vmg-indicators">
-			<div class="vmg-efficiency">
-				<span class="efficiency-label">Target</span>
-				<span class="efficiency-value">{formatCssDeg(targetATW)}</span>
-				<span class="efficiency-badge" style="background-color: {atwStatus === 'excellent' ? 'rgba(40, 167, 69, 0.12)' : atwStatus === 'good' ? 'rgba(255, 193, 7, 0.12)' : 'rgba(220, 53, 69, 0.12)'}; color: {atwStatusColor}">
-					{atwStatusLabel}
-				</span>
-				<span class="trend-inline" style="color: {atwStatusColor}">
-					<span class="metric-delta">{atwDelta > 0 ? '+' : ''}{formatCssDeg(atwDelta)}</span>
-				</span>
-			</div>
-		</div>
-
-		<!-- ATW History Chart -->
-		{#if atwHistory.length > 0}
-			<div class="vmg-chart-container">
-				<div class="chart-header">
-					<div class="chart-title">ATW over last {Math.min(atwHistory.length, 60)} turns</div>
-					<div class="chart-subtitle">Compared to optimal angle ({formatCssDeg(targetATW)})</div>
-				</div>
-				<div class="chart-scale-legend">
-					<span class="scale-item">
-						<span class="scale-color" style="background-color: rgba(40, 167, 69, 0.2); border-left: 3px solid #28a745;"></span>
-						<span class="scale-label">±2° Excellent</span>
-					</span>
-					<span class="scale-item">
-						<span class="scale-color" style="background-color: rgba(255, 193, 7, 0.2); border-left: 3px solid #ffc107;"></span>
-						<span class="scale-label">±5° Good</span>
-					</span>
-					<span class="scale-item">
-						<span class="scale-color" style="background-color: rgba(220, 53, 69, 0.2); border-left: 3px solid #dc3545;"></span>
-						<span class="scale-label">&gt;5° Needs Adjustment</span>
-					</span>
-				</div>
-				<ATWChart
-					history={atwHistory}
-					targetATW={targetATW}
-					currentStatusColor={atwStatusColor}
-					currentATW={atw}
-					currentDelta={atwDelta}
-				/>
-				<button
-					type="button"
-					class="chart-explanation-toggle"
-					on:click={() => (showATWChartExplanation = !showATWChartExplanation)}
-				>
-					How to read this chart {showATWChartExplanation ? '▾' : '▸'}
-				</button>
-				{#if showATWChartExplanation}
-					<div class="chart-explanation">
-						<p>
-							ATW over time shows how consistently you're maintaining the optimal angle.
-							The dashed line is your target angle ({formatCssDeg(targetATW)}).
-							Staying in the green zone means you're sailing at the optimal angle for maximum VMG.
-						</p>
-					</div>
-				{/if}
-			</div>
-		{/if}
-
-		<!-- Divider -->
-		<hr class="vmg-divider" />
-
-		<!-- Context-Aware Guidance -->
-		<div class="vmg-guidance">
-			<div class="guidance-section">
-				<h4 class="guidance-title">What this means</h4>
-				<ul class="guidance-list">
-					<li><strong>Too low (&lt;{formatCssDeg(targetATW - 3)})</strong> = Pinching (sailing too close to wind)</li>
-					<li><strong>Too high (&gt;{formatCssDeg(targetATW + 5)})</strong> = Footing (sailing too wide)</li>
-					<li><strong>Just right ({formatCssDeg(targetATW)})</strong> = Optimal VMG angle</li>
-				</ul>
-			</div>
-
-			<div class="guidance-section">
-				<h4 class="guidance-title">What to do</h4>
-				<div class="contextual-guidance" style="color: {atwStatusColor}">
-					{#if atwStatus === 'poor'}
-						Adjust your heading toward {formatCssDeg(targetATW)} — you're {atwDelta > 0 ? 'footing' : 'pinching'}.
-					{:else if atwStatus === 'good'}
-						Good angle — maintain course and watch for wind shifts.
-					{:else}
-						Excellent angle — you're sailing efficiently at the optimal VMG angle.
-					{/if}
-				</div>
-			</div>
-		</div>
-	</div>
-</Modal>
-
-<!-- Heading Info Modal -->
-<Modal open={showHeadingModal} title="Heading" size="md" on:close={() => (showHeadingModal = false)}>
-	<div class="vmg-info-content">
-		<!-- Subtitle -->
-		<p class="vmg-subtitle">
-			Your boat's current heading compared to the optimal heading for your tack.
-			The optimal heading changes with wind shifts, so stay alert!
-		</p>
-
-		<!-- Hero Stat: Heading Value -->
-		<div class="vmg-hero">
-			<div class="vmg-value">{formatCssDeg(boat.rotation)}</div>
-			<div class="vmg-unit">°</div>
-			<div class="vmg-label">HDG</div>
-		</div>
-
-		<!-- Supporting Indicators -->
-		<div class="vmg-indicators">
-			<div class="vmg-efficiency">
-				<span class="efficiency-label">Optimal</span>
-				<span class="efficiency-value">{formatCssDeg(optimalHeading)}</span>
-				<span class="efficiency-badge" style="background-color: {headingStatus === 'excellent' ? 'rgba(40, 167, 69, 0.12)' : headingStatus === 'good' ? 'rgba(255, 193, 7, 0.12)' : 'rgba(220, 53, 69, 0.12)'}; color: {headingStatusColor}">
-					{headingStatusLabel}
-				</span>
-				<span class="trend-inline" style="color: {headingStatusColor}">
-					<span class="metric-delta">{headingDelta > 0 ? '+' : ''}{formatCssDeg(headingDelta)}</span>
-				</span>
-			</div>
-		</div>
-
-		<!-- Heading History Chart -->
-		{#if headingHistory.length > 0}
-			<div class="vmg-chart-container">
-				<div class="chart-header">
-					<div class="chart-title">Heading vs Optimal over last {Math.min(headingHistory.length, 60)} turns</div>
-					<div class="chart-subtitle">Shows how well you're maintaining optimal heading</div>
-				</div>
-				<div class="chart-scale-legend">
-					<span class="scale-item">
-						<span class="scale-color" style="background-color: rgba(40, 167, 69, 0.2); border-left: 3px solid #28a745;"></span>
-						<span class="scale-label">±3° On Course</span>
-					</span>
-					<span class="scale-item">
-						<span class="scale-color" style="background-color: rgba(255, 193, 7, 0.2); border-left: 3px solid #ffc107;"></span>
-						<span class="scale-label">±5° Close</span>
-					</span>
-					<span class="scale-item">
-						<span class="scale-color" style="background-color: rgba(220, 53, 69, 0.2); border-left: 3px solid #dc3545;"></span>
-						<span class="scale-label">&gt;5° Off Course</span>
-					</span>
-				</div>
-				<HeadingChart
-					history={headingHistory}
-					currentStatusColor={headingStatusColor}
-					currentHeading={boat.rotation}
-					currentOptimal={optimalHeading}
-					currentDelta={headingDelta}
-				/>
-				<button
-					type="button"
-					class="chart-explanation-toggle"
-					on:click={() => (showHeadingChartExplanation = !showHeadingChartExplanation)}
-				>
-					How to read this chart {showHeadingChartExplanation ? '▾' : '▸'}
-				</button>
-				{#if showHeadingChartExplanation}
-					<div class="chart-explanation">
-						<p>
-							Heading over time shows how consistently you're maintaining the optimal heading.
-							The dashed line shows the optimal heading, which changes with wind shifts.
-							Staying close to optimal means you're responding well to wind changes.
-						</p>
-					</div>
-				{/if}
-			</div>
-		{/if}
-
-		<!-- Divider -->
-		<hr class="vmg-divider" />
-
-		<!-- Context-Aware Guidance -->
-		<div class="vmg-guidance">
-			<div class="guidance-section">
-				<h4 class="guidance-title">What this means</h4>
-				<ul class="guidance-list">
-					<li><strong>HDG matches OPT</strong> = You're sailing at the optimal angle</li>
-					<li><strong>Large delta</strong> = You're off the optimal heading</li>
-					<li><strong>Optimal changes</strong> = Wind shifts change the optimal heading</li>
-				</ul>
-			</div>
-
-			<div class="guidance-section">
-				<h4 class="guidance-title">What to do</h4>
-				<div class="contextual-guidance" style="color: {headingStatusColor}">
-					{#if headingStatus === 'poor'}
-						Adjust heading toward {formatCssDeg(optimalHeading)} — you're off course.
-					{:else if headingStatus === 'good'}
-						Good heading — maintain course and watch for wind shifts.
-					{:else}
-						Perfect heading — you're on the optimal course!
-					{/if}
-				</div>
-			</div>
-		</div>
-	</div>
-</Modal>
-
-<!-- Tack Advantage Info Modal -->
-<Modal open={showTackAdvantageModal} title="Tack Advantage" size="md" on:close={() => (showTackAdvantageModal = false)}>
-	<div class="vmg-info-content">
-		<!-- Subtitle -->
-		<p class="vmg-subtitle">
-			Comparison of your current tack vs. the opposite tack.
-			Positive means your current tack is better; negative means the opposite tack would be better.
-		</p>
-
-		<!-- Hero Stat: Tack Advantage Value -->
-		<div class="vmg-hero">
-			<div class="vmg-value">{tackAdvantage > 0 ? '+' : ''}{tackAdvantagePercent}</div>
-			<div class="vmg-unit">%</div>
-			<div class="vmg-label">Advantage</div>
-		</div>
-
-		<!-- Supporting Indicators -->
-		<div class="vmg-indicators">
-			<div class="vmg-efficiency">
-				<span class="efficiency-label">Current Tack</span>
-				<span class="efficiency-value">{boat.tack ? 'Port' : 'Starboard'}</span>
-				<span class="efficiency-badge" style="background-color: {tackAdvantageStatus === 'advantage' ? 'rgba(40, 167, 69, 0.12)' : 'rgba(220, 53, 69, 0.12)'}; color: {tackAdvantageStatusColor}">
-					{tackAdvantageStatusLabel}
-				</span>
-			</div>
-		</div>
-
-		<!-- Tack Advantage History Chart -->
-		{#if tackAdvantageHistory.length > 0}
-			<div class="vmg-chart-container">
-				<div class="chart-header">
-					<div class="chart-title">Tack Advantage over last {Math.min(tackAdvantageHistory.length, 60)} turns</div>
-					<div class="chart-subtitle">Positive = current tack better, Negative = opposite tack better</div>
-				</div>
-				<div class="chart-scale-legend">
-					<span class="scale-item">
-						<span class="scale-color" style="background-color: rgba(40, 167, 69, 0.2); border-left: 3px solid #28a745;"></span>
-						<span class="scale-label">Current Tack Better</span>
-					</span>
-					<span class="scale-item">
-						<span class="scale-color" style="background-color: rgba(220, 53, 69, 0.2); border-left: 3px solid #dc3545;"></span>
-						<span class="scale-label">Opposite Tack Better</span>
-					</span>
-				</div>
-				<TackAdvantageChart
-					history={tackAdvantageHistory}
-					currentStatusColor={tackAdvantageStatusColor}
-					currentAdvantage={tackAdvantagePercent}
-				/>
-				<button
-					type="button"
-					class="chart-explanation-toggle"
-					on:click={() => (showTackAdvantageChartExplanation = !showTackAdvantageChartExplanation)}
-				>
-					How to read this chart {showTackAdvantageChartExplanation ? '▾' : '▸'}
-				</button>
-				{#if showTackAdvantageChartExplanation}
-					<div class="chart-explanation">
-						<p>
-							Tack advantage shows whether your current tack or the opposite tack is better
-							for reaching the mark. Positive values mean stay on current tack;
-							negative values suggest considering a tack. Use with \"TACK SOON\" flag for decisions.
-						</p>
-					</div>
-				{/if}
-			</div>
-		{/if}
-
-		<!-- Divider -->
-		<hr class="vmg-divider" />
-
-		<!-- Context-Aware Guidance -->
-		<div class="vmg-guidance">
-			<div class="guidance-section">
-				<h4 class="guidance-title">What this means</h4>
-				<ul class="guidance-list">
-					<li><strong>Positive %</strong> = Your current tack is better</li>
-					<li><strong>Negative %</strong> = The opposite tack would be better</li>
-					<li><strong>Green border</strong> = Current tack is favored</li>
-					<li><strong>Red border</strong> = Opposite tack is favored</li>
-				</ul>
-			</div>
-
-			<div class="guidance-section">
-				<h4 class="guidance-title">What to do</h4>
-				<div class="contextual-guidance" style="color: {tackAdvantageStatusColor}">
-					{#if tackAdvantageStatus === 'disadvantage' && vmgEfficiency < 0.9}
-						Consider tacking — opposite tack is better and your VMG is low.
-					{:else if tackAdvantageStatus === 'disadvantage'}
-						Opposite tack is better, but VMG is acceptable — watch for better opportunity.
-					{:else}
-						Stay on current tack — you're on the favored tack.
-					{/if}
-				</div>
-			</div>
-		</div>
-	</div>
-</Modal>
 
 <style>
 	.player-tactical-card {
