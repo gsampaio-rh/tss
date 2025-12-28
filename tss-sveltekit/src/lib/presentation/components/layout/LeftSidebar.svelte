@@ -26,6 +26,23 @@
 		}
 	}
 
+	function handleAddAIPlayer(difficulty: 'easy' | 'medium' | 'hard' = 'medium') {
+		if (!$game) {
+			logger.warn('Cannot add AI player: no game exists. Please select a wind scenario first.', 'LeftSidebar');
+			return;
+		}
+		try {
+			gameActions.addAIPlayer(difficulty);
+		} catch (error) {
+			logger.error(
+				'Failed to add AI player',
+				error instanceof Error ? error : new Error(String(error)),
+				'LeftSidebar'
+			);
+			alert('Failed to add AI player. Please check the console for details.');
+		}
+	}
+
 	function handleStartRace() {
 		if (!$game) {
 			logger.warn('Cannot start race: no game exists.', 'LeftSidebar');
@@ -90,26 +107,37 @@
 		<div class="sidebar-section">
 			<div class="d-flex justify-content-between align-items-center mb-2">
 				<h3 class="section-title mb-0">Players</h3>
-				<button
-					class="btn btn-sm btn-outline-primary"
-					on:click={handleAddPlayer}
-					title="Add Player"
-					aria-label="Add new player"
-					disabled={!$game}
-				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						fill="currentColor"
-						viewBox="0 0 16 16"
+				<div class="btn-group" role="group">
+					<button
+						class="btn btn-sm btn-outline-primary"
+						on:click={handleAddPlayer}
+						title="Add Human Player"
+						aria-label="Add new human player"
+						disabled={!$game}
 					>
-						<path
-							d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"
-						/>
-					</svg>
-					Add
-				</button>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							fill="currentColor"
+							viewBox="0 0 16 16"
+						>
+							<path
+								d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"
+							/>
+						</svg>
+						Add
+					</button>
+					<button
+						class="btn btn-sm btn-outline-success"
+						on:click={() => handleAddAIPlayer('medium')}
+						title="Add AI Player (Medium difficulty)"
+						aria-label="Add new AI player"
+						disabled={!$game}
+					>
+						🤖 AI
+					</button>
+				</div>
 			</div>
 			{#if !$game}
 				<p class="text-muted small mb-2">

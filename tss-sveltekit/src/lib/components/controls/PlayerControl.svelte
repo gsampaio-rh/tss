@@ -44,6 +44,15 @@
 		gameActions.removePlayer(playerIndex);
 	}
 
+	function handleToggleAI() {
+		if (player.isAI) {
+			gameActions.toggleAIPlayer(playerIndex);
+		} else {
+			// Convert to AI with medium difficulty
+			gameActions.toggleAIPlayer(playerIndex, 'medium');
+		}
+	}
+
 	function formatFinishTime(time: number): string {
 		const min = Math.floor(time / 60);
 		const sec = Math.floor(time % 60);
@@ -62,10 +71,49 @@
 			<input
 				type="text"
 				class="form-control"
+				class:ai-player={player.isAI}
 				placeholder="Name"
 				bind:value={playerName}
 				on:blur={handleNameChange}
+				disabled={player.isAI}
 			/>
+
+			{#if player.isAI}
+				<span class="input-group-text ai-badge" title="AI Player ({player.aiDifficulty || 'medium'})">
+					🤖
+				</span>
+			{/if}
+
+			<button
+				class="btn btn-outline-secondary toggle-ai-btn"
+				type="button"
+				on:click={handleToggleAI}
+				title={player.isAI ? 'Convert to Human Player' : 'Convert to AI Player'}
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="14"
+					height="14"
+					fill="currentColor"
+					viewBox="0 0 16 16"
+				>
+					{#if player.isAI}
+						<path
+							d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"
+						/>
+						<path
+							d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 2.923 4.863a.75.75 0 0 1 1.06-1.061l3.494 3.493 3.494-3.493a.75.75 0 0 1 1.06 1.06z"
+						/>
+					{:else}
+						<path
+							d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"
+						/>
+						<path
+							d="M5.03 11.03a.75.75 0 0 1-1.06-1.06l3.494-3.494L4.97 3.47a.75.75 0 0 1 1.06-1.06l3.494 3.494L13.03 2.47a.75.75 0 0 1 1.06 1.06L10.596 7.03l3.494 3.494a.75.75 0 1 1-1.06 1.06L9.536 8.09 5.03 11.03z"
+						/>
+					{/if}
+				</svg>
+			</button>
 
 			<button
 				class="btn btn-outline-danger delete-btn"
@@ -96,12 +144,15 @@
 				<div class="pn-control-color" style="background-color: {player.color};"></div>
 			</span>
 
-			<div class="col-form-label border col name-input small-text">
+			<div class="col-form-label border col name-input small-text" class:ai-player={player.isAI}>
 				<strong>{player.name || `P${playerIndex + 1}`}</strong>
+				{#if player.isAI}
+					<span class="ai-badge-small" title="AI Player ({player.aiDifficulty || 'medium'})">🤖</span>
+				{/if}
 			</div>
 
 			<!-- Turn Selection Radio Buttons -->
-			<div class="btn-group" role="group">
+			<div class="btn-group" role="group" class:disabled={player.isAI}>
 				<!-- Forward Button -->
 				<input
 					type="radio"
@@ -293,6 +344,36 @@
 
 	.player-control-group.finished {
 		opacity: 0.6;
+	}
+
+	.ai-player {
+		background-color: rgba(40, 167, 69, 0.1);
+		font-style: italic;
+	}
+
+	.ai-badge {
+		background-color: rgba(40, 167, 69, 0.2);
+		font-size: 0.9rem;
+		padding: 0.25rem 0.5rem;
+	}
+
+	.ai-badge-small {
+		font-size: 0.75rem;
+		margin-left: 0.25rem;
+		opacity: 0.7;
+	}
+
+	.name-input.ai-player {
+		background-color: rgba(40, 167, 69, 0.1);
+	}
+
+	.btn-group.disabled {
+		pointer-events: none;
+		opacity: 0.6;
+	}
+
+	.toggle-ai-btn {
+		padding: 0.25rem 0.5rem;
 	}
 
 	.compact-controls {

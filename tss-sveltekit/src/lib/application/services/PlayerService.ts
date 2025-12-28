@@ -89,5 +89,38 @@ export class PlayerService {
 	static getFinishTime(boat: Boat): number | null {
 		return boat.finished !== false ? boat.finished : null;
 	}
+
+	/**
+	 * Create an AI-controlled player
+	 */
+	static createAIPlayer(
+		x: number,
+		y: number,
+		tack: boolean,
+		color: string,
+		name: string = 'AI Player',
+		difficulty: 'easy' | 'medium' | 'hard' = 'medium'
+	): Boat {
+		const boat = this.createPlayer(x, y, tack, color, name);
+		boat.isAI = true;
+		boat.aiDifficulty = difficulty;
+		return boat;
+	}
+
+	/**
+	 * Convert a human player to AI
+	 */
+	static convertToAI(boat: Boat, difficulty: 'easy' | 'medium' | 'hard' = 'medium'): void {
+		boat.isAI = true;
+		boat.aiDifficulty = difficulty;
+	}
+
+	/**
+	 * Convert an AI player to human
+	 */
+	static convertToHuman(boat: Boat): void {
+		boat.isAI = false;
+		boat.aiDifficulty = undefined;
+	}
 }
 

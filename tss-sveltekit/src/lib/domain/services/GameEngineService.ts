@@ -5,6 +5,7 @@
 
 import { BoatMovementService } from './BoatMovementService';
 import { WindCalculationService } from './WindCalculationService';
+import { AIPlayerService, AIDifficulty } from '../../application/services/AIPlayerService';
 import type { Boat } from '../../types/boat';
 import type { Game } from '../../types/game';
 
@@ -21,6 +22,19 @@ export class GameEngineService {
 		// Execute turn for each boat
 		for (const boat of game.players) {
 			if (!boat.finished) {
+				// If boat is AI-controlled, make AI decision
+				if (boat.isAI) {
+					const difficulty = boat.aiDifficulty 
+						? (boat.aiDifficulty as AIDifficulty)
+						: AIDifficulty.Medium;
+					const aiDecision = AIPlayerService.makeDecision(boat, game, difficulty);
+					boat.turntype = aiDecision.turnType;
+					// Log AI decision (can be removed or made optional)
+					if (typeof console !== 'undefined' && console.debug) {
+						console.debug(`[AI] ${boat.name || 'AI Player'}: ${aiDecision.reason}`);
+					}
+				}
+
 				const result = BoatMovementService.executeBoatTurn(boat, game, enableDirtyAirEffects);
 				
 				// Save turn data for track visualization

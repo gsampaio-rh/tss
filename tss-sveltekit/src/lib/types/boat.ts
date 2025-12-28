@@ -31,6 +31,8 @@ export class Boat {
 	color: string;
 	name: string = '';
 	turntype: TurnType = TurnType.Forward;
+	isAI: boolean = false; // Whether this boat is AI-controlled
+	aiDifficulty?: 'easy' | 'medium' | 'hard'; // AI difficulty level
 
 	// UI elements (will be replaced by Svelte components)
 	html?: HTMLElement;

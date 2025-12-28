@@ -93,36 +93,141 @@ export const gameActions = {
 	 */
 	addPlayer: (colors: string[] = COLORS) => {
 		const currentGame = get(game);
-		if (!currentGame) return;
+		if (!currentGame) {
+			logger.warn('[gameActions] Cannot add player: no game exists', 'gameActions');
+			return;
+		}
 
 		try {
-			const color = currentGame.findFreeColor(colors);
+			// Find available color
+			let color: string | null = null;
+			for (const availableColor of colors) {
+				if (!currentGame.players.find(p => p.color === availableColor)) {
+					color = availableColor;
+					break;
+				}
+			}
 			if (!color) {
-				logger.warn('Cannot add player: no free colors available', 'gameActions');
-				return;
+				color = colors[currentGame.players.length % colors.length];
 			}
 
 			const newBoat = PlayerService.createPlayer(
-				6,
-				currentGame.height - 2,
+				0,
+				0,
 				false,
 				color,
 				`Player ${currentGame.players.length + 1}`
 			);
-			newBoat.startPos = 1; // Default to middle
-			newBoat.startPriority = currentGame.currentStartPriority++;
+			newBoat.startPos = 1;
+			newBoat.startPriority = currentGame.players.length;
 
 			currentGame.players.push(newBoat);
 			currentGame.placeBoatsOnStart();
-
+			players.set([...currentGame.players]);
 			game.set(currentGame);
-			players.set(currentGame.players);
-			logger.info('Player added', 'gameActions', { playerName: newBoat.name });
+
+			logger.info('[gameActions] Player added', 'gameActions', {
+				playerName: newBoat.name,
+				totalPlayers: currentGame.players.length
+			});
 		} catch (error) {
 			logger.error(
 				'Failed to add player',
 				error instanceof Error ? error : new Error(String(error)),
 				'gameActions'
+			);
+			throw error;
+		}
+	},
+
+	/**
+	 * Add an AI-controlled player
+	 */
+	addAIPlayer: (difficulty: 'easy' | 'medium' | 'hard' = 'medium', colors: string[] = COLORS) => {
+		const currentGame = get(game);
+		if (!currentGame) {
+			logger.warn('[gameActions] Cannot add AI player: no game exists', 'gameActions');
+			return;
+		}
+
+		try {
+			// Find available color
+			let color: string | null = null;
+			for (const availableColor of colors) {
+				if (!currentGame.players.find(p => p.color === availableColor)) {
+					color = availableColor;
+					break;
+				}
+			}
+			if (!color) {
+				color = colors[currentGame.players.length % colors.length];
+			}
+
+			const aiBoat = PlayerService.createAIPlayer(
+				0,
+				0,
+				false,
+				color,
+				`AI Player ${currentGame.players.filter(p => p.isAI).length + 1}`,
+				difficulty
+			);
+			aiBoat.startPos = 1;
+			aiBoat.startPriority = currentGame.players.length;
+
+			currentGame.players.push(aiBoat);
+			currentGame.placeBoatsOnStart();
+			players.set([...currentGame.players]);
+			game.set(currentGame);
+
+			logger.info('[gameActions] AI player added', 'gameActions', {
+				playerName: aiBoat.name,
+				difficulty,
+				totalPlayers: currentGame.players.length
+			});
+		} catch (error) {
+			logger.error(
+				'Failed to add AI player',
+				error instanceof Error ? error : new Error(String(error)),
+				'gameActions'
+			);
+			throw error;
+		}
+	},
+
+	/**
+	 * Toggle AI status of a player
+	 */
+	toggleAIPlayer: (index: number, difficulty?: 'easy' | 'medium' | 'hard') => {
+		const currentGame = get(game);
+		if (!currentGame || index < 0 || index >= currentGame.players.length) {
+			logger.warn('[gameActions] Cannot toggle AI: invalid player index', 'gameActions', { index });
+			return;
+		}
+
+		try {
+			const boat = currentGame.players[index];
+			if (boat.isAI) {
+				PlayerService.convertToHuman(boat);
+				logger.info('[gameActions] Player converted to human', 'gameActions', {
+					playerName: boat.name,
+					index
+				});
+			} else {
+				PlayerService.convertToAI(boat, difficulty || 'medium');
+				logger.info('[gameActions] Player converted to AI', 'gameActions', {
+					playerName: boat.name,
+					difficulty: difficulty || 'medium',
+					index
+				});
+			}
+			players.set([...currentGame.players]);
+			game.set(currentGame);
+		} catch (error) {
+			logger.error(
+				'Failed to toggle AI player',
+				error instanceof Error ? error : new Error(String(error)),
+				'gameActions',
+				{ index }
 			);
 			throw error;
 		}
