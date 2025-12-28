@@ -2,9 +2,13 @@
 	export let history: Array<{ time: number; vmg: number; efficiency: number }>;
 	export let optimalVMG: number;
 	export let currentStatusColor: string;
+	export let currentVMG: number;
+	export let currentEfficiency: number;
+
+	let showTooltip = false;
 
 	const CHART_HEIGHT = 140;
-	const CHART_PADDING = { top: 10, right: 40, bottom: 20, left: 40 };
+	const CHART_PADDING = { top: 30, right: 20, bottom: 20, left: 40 };
 	const CHART_WIDTH = 400;
 
 	// Calculate chart dimensions
@@ -117,16 +121,28 @@
 			stroke-dasharray="4 4"
 			opacity="0.6"
 		/>
-		<!-- Optimal VMG label -->
-		<text
-			x={CHART_PADDING.left + chartWidth + 4}
-			y={optimalY + 4}
-			font-size="11"
-			fill="#6b7280"
-			alignment-baseline="middle"
-		>
-			Optimal VMG
-		</text>
+		<!-- Optimal VMG legend (inside chart area) -->
+		<g transform="translate({CHART_PADDING.left + chartWidth - 80}, {optimalY - 8})">
+			<line
+				x1="0"
+				y1="4"
+				x2="20"
+				y2="4"
+				stroke="#6b7280"
+				stroke-width="1.5"
+				stroke-dasharray="4 4"
+				opacity="0.6"
+			/>
+			<text
+				x="24"
+				y="4"
+				font-size="10"
+				fill="#6b7280"
+				alignment-baseline="middle"
+			>
+				Optimal VMG
+			</text>
+		</g>
 	{/if}
 
 	<!-- VMG line -->
@@ -148,11 +164,39 @@
 		<circle
 			cx={x}
 			cy={y}
-			r="4"
+			r="5"
 			fill={currentStatusColor}
 			stroke="#fff"
 			stroke-width="2"
+			class="current-point"
+			on:mouseenter={() => (showTooltip = true)}
+			on:mouseleave={() => (showTooltip = false)}
+			style="animation: pulse 2s ease-in-out infinite;"
 		/>
+		<!-- Tooltip -->
+		{#if showTooltip}
+			<g transform="translate({x}, {y - 20})">
+				<rect
+					x="-40"
+					y="-18"
+					width="80"
+					height="16"
+					rx="4"
+					fill="rgba(0, 0, 0, 0.85)"
+				/>
+				<text
+					x="0"
+					y="-6"
+					font-size="10"
+					fill="#fff"
+					text-anchor="middle"
+					alignment-baseline="middle"
+					font-weight="500"
+				>
+					Now: {currentVMG.toFixed(2)} kn ({currentEfficiency}%)
+				</text>
+			</g>
+		{/if}
 	{/if}
 </svg>
 
@@ -161,6 +205,19 @@
 		display: block;
 		width: 100%;
 		height: auto;
+	}
+
+	.current-point {
+		cursor: pointer;
+	}
+
+	@keyframes pulse {
+		0%, 100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.7;
+		}
 	}
 </style>
 

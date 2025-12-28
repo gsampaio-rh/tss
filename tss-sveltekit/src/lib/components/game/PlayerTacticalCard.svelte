@@ -455,10 +455,16 @@
 		<!-- VMG History Chart -->
 		{#if vmgHistory.length > 0}
 			<div class="vmg-chart-container">
+				<div class="chart-header">
+					<div class="chart-title">VMG over last 60s</div>
+					<div class="chart-subtitle">Compared to optimal VMG for this wind angle</div>
+				</div>
 				<VMGChart
 					history={vmgHistory}
 					optimalVMG={optimalVMG}
 					currentStatusColor={vmgStatusColor}
+					currentVMG={vmg}
+					currentEfficiency={vmgPercent}
 				/>
 				<button
 					type="button"
@@ -1039,7 +1045,7 @@
 
 	.efficiency-value {
 		font-size: var(--font-size-lg);
-		font-weight: var(--font-weight-semibold);
+		font-weight: var(--font-weight-bold);
 		color: var(--color-text-primary);
 	}
 
@@ -1134,6 +1140,23 @@
 		background: var(--color-bg-primary);
 		border-radius: var(--radius-md);
 		border: 1px solid var(--color-border-light);
+	}
+
+	.chart-header {
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.chart-title {
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-semibold);
+		color: var(--color-text-primary);
+		margin-bottom: 2px;
+	}
+
+	.chart-subtitle {
+		font-size: var(--font-size-xs);
+		color: var(--color-text-muted);
+		font-weight: var(--font-weight-normal);
 	}
 
 	.chart-explanation-toggle {
