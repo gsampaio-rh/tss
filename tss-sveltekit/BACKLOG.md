@@ -86,7 +86,60 @@ Add contextual help icons (ℹ️) next to every insight/metric in the race insi
 
 ## 🎯 High Priority Features
 
-### 1. Wind Zones UI Improvements
+### 1. Tell Tales Indicators
+
+**Priority**: 🔴 High  
+**Status**: Not Started  
+**Estimated Effort**: 2-3 days
+
+#### Description
+Add tell tales indicators to the player tactical card. Tell tales are visual indicators that show wind flow and help sailors optimize sail trim and heading. They provide immediate visual feedback about whether the boat is sailing efficiently.
+
+#### Requirements
+- **Visual Indicators**:
+  - Show tell tales on the player tactical card
+  - Visual representation (e.g., arrows, ribbons, or small indicators)
+  - Color-coded based on efficiency (green = good, yellow = okay, red = poor)
+  
+- **Wind Flow Visualization**:
+  - Show wind direction relative to boat heading
+  - Indicate if wind is flowing smoothly over sails
+  - Show when sails are stalled or backwinded
+
+- **Sail Trim Feedback**:
+  - Indicate if sails are properly trimmed
+  - Show when to ease or trim sails
+  - Provide visual cues for optimal sail angle
+
+- **Integration**:
+  - Add to player tactical card UI
+  - Update based on current wind and boat heading
+  - Show real-time feedback as conditions change
+
+#### Acceptance Criteria
+- [ ] Tell tales visible on player tactical card
+- [ ] Visual indicators show wind flow direction
+- [ ] Color coding reflects sail efficiency
+- [ ] Updates in real-time with wind/heading changes
+- [ ] Clear visual feedback for sail trim adjustments
+- [ ] Accessible and easy to understand
+
+#### Technical Notes
+- Add tell tales component to `PlayerTacticalCard.svelte`
+- Calculate wind flow angle relative to boat heading
+- Use ATW and wind direction to determine tell tale state
+- Consider using small animated indicators for wind flow
+- May integrate with existing wind visualization
+
+#### UI/UX Considerations
+- Keep tell tales compact but visible
+- Use intuitive visual language (arrows, ribbons, or flow lines)
+- Color coding should match existing efficiency indicators
+- Consider tooltip/explanation for new users
+
+---
+
+### 2. Wind Zones UI Improvements
 
 **Priority**: 🔴 High  
 **Status**: Not Started  
