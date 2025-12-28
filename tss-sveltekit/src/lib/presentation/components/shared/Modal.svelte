@@ -24,6 +24,15 @@
 		}
 	}
 
+	function handleBackdropKeydown(event: KeyboardEvent) {
+		if (closeOnBackdrop && (event.key === 'Enter' || event.key === ' ')) {
+			event.preventDefault();
+			if (backdropElement && event.target === backdropElement) {
+				handleClose();
+			}
+		}
+	}
+
 	function handleKeydown(event: KeyboardEvent) {
 		if (closeOnEscape && event.key === 'Escape' && open) {
 			handleClose();
@@ -36,6 +45,11 @@
 			document.removeEventListener('keydown', handleKeydown);
 		};
 	});
+
+	$: if (open && modalElement) {
+		// Focus the modal when it opens for keyboard accessibility
+		modalElement.focus();
+	}
 
 	$: if (open) {
 		// Prevent body scroll when modal is open
@@ -50,16 +64,20 @@
 		bind:this={backdropElement}
 		class="modal-backdrop"
 		on:click={handleBackdropClick}
-		on:keydown={handleKeydown}
-		role="dialog"
-		aria-modal="true"
-		aria-labelledby={title ? 'modal-title' : undefined}
-		tabindex="-1"
+		on:keydown={handleBackdropKeydown}
+		role="button"
+		aria-label="Close modal"
+		tabindex={closeOnBackdrop ? 0 : -1}
 	>
 		<div
 			bind:this={modalElement}
 			class="modal modal-{size}"
 			on:click|stopPropagation
+			on:keydown|stopPropagation
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby={title ? 'modal-title' : undefined}
+			tabindex={-1}
 		>
 			<div class="modal-header">
 				{#if title}
@@ -99,6 +117,11 @@
 		justify-content: center;
 		z-index: 1000;
 		animation: fadeIn 0.2s ease-out;
+		outline: none;
+	}
+
+	.modal-backdrop:focus {
+		outline: none;
 	}
 
 	.modal {
@@ -111,6 +134,7 @@
 		flex-direction: column;
 		animation: slideIn 0.2s ease-out;
 		overflow: hidden;
+		outline: none;
 	}
 
 	.modal-sm {
