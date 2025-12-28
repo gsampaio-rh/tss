@@ -3,6 +3,7 @@
 	import HeadingChart from '../../HeadingChart.svelte';
 	import { turnCount } from '$lib/stores/game';
 	import type { Boat } from '$lib/types/boat';
+	import { useMetricHistory } from '../composables/useMetricHistory';
 
 	function formatCssDeg(val: number): string {
 		return `${Math.round(val)}°`;
@@ -18,26 +19,27 @@
 
 	let showChartExplanation = false;
 
-	// Heading history tracking
-	let headingHistory: Array<{ time: number; heading: number; optimalHeading: number; delta: number; turn: number }> = [];
-	const MAX_HISTORY_TURNS = 60;
+	// Heading history tracking using composable
+	const { history: headingHistoryRaw, track: trackHeading } = useMetricHistory(() => ({ 
+		heading: boat.rotation, 
+		optimalHeading, 
+		delta: headingDelta 
+	}), { maxTurns: 60 });
 	let lastTrackedTurn = -1;
+
+	// Transform history to match chart format
+	$: headingHistory = headingHistoryRaw.map(entry => ({
+		time: entry.timestamp,
+		heading: entry.value.heading,
+		optimalHeading: entry.value.optimalHeading,
+		delta: entry.value.delta,
+		turn: entry.turn
+	}));
 
 	// Track Heading history
 	$: if ($turnCount !== undefined && $turnCount !== lastTrackedTurn) {
-		const now = Date.now();
-		headingHistory.push({
-			time: now,
-			heading: boat.rotation,
-			optimalHeading: optimalHeading,
-			delta: headingDelta,
-			turn: $turnCount
-		});
+		trackHeading($turnCount, { heading: boat.rotation, optimalHeading, delta: headingDelta });
 		lastTrackedTurn = $turnCount;
-		
-		if (headingHistory.length > MAX_HISTORY_TURNS) {
-			headingHistory = headingHistory.slice(-MAX_HISTORY_TURNS);
-		}
 	}
 
 	function handleClose() {

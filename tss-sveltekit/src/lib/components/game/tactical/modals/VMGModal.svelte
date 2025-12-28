@@ -2,6 +2,7 @@
 	import Modal from '$lib/presentation/components/shared/Modal.svelte';
 	import VMGChart from '../../VMGChart.svelte';
 	import { turnCount } from '$lib/stores/game';
+	import { useMetricHistory } from '../composables/useMetricHistory';
 
 	export let open: boolean = false;
 	export let vmg: number;
@@ -16,26 +17,22 @@
 
 	let showChartExplanation = false;
 
-	// VMG history tracking (last 60 turns, sampled every turn)
-	let vmgHistory: Array<{ time: number; vmg: number; efficiency: number; turn: number }> = [];
-	const MAX_HISTORY_TURNS = 60;
+	// VMG history tracking using composable
+	const { history: vmgHistoryRaw, track: trackVMG } = useMetricHistory(() => ({ vmg, efficiency: vmgPercent }), { maxTurns: 60 });
 	let lastTrackedTurn = -1;
+
+	// Transform history to match chart format
+	$: vmgHistory = vmgHistoryRaw.map(entry => ({
+		time: entry.timestamp,
+		vmg: entry.value.vmg,
+		efficiency: entry.value.efficiency,
+		turn: entry.turn
+	}));
 
 	// Track VMG history (sample every turn)
 	$: if (windwardMark && vmg > 0 && $turnCount !== undefined && $turnCount !== lastTrackedTurn) {
-		const now = Date.now();
-		vmgHistory.push({
-			time: now,
-			vmg: vmg,
-			efficiency: vmgPercent,
-			turn: $turnCount
-		});
+		trackVMG($turnCount, { vmg, efficiency: vmgPercent });
 		lastTrackedTurn = $turnCount;
-		
-		// Remove old data (keep only last MAX_HISTORY_TURNS turns)
-		if (vmgHistory.length > MAX_HISTORY_TURNS) {
-			vmgHistory = vmgHistory.slice(-MAX_HISTORY_TURNS);
-		}
 	}
 
 	function handleClose() {

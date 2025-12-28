@@ -2,6 +2,7 @@
 	import Modal from '$lib/presentation/components/shared/Modal.svelte';
 	import ATWChart from '../../ATWChart.svelte';
 	import { turnCount } from '$lib/stores/game';
+	import { useMetricHistory } from '../composables/useMetricHistory';
 
 	function formatCssDeg(val: number): string {
 		return `${Math.round(val)}°`;
@@ -17,26 +18,22 @@
 
 	let showChartExplanation = false;
 
-	// ATW history tracking (last 60 turns, sampled every turn)
-	let atwHistory: Array<{ time: number; atw: number; delta: number; turn: number }> = [];
-	const MAX_HISTORY_TURNS = 60;
+	// ATW history tracking using composable
+	const { history: atwHistoryRaw, track: trackATW } = useMetricHistory(() => ({ atw, delta: atwDelta }), { maxTurns: 60 });
 	let lastTrackedTurn = -1;
+
+	// Transform history to match chart format
+	$: atwHistory = atwHistoryRaw.map(entry => ({
+		time: entry.timestamp,
+		atw: entry.value.atw,
+		delta: entry.value.delta,
+		turn: entry.turn
+	}));
 
 	// Track ATW history (sample every turn)
 	$: if ($turnCount !== undefined && $turnCount !== lastTrackedTurn) {
-		const now = Date.now();
-		atwHistory.push({
-			time: now,
-			atw: atw,
-			delta: atwDelta,
-			turn: $turnCount
-		});
+		trackATW($turnCount, { atw, delta: atwDelta });
 		lastTrackedTurn = $turnCount;
-		
-		// Remove old data (keep only last MAX_HISTORY_TURNS turns)
-		if (atwHistory.length > MAX_HISTORY_TURNS) {
-			atwHistory = atwHistory.slice(-MAX_HISTORY_TURNS);
-		}
 	}
 
 	function handleClose() {

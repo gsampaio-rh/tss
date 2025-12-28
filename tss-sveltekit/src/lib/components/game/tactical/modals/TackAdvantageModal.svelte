@@ -3,6 +3,7 @@
 	import TackAdvantageChart from '../../TackAdvantageChart.svelte';
 	import { turnCount } from '$lib/stores/game';
 	import type { Boat } from '$lib/types/boat';
+	import { useMetricHistory } from '../composables/useMetricHistory';
 
 	export let open: boolean = false;
 	export let boat: Boat;
@@ -15,25 +16,25 @@
 
 	let showChartExplanation = false;
 
-	// Tack Advantage history tracking
-	let tackAdvantageHistory: Array<{ time: number; advantage: number; percent: number; turn: number }> = [];
-	const MAX_HISTORY_TURNS = 60;
+	// Tack Advantage history tracking using composable
+	const { history: tackAdvantageHistoryRaw, track: trackTackAdvantage } = useMetricHistory(() => ({ 
+		advantage: tackAdvantage, 
+		percent: tackAdvantagePercent 
+	}), { maxTurns: 60 });
 	let lastTrackedTurn = -1;
+
+	// Transform history to match chart format
+	$: tackAdvantageHistory = tackAdvantageHistoryRaw.map(entry => ({
+		time: entry.timestamp,
+		advantage: entry.value.advantage,
+		percent: entry.value.percent,
+		turn: entry.turn
+	}));
 
 	// Track Tack Advantage history
 	$: if ($turnCount !== undefined && $turnCount !== lastTrackedTurn) {
-		const now = Date.now();
-		tackAdvantageHistory.push({
-			time: now,
-			advantage: tackAdvantage,
-			percent: tackAdvantagePercent,
-			turn: $turnCount
-		});
+		trackTackAdvantage($turnCount, { advantage: tackAdvantage, percent: tackAdvantagePercent });
 		lastTrackedTurn = $turnCount;
-		
-		if (tackAdvantageHistory.length > MAX_HISTORY_TURNS) {
-			tackAdvantageHistory = tackAdvantageHistory.slice(-MAX_HISTORY_TURNS);
-		}
 	}
 
 	function handleClose() {
