@@ -98,8 +98,7 @@ src/lib/
 
 ### Other
 
-- [Release Notes](./RELEASE_NOTES.md) - Version history and release notes
-- [Refactoring Summary](./REFACTORING_SUMMARY.md) - Refactoring progress and roadmap
+- [Release Notes](./docs/RELEASE_NOTES.md) - Version history and release notes
 
 ## Key Technologies
 
