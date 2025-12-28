@@ -70,7 +70,48 @@ Add contextual help icons (ℹ️) next to every insight/metric in the race insi
 
 ## 🎯 High Priority Features
 
-### 1. Speed-Based Movement System
+### 1. Wind Zones UI Improvements
+
+**Priority**: 🔴 High  
+**Status**: Not Started  
+**Estimated Effort**: 1 day
+
+#### Description
+Improve the visual design of wind zones. The current circle/arc visualization is too large and can be distracting or cover important game elements.
+
+#### Requirements
+- **Size Reduction**:
+  - Reduce the size of wind zone circles/arcs
+  - Make them more subtle and less intrusive
+  - Ensure they're still visible but don't dominate the canvas
+
+- **Visual Refinement**:
+  - Adjust opacity/transparency for better visibility balance
+  - Consider alternative visualizations (thinner arcs, dashed lines, etc.)
+  - Ensure wind zones don't obscure boats, marks, or tracks
+
+- **User Control**:
+  - Keep the toggle to show/hide wind zones
+  - Consider adding opacity slider in settings
+  - Ensure zones are still informative when visible
+
+#### Acceptance Criteria
+- [ ] Wind zone circles/arcs are smaller and less intrusive
+- [ ] Zones don't obscure important game elements
+- [ ] Still clearly visible and informative
+- [ ] Visual design is polished and professional
+- [ ] Settings allow users to control visibility/opacity
+
+#### Technical Notes
+- Modify `WindZones.svelte` component
+- Adjust SVG circle/arc radius calculations
+- Update opacity and stroke width values
+- May need to adjust z-index/layering
+- Test with different screen sizes
+
+---
+
+### 2. Speed-Based Movement System
 
 **Priority**: 🔴 High  
 **Status**: Not Started  
@@ -368,9 +409,10 @@ To request a new feature:
 
 **Sprint Goals** (Next 2 weeks):
 1. **Contextual help for race insights** - Add info icons with tooltips to all metrics
-2. Speed-based movement system
-3. Racing rules implementation
-4. Enhanced game statistics
+2. **Wind zones UI improvements** - Reduce circle size, improve visual design
+3. Speed-based movement system
+4. Racing rules implementation
+5. Enhanced game statistics
 
 ---
 
