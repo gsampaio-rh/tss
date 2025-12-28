@@ -42,7 +42,7 @@
 			{/if}
 		</div>
 	{/if}
-	<div class="card-body" class:collapsed={isCollapsed} class:padding-{padding}>
+	<div class="card-body" class:collapsed={isCollapsed} class:padding-sm={padding === 'sm'} class:padding-md={padding === 'md'} class:padding-lg={padding === 'lg'}>
 		{#if !isCollapsed}
 			<slot />
 		{/if}

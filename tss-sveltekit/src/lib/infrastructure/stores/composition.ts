@@ -1,6 +1,15 @@
 /**
  * Store Composition Pattern
- * Utilities for composing multiple stores together
+ * 
+ * Utilities for composing multiple stores together, enabling:
+ * - Combining multiple stores into a single derived store
+ * - Selecting specific properties from object stores
+ * - Filtering and mapping store values
+ * 
+ * This follows the composition pattern, allowing stores to be
+ * combined and transformed without modifying the original stores.
+ * 
+ * @module Infrastructure/Stores
  */
 
 import { derived, type Readable } from 'svelte/store';

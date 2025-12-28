@@ -1,6 +1,11 @@
 /**
  * Game Service
- * Orchestrates game operations using domain services
+ * 
+ * Orchestrates game operations using domain services.
+ * This is an application service that coordinates between the domain layer
+ * and the presentation layer.
+ * 
+ * @module Application/Services
  */
 
 import { GameEngineService } from '$lib/domain/services/GameEngineService';
@@ -12,9 +17,31 @@ import type { WindScenario } from '$lib/types/wind';
 import { Boat } from '$lib/types/boat';
 import { logger } from '$lib/infrastructure/logging/logger';
 
+/**
+ * Game Service
+ * 
+ * Provides high-level game operations by orchestrating domain services.
+ * Converts between domain entities (GameEntity) and legacy Game objects
+ * for backward compatibility.
+ */
 export class GameService {
 	/**
 	 * Create a new game from a wind scenario
+	 * 
+	 * Creates a GameEntity, initializes it with the wind scenario,
+	 * creates initial players, places boats on the start line, and
+	 * converts to legacy Game format for backward compatibility.
+	 * 
+	 * @param playerCount - Number of players to create (default: 2)
+	 * @param windScenario - Wind scenario to use for the game
+	 * @param colors - Array of color names to assign to players
+	 * @returns A new Game instance ready to play
+	 * 
+	 * @example
+	 * ```typescript
+	 * const windScenario = { name: 'Pendulum', wind: [0, 5, 10, ...] };
+	 * const game = GameService.createGame(2, windScenario);
+	 * ```
 	 */
 	static createGame(
 		playerCount: number,

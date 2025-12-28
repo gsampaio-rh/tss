@@ -20,10 +20,42 @@ export interface BoatMovementResult {
 	finished: number | false;
 }
 
+/**
+ * Boat Movement Service
+ * 
+ * Provides boat movement calculation and execution functionality.
+ */
 export class BoatMovementService {
 	/**
 	 * Execute a boat turn based on turn type
-	 * This is a refactored version of executeBoatTurn from gameLogic.ts
+	 * 
+	 * Executes a boat's turn based on the selected turn type (Forward, Tack, ToMark).
+	 * Handles:
+	 * - Tack execution (switching tacks and recalculating rotation)
+	 * - Forward movement (recalculating rotation based on current wind)
+	 * - ToMark movement (heading directly to mark when close, with smart tacking)
+	 * - Dirty air effects (if enabled)
+	 * - Boundary conditions (tacking at boundaries)
+	 * - Finish detection (when boat reaches mark)
+	 * 
+	 * **Important**: 
+	 * - This method recalculates rotation every turn for Forward movement to ensure 
+	 *   boats respond to wind shifts. This was a critical fix for wind responsiveness.
+	 * - ToMark mode now intelligently evaluates wind shifts and can tack if the opposite
+	 *   tack provides significantly better VMG (>15% improvement) and the boat is not
+	 *   too close to the mark (<2 units). This prevents boats from ignoring major wind
+	 *   shifts when heading to the mark.
+	 * 
+	 * @param boat - The boat to move
+	 * @param game - The current game state
+	 * @param enableDirtyAirEffects - Whether to apply dirty air speed/angle penalties
+	 * @returns Movement result with points, final rotation, tack, and finish status
+	 * 
+	 * @example
+	 * ```typescript
+	 * const result = BoatMovementService.executeBoatTurn(boat, game, true);
+	 * boat.saveTurn(boat.turntype, result.points, result.finalRotation.degrees, result.finalTack, result.finished);
+	 * ```
 	 */
 	static executeBoatTurn(
 		boat: Boat,
@@ -145,6 +177,55 @@ export class BoatMovementService {
 
 					// Execute movement based on turn type
 					if (boat.turntype === TurnType.ToMark) {
+						// Smart ToMark: Evaluate if tacking would be beneficial despite being in ToMark mode
+						const distanceToMark = NavigationService.distance(currentPosition, markPosition);
+						const isVeryCloseToMark = distanceToMark < 2.0; // Within 2 units, always head directly
+						
+						if (!isVeryCloseToMark) {
+							// Check for significant wind shift
+							const previousWind = game.turncount > 0
+								? Angle.fromDegrees(game.getWind(game.turncount - 1))
+								: currentWind;
+							
+							const windShift = Math.abs(TacticalAnalysisService.angleDiff(currentWind, previousWind));
+							const significantShift = windShift > 15; // More than 15° shift
+							
+							if (significantShift) {
+								// Calculate VMG on current tack vs opposite tack
+								const currentHeading = currentRotation;
+								const currentVMG = TacticalAnalysisService.calculateVMG(
+									currentPosition,
+									markPosition,
+									1.0, // Base speed
+									currentHeading
+								);
+								
+								// Calculate optimal heading on opposite tack
+								const oppositeTack = !currentTack;
+								const oppositeOptHeading = TacticalAnalysisService.getOptimalHeading(
+									oppositeTack,
+									currentWind,
+									true // Assuming upwind
+								);
+								
+								const oppositeVMG = TacticalAnalysisService.calculateVMG(
+									currentPosition,
+									markPosition,
+									1.0,
+									oppositeOptHeading
+								);
+								
+								// Tack if opposite tack is significantly better (15%+ improvement)
+								// AND we're not too close to the mark
+								if (oppositeVMG > currentVMG * 1.15) {
+									// Switch to opposite tack
+									currentTack = oppositeTack;
+									currentRotation = oppositeOptHeading;
+									// Continue with ToMark movement on new tack
+								}
+							}
+						}
+						
 						currentPosition = BoatMovementService.executeToMarkMovement(
 							currentPosition,
 							markPosition,

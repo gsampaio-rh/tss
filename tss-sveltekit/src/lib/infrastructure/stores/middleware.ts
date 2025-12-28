@@ -1,6 +1,15 @@
 /**
  * Store Middleware
- * Provides middleware functionality for Svelte stores (logging, persistence, error handling)
+ * 
+ * Provides middleware functionality for Svelte stores, enabling:
+ * - Logging: Log all store updates
+ * - Persistence: Persist store values to localStorage
+ * - Error Handling: Catch and handle store errors
+ * 
+ * Middleware follows the middleware pattern, allowing cross-cutting
+ * concerns to be added to stores without modifying store logic.
+ * 
+ * @module Infrastructure/Stores
  */
 
 import { get, writable, type Writable, type Readable } from 'svelte/store';
@@ -8,9 +17,23 @@ import { logger } from '../logging/logger';
 import { handleError } from '../errors/errorHandler';
 import type { AppError } from '../errors/ErrorTypes';
 
+/**
+ * Store Middleware Interface
+ * 
+ * Defines the contract for store middleware. Middleware can hook into
+ * store updates at three points:
+ * - beforeUpdate: Called before value is set (can modify value)
+ * - afterUpdate: Called after value is set
+ * - onError: Called if an error occurs
+ * 
+ * @template T - The type of the store value
+ */
 export interface StoreMiddleware<T> {
+	/** Called before store value is updated. Can modify the new value. */
 	beforeUpdate?: (current: T, next: T) => T | void;
+	/** Called after store value is updated. */
 	afterUpdate?: (value: T) => void;
+	/** Called if an error occurs during store update. */
 	onError?: (error: unknown) => void;
 }
 

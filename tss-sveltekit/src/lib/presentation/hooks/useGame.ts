@@ -1,6 +1,20 @@
 /**
  * useGame Hook
- * Provides game state and operations
+ * 
+ * Provides game state and operations for Svelte components.
+ * This hook encapsulates game-related state and operations, making
+ * it easy to use game functionality in components.
+ * 
+ * @module Presentation/Hooks
+ * 
+ * @returns An object with game state getters and operation methods
+ * 
+ * @example
+ * ```typescript
+ * const gameHook = useGame();
+ * const currentGame = gameHook.game;
+ * gameHook.createGame(2, windScenario);
+ * ```
  */
 
 import { get } from 'svelte/store';
@@ -9,6 +23,13 @@ import { GameService } from '$lib/application/services/GameService';
 import type { Game } from '$lib/types/game';
 import type { WindScenario } from '$lib/types/wind';
 
+/**
+ * useGame Hook
+ * 
+ * Provides reactive access to game state and game operations.
+ * 
+ * @returns Object with game state getters and operation methods
+ */
 export function useGame() {
 	return {
 		// State

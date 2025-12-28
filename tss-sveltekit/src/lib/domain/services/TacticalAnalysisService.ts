@@ -1,14 +1,33 @@
 /**
  * Tactical Analysis Service
- * Handles tactical calculations: VMG, Lift/Header, optimal headings
+ * 
+ * Handles tactical calculations for sailing strategy:
+ * - VMG (Velocity Made Good) calculations
+ * - Lift/Header detection relative to course axis
+ * - Optimal heading calculations based on polar model
+ * - Tactical decision support
+ * 
+ * All calculations follow real sailing theory and match RC sailing definitions.
+ * 
+ * @module Domain/Services
  */
 
 import { Angle } from '../value-objects/Angle';
 import { Position } from '../value-objects/Position';
 import { NavigationService } from './NavigationService';
 
-// Constants for polar model
+/**
+ * Optimal upwind angle in degrees.
+ * This is the angle relative to the wind direction that provides
+ * the best VMG when sailing upwind.
+ */
 export const OPT_UPWIND_ANGLE = 45; // Optimal upwind angle (degrees)
+
+/**
+ * Optimal downwind angle in degrees.
+ * This is the angle relative to the wind direction that provides
+ * the best VMG when sailing downwind.
+ */
 export const OPT_DOWNWIND_ANGLE = 155; // Optimal downwind angle (degrees)
 
 export interface LiftHeaderResult {

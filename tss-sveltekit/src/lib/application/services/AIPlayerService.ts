@@ -1,6 +1,20 @@
 /**
  * AI Player Service
- * Handles AI decision-making for computer-controlled boats
+ * 
+ * Handles AI decision-making for computer-controlled boats.
+ * Provides tactical decision-making logic with three difficulty levels:
+ * - Easy: Simple decisions, occasional random tacks
+ * - Medium: Tactical decisions using lift/header and VMG optimization
+ * - Hard: Advanced tactics with strategic tacking and boundary management
+ * 
+ * The AI uses TacticalAnalysisService to make informed decisions based on:
+ * - Wind shifts (lift/header detection)
+ * - VMG (Velocity Made Good) optimization
+ * - Heading errors
+ * - Boundary conditions
+ * - Distance to mark
+ * 
+ * @module Application/Services
  */
 
 import { TurnType } from '../../types/game';
@@ -12,20 +26,61 @@ import { Angle } from '../../domain/value-objects/Angle';
 import { Position } from '../../domain/value-objects/Position';
 import { WindCalculationService } from '../../domain/services/WindCalculationService';
 
+/**
+ * AI Difficulty Levels
+ * 
+ * Defines the three difficulty levels available for AI players.
+ * Each level uses different decision-making strategies.
+ */
 export enum AIDifficulty {
+	/** Easy AI: Simple decisions, occasional random tacks */
 	Easy = 'easy',
+	/** Medium AI: Tactical decisions using lift/header and VMG optimization */
 	Medium = 'medium',
+	/** Hard AI: Advanced tactics with strategic tacking and boundary management */
 	Hard = 'hard'
 }
 
+/**
+ * AI Decision Result
+ * 
+ * Represents a decision made by the AI, including the turn type
+ * and the reasoning behind the decision (for debugging/logging).
+ */
 export interface AIDecision {
+	/** The turn type to execute */
 	turnType: TurnType;
+	/** Human-readable reason for this decision (for debugging) */
 	reason: string;
 }
 
+/**
+ * AI Player Service
+ * 
+ * Provides AI decision-making capabilities for computer-controlled boats.
+ */
 export class AIPlayerService {
 	/**
 	 * Make a decision for an AI-controlled boat
+	 * 
+	 * Analyzes the current game state and boat position to determine
+	 * the best tactical move. Uses tactical analysis to consider:
+	 * - Wind shifts (lift/header)
+	 * - VMG optimization
+	 * - Heading errors
+	 * - Boundary conditions
+	 * - Distance to mark
+	 * 
+	 * @param boat - The AI-controlled boat
+	 * @param game - The current game state
+	 * @param difficulty - AI difficulty level (default: Medium)
+	 * @returns An AI decision with turn type and reasoning
+	 * 
+	 * @example
+	 * ```typescript
+	 * const decision = AIPlayerService.makeDecision(boat, game, AIDifficulty.Hard);
+	 * boat.turntype = decision.turnType;
+	 * ```
 	 */
 	static makeDecision(
 		boat: Boat,

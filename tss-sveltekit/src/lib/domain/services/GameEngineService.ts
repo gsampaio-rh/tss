@@ -1,6 +1,14 @@
 /**
  * Game Engine Service
- * Core game loop and turn execution orchestration
+ * 
+ * Core game loop and turn execution orchestration.
+ * This is a domain service that handles the core game mechanics:
+ * - Executes turns for all boats
+ * - Handles AI decision-making
+ * - Manages turn history
+ * - Handles game state transitions
+ * 
+ * @module Domain/Services
  */
 
 import { BoatMovementService } from './BoatMovementService';
@@ -9,9 +17,29 @@ import { AIPlayerService, AIDifficulty } from '../../application/services/AIPlay
 import type { Boat } from '../../types/boat';
 import type { Game } from '../../types/game';
 
+/**
+ * Game Engine Service
+ * 
+ * Provides core game loop functionality including turn execution,
+ * turn history management, and game state management.
+ */
 export class GameEngineService {
 	/**
 	 * Execute a game turn for all boats
+	 * 
+	 * Processes one turn for all active boats in the game:
+	 * 1. For AI boats, makes AI decisions
+	 * 2. Executes boat movement for each boat
+	 * 3. Saves turn data for track visualization
+	 * 4. Increments turn count
+	 * 
+	 * @param game - The game instance
+	 * @param enableDirtyAirEffects - Whether to apply dirty air speed/angle penalties
+	 * 
+	 * @example
+	 * ```typescript
+	 * GameEngineService.executeTurn(game, true);
+	 * ```
 	 */
 	static executeTurn(
 		game: Game,
