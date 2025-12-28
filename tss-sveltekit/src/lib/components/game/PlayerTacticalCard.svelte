@@ -19,6 +19,12 @@
 	import ATWModal from './tactical/modals/ATWModal.svelte';
 	import HeadingModal from './tactical/modals/HeadingModal.svelte';
 	import TackAdvantageModal from './tactical/modals/TackAdvantageModal.svelte';
+	import ATWMetricCard from './tactical/ATWMetricCard.svelte';
+	import VMGMetricCard from './tactical/VMGMetricCard.svelte';
+	import HeadingMetricCard from './tactical/HeadingMetricCard.svelte';
+	import TackAdvantageMetricCard from './tactical/TackAdvantageMetricCard.svelte';
+	import ModeMetricCard from './tactical/ModeMetricCard.svelte';
+	import LiftHeaderMetricCard from './tactical/LiftHeaderMetricCard.svelte';
 
 	export let boat: Boat;
 	export let playerIndex: number;
@@ -62,7 +68,7 @@
 	$: atw = boat ? Math.abs(angleDiff(boat.rotation, windDir)) : 0;
 	$: targetATW = OPT_UPWIND_ANGLE;
 	$: atwDelta = atw - targetATW;
-	$: atwColor = Math.abs(atwDelta) <= 2 ? 'green' : Math.abs(atwDelta) <= 5 ? 'yellow' : 'red';
+	$: atwColor = (Math.abs(atwDelta) <= 2 ? 'green' : Math.abs(atwDelta) <= 5 ? 'yellow' : 'red') as 'green' | 'yellow' | 'red';
 	$: atwStatus = (Math.abs(atwDelta) <= 2 ? 'excellent' : Math.abs(atwDelta) <= 5 ? 'good' : 'poor') as 'excellent' | 'good' | 'poor';
 	$: atwStatusColor = Math.abs(atwDelta) <= 2 ? '#28a745' : Math.abs(atwDelta) <= 5 ? '#ffc107' : '#dc3545';
 	$: atwStatusLabel = Math.abs(atwDelta) <= 2 ? 'Excellent' : Math.abs(atwDelta) <= 5 ? 'Good' : 'Needs Adjustment';
@@ -302,124 +308,42 @@
 		<!-- Main Metrics Grid -->
 		<div class="metrics-grid">
 			<!-- ATW (Top Left) -->
-			<div class="metric-card atw-metric">
-				<div class="metric-label">
-					<span>Angle to Wind</span>
-					<button
-						type="button"
-						class="info-icon"
-						on:click|stopPropagation={() => (showATWModal = true)}
-						aria-label="Learn more about Angle to Wind"
-					>
-						ℹ️
-					</button>
-				</div>
-				<div
-					class="metric-value"
-					class:green={atwColor === 'green'}
-					class:yellow={atwColor === 'yellow'}
-					class:red={atwColor === 'red'}
-				>
-					{formatCssDeg(atw)}
-				</div>
-				<div class="metric-target">Target: {formatCssDeg(targetATW)}</div>
-				<div class="metric-delta">{atwDelta > 0 ? '+' : ''}{formatCssDeg(atwDelta)}</div>
-			</div>
+			<ATWMetricCard
+				{atw}
+				{targetATW}
+				{atwDelta}
+				{atwColor}
+				onInfoClick={() => (showATWModal = true)}
+			/>
 
 			<!-- VMG (Top Right) -->
-			<div class="metric-card vmg-metric">
-				<div class="metric-label">
-					<span>VMG</span>
-					<button
-						type="button"
-						class="info-icon"
-						on:click|stopPropagation={() => (showVMGModal = true)}
-						aria-label="Learn more about VMG"
-					>
-						ℹ️
-					</button>
-				</div>
-				<div class="metric-value">{vmg.toFixed(2)} kt</div>
-				<div class="vmg-bar-mini">
-					<div
-						class="vmg-bar-fill-mini"
-						style="width: {vmgPercent}%"
-						class:good={vmgPercent >= 95}
-						class:ok={vmgPercent >= 85 && vmgPercent < 95}
-						class:poor={vmgPercent < 85}
-					></div>
-				</div>
-				<div class="metric-delta">
-					{vmgPercent}%
-					{#if vmgTrend !== 'stable'}
-						<span class="trend-icon" class:up={vmgTrend === 'up'} class:down={vmgTrend === 'down'}>
-							{vmgTrend === 'up' ? '▲' : '▼'}
-						</span>
-					{/if}
-				</div>
-			</div>
+			<VMGMetricCard
+				{vmg}
+				{vmgPercent}
+				{vmgTrend}
+				onInfoClick={() => (showVMGModal = true)}
+			/>
 
-			<!-- Lift/Header (Middle Left) - Now shown as bar above, keep compact indicator here -->
-			{#if isLift || isHeader}
-				<div class="metric-card lift-header-metric" class:lift={isLift} class:header={isHeader}>
-					<div class="metric-label">Wind Shift</div>
-					<div class="metric-value-large">
-						<span class="shift-arrow">{isLift ? '↗' : '↘'}</span>
-						{isLift ? 'LIFT' : 'HEADER'}
-					</div>
-					<div class="metric-delta">{isLift ? '+' : '−'}{Math.abs(liftAmount).toFixed(0)}°</div>
-				</div>
-			{:else}
-				<!-- Empty space when no shift -->
-				<div class="metric-card lift-header-metric">
-					<div class="metric-label">Wind Shift</div>
-					<div class="metric-value-small" style="color: var(--color-text-muted);">No shift</div>
-				</div>
-			{/if}
+			<!-- Lift/Header (Middle Left) -->
+			<LiftHeaderMetricCard {isLift} {isHeader} {liftAmount} />
 
 			<!-- Mode (Middle Right) -->
-			<div class="metric-card mode-metric">
-				<div class="metric-label">Mode</div>
-				<div class="metric-value">{mode}</div>
-			</div>
+			<ModeMetricCard {mode} />
 
 			<!-- Heading (Bottom Left) -->
-			<div class="metric-card heading-metric">
-				<div class="metric-label">
-					<span>Heading</span>
-					<button
-						type="button"
-						class="info-icon"
-						on:click|stopPropagation={() => (showHeadingModal = true)}
-						aria-label="Learn more about Heading"
-					>
-						ℹ️
-					</button>
-				</div>
-				<div class="metric-value-small">HDG {formatCssDeg(boat.rotation)}</div>
-				<div class="metric-target-small">OPT {formatCssDeg(optimalHeading)}</div>
-				<div class="metric-delta">{headingDelta > 0 ? '+' : ''}{formatCssDeg(headingDelta)}</div>
-			</div>
+			<HeadingMetricCard
+				heading={boat.rotation}
+				{optimalHeading}
+				{headingDelta}
+				onInfoClick={() => (showHeadingModal = true)}
+			/>
 
 			<!-- Tack Advantage (Bottom Right) -->
-			<div
-				class="metric-card tack-metric"
-				class:advantage={tackAdvantage < 0}
-				class:disadvantage={tackAdvantage > 0}
-			>
-				<div class="metric-label">
-					<span>Tack Advantage</span>
-					<button
-						type="button"
-						class="info-icon"
-						on:click|stopPropagation={() => (showTackAdvantageModal = true)}
-						aria-label="Learn more about Tack Advantage"
-					>
-						ℹ️
-					</button>
-				</div>
-				<div class="metric-value">{tackAdvantage > 0 ? '+' : ''}{tackAdvantagePercent}%</div>
-			</div>
+			<TackAdvantageMetricCard
+				{tackAdvantage}
+				{tackAdvantagePercent}
+				onInfoClick={() => (showTackAdvantageModal = true)}
+			/>
 		</div>
 
 		<!-- Secondary Info Row -->
