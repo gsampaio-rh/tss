@@ -12,12 +12,48 @@
 	} from '$lib/utils/gameLogic';
 	import { getBoatColorHex } from '$lib/types/game';
 	import Modal from '$lib/presentation/components/shared/Modal.svelte';
+	import { onMount, onDestroy } from 'svelte';
+	import { turnCount } from '$lib/stores/game';
+	import VMGChart from './VMGChart.svelte';
 
 	export let boat: Boat;
 	export let playerIndex: number;
 
 	// Modal state for VMG info
 	let showVMGModal = false;
+	let showChartExplanation = false;
+
+	// VMG history tracking (last 60 seconds, sampled every turn)
+	let vmgHistory: Array<{ time: number; vmg: number; efficiency: number }> = [];
+	const MAX_HISTORY_SECONDS = 60; // Track last 60 seconds
+	let lastHistoryUpdate = 0;
+	
+	// Track VMG history (sample every turn, not every reactive update)
+	$: if (windwardMark && vmg > 0 && $turnCount !== undefined) {
+		const now = Date.now();
+		// Only add new point if enough time has passed (or turn changed)
+		if (now - lastHistoryUpdate > 1000 || vmgHistory.length === 0) {
+			vmgHistory.push({
+				time: now,
+				vmg: vmg,
+				efficiency: vmgEfficiency
+			});
+			lastHistoryUpdate = now;
+			
+			// Remove old data (older than MAX_HISTORY_SECONDS)
+			const cutoffTime = now - MAX_HISTORY_SECONDS * 1000;
+			vmgHistory = vmgHistory.filter(point => point.time >= cutoffTime);
+		}
+	}
+	
+	// Calculate optimal VMG (always BOAT_SPEED when perfectly aligned)
+	$: optimalVMG = BOAT_SPEED;
+	
+	// Reset history when modal closes
+	$: if (!showVMGModal) {
+		vmgHistory = [];
+		lastHistoryUpdate = 0;
+	}
 
 	// Calculate distance to mark
 	function distance(x1: number, y1: number, x2: number, y2: number): number {
@@ -67,6 +103,14 @@
 			)
 		: 0;
 	$: vmgPercent = Math.round(vmgEfficiency * 100);
+	$: vmgStatus = vmgPercent >= 95 ? 'excellent' : vmgPercent >= 85 ? 'good' : 'poor';
+	$: vmgStatusColor = vmgPercent >= 95 ? '#28a745' : vmgPercent >= 85 ? '#ffc107' : '#dc3545';
+	$: vmgStatusLabel = vmgPercent >= 95 ? 'Excellent' : vmgPercent >= 85 ? 'Good' : 'Poor';
+	$: vmgStatusBgColor = vmgPercent >= 95 
+		? 'rgba(40, 167, 69, 0.12)' 
+		: vmgPercent >= 85 
+		? 'rgba(255, 193, 7, 0.12)' 
+		: 'rgba(220, 53, 69, 0.12)';
 
 	// VMG trend
 	let previousVMG = vmg;
@@ -381,62 +425,89 @@
 <!-- VMG Info Modal -->
 <Modal open={showVMGModal} title="VMG (Velocity Made Good)" size="md" on:close={() => (showVMGModal = false)}>
 	<div class="vmg-info-content">
-		<div class="info-intro">
-			<strong>Your speed toward the mark.</strong> This is the most important metric for measuring
-			your progress!
+		<!-- Subtitle -->
+		<p class="vmg-subtitle">Your speed toward the mark</p>
+
+		<!-- Hero Stat: VMG Value -->
+		<div class="vmg-hero">
+			<div class="vmg-value">{vmg.toFixed(1)}</div>
+			<div class="vmg-unit">kn</div>
+			<div class="vmg-label">VMG</div>
 		</div>
 
-		<div class="info-section">
-			<h4>📊 Display</h4>
-			<ul class="info-list">
-				<li>
-					<span class="info-term">VMG Value:</span>
-					<span class="info-desc">Speed toward mark in knots</span>
-				</li>
-				<li>
-					<span class="info-term">Percentage:</span>
-					<span class="info-desc">Efficiency compared to optimal</span>
-				</li>
-				<li>
-					<span class="info-term">Bar:</span>
-					<span class="info-desc">
-						<span class="color-badge color-good"></span> 95%+ (excellent) •
-						<span class="color-badge color-ok"></span> 85-95% (good) •
-						<span class="color-badge color-poor"></span> &lt;85% (poor)
+		<!-- Supporting Indicators -->
+		<div class="vmg-indicators">
+			<div class="vmg-efficiency">
+				<span class="efficiency-label">Efficiency</span>
+				<span class="efficiency-value">{vmgPercent}%</span>
+				<span class="efficiency-badge" style="background-color: {vmgStatusBgColor}; color: {vmgStatusColor}">
+					{vmgStatusLabel}
+				</span>
+				{#if vmgTrend !== 'stable'}
+					<span class="trend-inline" style="color: {vmgStatusColor}">
+						<span class="trend-arrow-inline">{vmgTrend === 'up' ? '▲' : '▼'}</span>
+						<span class="trend-label">{vmgTrend === 'up' ? 'Improving' : 'Declining'}</span>
 					</span>
-				</li>
-			</ul>
+				{/if}
+			</div>
 		</div>
 
-		<div class="info-section">
-			<h4>📈 Trend</h4>
-			<ul class="info-list">
-				<li>
-					<span class="trend-arrow trend-up">▲</span>
-					<span class="info-desc">Increasing (getting better)</span>
-				</li>
-				<li>
-					<span class="trend-arrow trend-down">▼</span>
-					<span class="info-desc">Decreasing (getting worse)</span>
-				</li>
-			</ul>
-		</div>
+		<!-- VMG History Chart -->
+		{#if vmgHistory.length > 0}
+			<div class="vmg-chart-container">
+				<VMGChart
+					history={vmgHistory}
+					optimalVMG={optimalVMG}
+					currentStatusColor={vmgStatusColor}
+				/>
+				<button
+					type="button"
+					class="chart-explanation-toggle"
+					on:click={() => (showChartExplanation = !showChartExplanation)}
+				>
+					How to read this chart {showChartExplanation ? '▾' : '▸'}
+				</button>
+				{#if showChartExplanation}
+					<div class="chart-explanation">
+						<p>
+							VMG over time shows how fast you're closing the distance to the mark.
+							The dashed line is your optimal VMG at this wind angle.
+							Staying in the green zone means you're sailing efficiently toward the mark.
+						</p>
+					</div>
+				{/if}
+			</div>
+		{/if}
 
-		<div class="info-section">
-			<h4>💡 Meaning</h4>
-			<ul class="info-list">
-				<li><strong>High VMG</strong> = Good progress toward mark</li>
-				<li><strong>Low VMG</strong> = Poor progress (even if boat speed is high)</li>
-			</ul>
-		</div>
+		<!-- Divider -->
+		<hr class="vmg-divider" />
 
-		<div class="info-section-action">
-			<h4>🎯 Action</h4>
-			<ul class="action-list">
-				<li>Aim for 95%+ VMG efficiency</li>
-				<li>If &lt;85%, check heading and tack</li>
-				<li>Watch trend - dropping means change needed</li>
-			</ul>
+		<!-- Context-Aware Guidance -->
+		<div class="vmg-guidance">
+			<div class="guidance-section">
+				<h4 class="guidance-title">What this means</h4>
+				<ul class="guidance-list">
+					<li><strong>High VMG</strong> = good progress toward mark</li>
+					<li><strong>Low VMG</strong> = poor progress (even if boat speed is high)</li>
+				</ul>
+			</div>
+
+			<div class="guidance-section">
+				<h4 class="guidance-title">What to do</h4>
+				<div class="contextual-guidance" style="color: {vmgStatusColor}">
+					{#if vmgStatus === 'poor' && vmgTrend === 'down'}
+						You're sailing fast but not toward the mark — adjust heading or tack.
+					{:else if vmgStatus === 'good' && vmgTrend === 'up'}
+						Improving efficiency — hold course.
+					{:else if vmgStatus === 'excellent' && vmgTrend === 'stable'}
+						Optimal VMG — maintain trim and angle.
+					{:else if vmgStatus === 'poor'}
+						Aim for 95%+ efficiency — adjust heading and tack.
+					{:else}
+						Aim for 95%+ efficiency.
+					{/if}
+				</div>
+			</div>
 		</div>
 	</div>
 </Modal>
@@ -896,163 +967,208 @@
 
 	/* VMG Info Modal Styles */
 	.vmg-info-content {
-		line-height: var(--line-height-normal);
 		color: var(--color-text-primary);
-		max-height: 70vh;
-		overflow-y: auto;
+		padding: 0;
 	}
 
-	.info-intro {
-		padding: var(--spacing-sm) var(--spacing-md);
-		background: linear-gradient(135deg, rgba(0, 123, 255, 0.05) 0%, rgba(0, 123, 255, 0.02) 100%);
-		border-radius: var(--radius-md);
-		border-left: 3px solid var(--color-primary);
-		margin-bottom: var(--spacing-md);
+	/* Subtitle */
+	.vmg-subtitle {
+		margin: 0 0 var(--spacing-lg) 0;
 		font-size: var(--font-size-sm);
+		color: #6b7280;
+		font-weight: var(--font-weight-normal);
 		line-height: var(--line-height-normal);
 	}
 
-	.info-intro strong {
-		color: var(--color-primary);
+	/* Hero Stat: VMG Value */
+	.vmg-hero {
+		display: flex;
+		align-items: baseline;
+		gap: var(--spacing-xs);
+		margin-bottom: var(--spacing-lg);
+		flex-wrap: wrap;
+	}
+
+	.vmg-value {
+		font-size: 44px;
+		font-weight: 600;
+		line-height: 1;
+		color: var(--color-text-primary);
+	}
+
+	.vmg-unit {
+		font-size: 18px;
+		font-weight: var(--font-weight-normal);
+		color: var(--color-text-secondary);
+		opacity: 0.6;
+		margin-left: 2px;
+	}
+
+	.vmg-label {
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+		color: var(--color-text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		margin-left: auto;
+		align-self: flex-end;
+		padding-bottom: 4px;
+	}
+
+	/* Supporting Indicators */
+	.vmg-indicators {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-sm);
+		margin-bottom: var(--spacing-lg);
+	}
+
+	.vmg-efficiency {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		flex-wrap: wrap;
+		line-height: 1.5;
+	}
+
+	.efficiency-label {
+		font-size: var(--font-size-sm);
+		color: var(--color-text-muted);
+		font-weight: var(--font-weight-normal);
+	}
+
+	.efficiency-value {
+		font-size: var(--font-size-lg);
 		font-weight: var(--font-weight-semibold);
+		color: var(--color-text-primary);
 	}
 
-	.info-section {
-		margin-bottom: var(--spacing-md);
-		padding-bottom: var(--spacing-sm);
-		border-bottom: 1px solid var(--color-border-light);
+	.efficiency-badge {
+		display: inline-flex;
+		align-items: center;
+		padding: 2px 10px;
+		border-radius: 12px;
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+		text-transform: capitalize;
 	}
 
-	.info-section:last-of-type {
-		border-bottom: none;
-		margin-bottom: 0;
-		padding-bottom: 0;
+	.trend-inline {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-normal);
+		margin-left: var(--spacing-xs);
 	}
 
-	.info-section h4 {
+	.trend-arrow-inline {
+		font-size: 12px;
+		line-height: 1;
+	}
+
+	.trend-label {
+		font-weight: var(--font-weight-normal);
+	}
+
+	/* Divider */
+	.vmg-divider {
+		border: none;
+		border-top: 1px solid var(--color-border-light);
+		margin: var(--spacing-lg) 0;
+	}
+
+	/* Guidance Section */
+	.vmg-guidance {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-md);
+	}
+
+	.guidance-section {
+		/* No special styling - keep neutral */
+	}
+
+	.guidance-title {
 		margin: 0 0 var(--spacing-sm) 0;
 		font-size: var(--font-size-base);
 		font-weight: var(--font-weight-semibold);
 		color: var(--color-text-primary);
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-xs);
 	}
 
-	.info-list {
+	.guidance-list {
 		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-
-	.info-list > li {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-sm);
-		margin-bottom: var(--spacing-xs);
-		font-size: var(--font-size-sm);
-		line-height: var(--line-height-normal);
-	}
-
-	.info-list > li:last-child {
-		margin-bottom: 0;
-	}
-
-	.info-term {
-		font-weight: var(--font-weight-semibold);
-		color: var(--color-text-primary);
-		min-width: 90px;
-		flex-shrink: 0;
-	}
-
-	.info-desc {
-		color: var(--color-text-secondary);
-		flex: 1;
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-xs);
-		flex-wrap: wrap;
-	}
-
-	.color-badge {
-		display: inline-block;
-		width: 12px;
-		height: 12px;
-		border-radius: 2px;
-		vertical-align: middle;
-		border: 1px solid rgba(0, 0, 0, 0.1);
-	}
-
-	.color-badge.color-good {
-		background: #28a745;
-	}
-
-	.color-badge.color-ok {
-		background: #ffc107;
-	}
-
-	.color-badge.color-poor {
-		background: #dc3545;
-	}
-
-	.trend-arrow {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 20px;
-		height: 20px;
-		border-radius: 3px;
-		font-size: 12px;
-		font-weight: var(--font-weight-bold);
-		flex-shrink: 0;
-	}
-
-	.trend-arrow.trend-up {
-		background: rgba(40, 167, 69, 0.1);
-		color: #28a745;
-	}
-
-	.trend-arrow.trend-down {
-		background: rgba(220, 53, 69, 0.1);
-		color: #dc3545;
-	}
-
-	.info-section-action {
-		background: linear-gradient(135deg, rgba(40, 167, 69, 0.05) 0%, rgba(40, 167, 69, 0.02) 100%);
-		padding: var(--spacing-sm) var(--spacing-md);
-		border-radius: var(--radius-md);
-		border-left: 3px solid var(--color-success);
-		margin-top: var(--spacing-sm);
-	}
-
-	.info-section-action h4 {
-		margin-bottom: var(--spacing-xs);
-	}
-
-	.action-list {
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-
-	.action-list li {
-		position: relative;
 		padding-left: var(--spacing-md);
+		list-style: none;
+	}
+
+	.guidance-list li {
 		margin-bottom: var(--spacing-xs);
 		font-size: var(--font-size-sm);
 		line-height: var(--line-height-normal);
 		color: var(--color-text-secondary);
+		position: relative;
+		padding-left: var(--spacing-sm);
 	}
 
-	.action-list li:last-child {
-		margin-bottom: 0;
-	}
-
-	.action-list li::before {
-		content: '→';
+	.guidance-list li::before {
+		content: '•';
 		position: absolute;
 		left: 0;
-		color: var(--color-success);
-		font-weight: var(--font-weight-bold);
+		color: var(--color-text-muted);
+	}
+
+	.guidance-list li:last-child {
+		margin-bottom: 0;
+	}
+
+	.guidance-list strong {
+		color: var(--color-text-primary);
+		font-weight: var(--font-weight-semibold);
+	}
+
+	/* VMG Chart Container */
+	.vmg-chart-container {
+		margin: var(--spacing-lg) 0;
+		padding: var(--spacing-md);
+		background: var(--color-bg-primary);
+		border-radius: var(--radius-md);
+		border: 1px solid var(--color-border-light);
+	}
+
+	.chart-explanation-toggle {
+		background: none;
+		border: none;
+		color: var(--color-text-muted);
+		font-size: var(--font-size-xs);
+		cursor: pointer;
+		padding: var(--spacing-xs) 0;
+		margin-top: var(--spacing-sm);
+		text-align: left;
+		width: 100%;
+		transition: color var(--transition-base);
+	}
+
+	.chart-explanation-toggle:hover {
+		color: var(--color-text-primary);
+	}
+
+	.chart-explanation {
+		margin-top: var(--spacing-sm);
+		padding-top: var(--spacing-sm);
+		border-top: 1px solid var(--color-border-light);
+		font-size: var(--font-size-xs);
+		color: var(--color-text-secondary);
+		line-height: var(--line-height-normal);
+	}
+
+	.contextual-guidance {
+		font-size: var(--font-size-sm);
+		line-height: var(--line-height-normal);
+		padding: var(--spacing-sm);
+		background: var(--color-bg-primary);
+		border-radius: var(--radius-sm);
+		border-left: 3px solid currentColor;
+		margin-top: var(--spacing-xs);
 	}
 </style>
