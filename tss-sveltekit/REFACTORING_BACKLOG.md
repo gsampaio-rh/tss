@@ -32,11 +32,11 @@ This document tracks refactoring tasks to improve code quality, maintainability,
 - Each modal contains its own CSS
 - **Result**: Reduced PlayerTacticalCard by 473 lines
 
-**1.2 Extract Metric Cards into Reusable Components**
-- Create `MetricCard.svelte` base component
-- Extract `VMGMetricCard.svelte`, `ATWMetricCard.svelte`, `HeadingMetricCard.svelte`, etc.
-- Each card handles its own calculations and display logic
-- **Estimated**: 1 day
+**1.2 Extract Metric Cards into Reusable Components** ✅ COMPLETED
+- Created `MetricCard.svelte` base component
+- Created `VMGMetricCard.svelte`, `ATWMetricCard.svelte`, `HeadingMetricCard.svelte`, `TackAdvantageMetricCard.svelte`, `ModeMetricCard.svelte`, `LiftHeaderMetricCard.svelte`
+- Each card handles its own display logic and CSS
+- **Result**: Reduced PlayerTacticalCard by 166 lines
 
 **1.3 Extract Tell Tales into Separate Component**
 - Create `TellTales.svelte` component
