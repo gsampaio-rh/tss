@@ -220,6 +220,20 @@
 		return 'FOOTING';
 	})();
 
+	// Tell Tales Indicators
+	$: isPinching = mode === 'PINCHING';
+	$: isFooting = mode === 'FOOTING';
+	
+	// When pinching (too close to wind): windward tell tale goes down (stalled)
+	// When footing (too wide): leeward tell tale goes down (stalled)
+	// Leeward tell tale: red and down when footing, green and sideways otherwise
+	$: leewardColor = isFooting ? '#dc3545' : '#28a745';
+	$: leewardDirection = isFooting ? 'down' : 'sideways';
+	
+	// Windward tell tale: red and down when pinching, green and sideways otherwise
+	$: windwardColor = isPinching ? '#dc3545' : '#28a745';
+	$: windwardDirection = isPinching ? 'down' : 'sideways';
+
 	// 7. Tack Advantage
 	$: oppositeTack = !boat.tack;
 	$: oppositeOptHeading = getOptimalHeading(oppositeTack, windDir, true);
@@ -349,6 +363,39 @@
 					{decisionFlag}
 				</div>
 			{/if}
+		</div>
+
+		<!-- Tell Tales Indicators -->
+		<div class="tell-tales-container">
+			<div class="tell-tale-label">Tell Tales</div>
+			<div class="tell-tales">
+				<!-- Leeward Tell Tale -->
+				<div class="tell-tale" class:ok={leewardColor === '#28a745'} class:bad={leewardColor === '#dc3545'}>
+					<svg width="16" height="16" viewBox="0 0 16 16" class="tell-tale-icon">
+						{#if leewardDirection === 'sideways'}
+							<!-- Green triangle pointing right (leeward) -->
+							<polygon points="4,8 12,4 12,12" fill={leewardColor} />
+						{:else}
+							<!-- Red triangle pointing down (when pinching) -->
+							<polygon points="4,4 12,4 8,12" fill={leewardColor} />
+						{/if}
+					</svg>
+					<span class="tell-tale-label-small">Leeward</span>
+				</div>
+				<!-- Windward Tell Tale -->
+				<div class="tell-tale" class:ok={windwardColor === '#28a745'} class:bad={windwardColor === '#dc3545'}>
+					<svg width="16" height="16" viewBox="0 0 16 16" class="tell-tale-icon">
+						{#if windwardDirection === 'sideways'}
+							<!-- Green triangle pointing left (windward) -->
+							<polygon points="12,8 4,4 4,12" fill={windwardColor} />
+						{:else}
+							<!-- Red triangle pointing down (when footing) -->
+							<polygon points="4,4 12,4 8,12" fill={windwardColor} />
+						{/if}
+					</svg>
+					<span class="tell-tale-label-small">Windward</span>
+				</div>
+			</div>
 		</div>
 
 		<!-- Lift/Header Bar (always visible) -->
@@ -1116,6 +1163,59 @@
 		50% {
 			opacity: 0.7;
 		}
+	}
+
+	/* Tell Tales Indicators */
+	.tell-tales-container {
+		margin-bottom: var(--spacing-md);
+		padding-bottom: var(--spacing-sm);
+		border-bottom: 1px solid var(--color-border-light);
+	}
+
+	.tell-tale-label {
+		font-size: var(--font-size-xs);
+		color: var(--color-text-muted);
+		margin-bottom: 6px;
+		font-weight: var(--font-weight-semibold);
+	}
+
+	.tell-tales {
+		display: flex;
+		gap: var(--spacing-md);
+		align-items: center;
+		justify-content: center;
+	}
+
+	.tell-tale {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 4px;
+	}
+
+	.tell-tale-icon {
+		transition: transform 0.2s ease;
+	}
+
+	.tell-tale.ok .tell-tale-icon {
+		filter: drop-shadow(0 0 2px rgba(40, 167, 69, 0.5));
+	}
+
+	.tell-tale.bad .tell-tale-icon {
+		filter: drop-shadow(0 0 2px rgba(220, 53, 69, 0.5));
+		animation: shake 0.5s ease-in-out;
+	}
+
+	@keyframes shake {
+		0%, 100% { transform: translateX(0); }
+		25% { transform: translateX(-2px); }
+		75% { transform: translateX(2px); }
+	}
+
+	.tell-tale-label-small {
+		font-size: var(--font-size-xs);
+		color: var(--color-text-muted);
+		font-weight: var(--font-weight-medium);
 	}
 
 	/* Lift/Header Bar */
