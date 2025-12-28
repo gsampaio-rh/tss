@@ -195,8 +195,16 @@
 			stroke="#fff"
 			stroke-width="2"
 			class="current-point"
+			role="button"
+			aria-label="Current VMG: {currentVMG.toFixed(2)} kn ({currentEfficiency}%)"
+			tabindex="0"
 			on:mouseenter={() => (showTooltip = true)}
 			on:mouseleave={() => (showTooltip = false)}
+			on:keydown={(e) => {
+				if (e.key === 'Enter' || e.key === ' ') {
+					showTooltip = !showTooltip;
+				}
+			}}
 			style="animation: pulse 2s ease-in-out infinite;"
 		/>
 		<!-- Tooltip -->
