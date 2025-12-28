@@ -50,11 +50,11 @@ This document tracks refactoring tasks to improve code quality, maintainability,
 - Refactored all modal components to use the composable
 - **Result**: Eliminated code duplication, consistent tracking logic
 
-**1.5 Extract Tactical Calculations into Service**
-- Create `TacticalCardService.ts` in domain/application layer
-- Move calculation logic out of component
-- Component becomes presentation-only
-- **Estimated**: 1 day
+**1.5 Extract Tactical Calculations into Service** ✅ COMPLETED
+- Created `TacticalCardService.ts` in application layer
+- Moved all calculation logic out of component
+- Component is now presentation-only
+- **Result**: Reduced PlayerTacticalCard by 72 lines (from 747 to 675)
 
 **1.6 Extract CSS into Separate Stylesheet**
 - Move CSS to `PlayerTacticalCard.module.css` or separate `<style>` files
