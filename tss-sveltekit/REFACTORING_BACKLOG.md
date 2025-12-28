@@ -109,12 +109,14 @@ components/game/
 
 ---
 
-### 2. Refactor BoatTacticalIndicators.svelte (545 lines)
+### 2. Refactor BoatTacticalIndicators.svelte (545 lines → 250 lines) ✅ MOSTLY COMPLETED
 
 **Priority**: 🟡 Medium  
-**Status**: Not Started  
+**Status**: ✅ Mostly Completed  
 **Estimated Effort**: 1-2 days  
-**Current Size**: 545 lines
+**Original Size**: 545 lines  
+**Current Size**: 250 lines  
+**Reduction**: 54% (295 lines removed)
 
 #### Problem
 Component handles multiple responsibilities:
@@ -122,10 +124,26 @@ Component handles multiple responsibilities:
 - Visual indicators rendering
 - State management
 
-#### Proposed Refactoring
-- Extract calculation logic to `TacticalCalculationService`
-- Split into smaller indicator components
-- Use composition pattern
+#### Completed Refactoring
+
+**2.1 Extract Calculation Logic** ✅ COMPLETED
+- Reused `TacticalCardService` (no duplicate code!)
+- Removed all tactical calculation logic from component
+- **Result**: Reduced component by 51 lines
+
+**2.2 Extract Clock Position Utilities** ✅ COMPLETED
+- Created `clockPosition.ts` utility
+- Extracted `getClockPosition()` function
+- **Result**: Reusable utility for clock-style positioning
+
+**2.3 Extract CSS** ✅ COMPLETED
+- Created `BoatTacticalIndicators.css`
+- Moved all styles to external stylesheet
+- **Result**: Reduced component by 244 lines (from 494 to 250)
+
+#### Remaining Work (Optional)
+- Extract individual indicator components (ATW, VMG, Lift/Header, Mode, Tack Advantage, Power, Speed, Heading)
+- **Note**: Component is now manageable at 250 lines, so this is optional
 
 ---
 
