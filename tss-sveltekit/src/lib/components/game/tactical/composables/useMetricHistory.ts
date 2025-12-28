@@ -1,4 +1,4 @@
-import type { Readable } from 'svelte/store';
+import { writable } from 'svelte/store';
 
 export interface MetricHistoryEntry<T> {
 	turn: number;
@@ -11,9 +11,9 @@ export interface UseMetricHistoryOptions {
 }
 
 /**
- * Creates a reactive history tracker for a metric.
+ * Creates a reactive history tracker for a metric using a Svelte store.
  * 
- * This is a helper function that returns the initial state and a function
+ * This is a helper function that returns a reactive store and a function
  * to update the history. Use it in Svelte components like this:
  * 
  * ```svelte
@@ -38,30 +38,38 @@ export function useMetricHistory<T>(
 	getValue: () => T,
 	options: UseMetricHistoryOptions = {}
 ): {
-	history: MetricHistoryEntry<T>[];
+	history: ReturnType<typeof writable<MetricHistoryEntry<T>[]>>;
 	track: (turn: number, value: T) => void;
 	clear: () => void;
 } {
 	const { maxTurns = 60 } = options;
-	const history: MetricHistoryEntry<T>[] = [];
+	const history = writable<MetricHistoryEntry<T>[]>([]);
 
 	function track(turn: number, value: T) {
+		console.log('[useMetricHistory] track called', { turn, value });
 		if (value !== null && value !== undefined) {
-			history.push({
-				turn,
-				value,
-				timestamp: Date.now()
-			});
+			history.update((current) => {
+				const updated = [
+					...current,
+					{
+						turn,
+						value,
+						timestamp: Date.now()
+					}
+				];
 
-			// Keep only last maxTurns entries
-			if (history.length > maxTurns) {
-				history.splice(0, history.length - maxTurns);
-			}
+				// Keep only last maxTurns entries
+				const final = updated.length > maxTurns ? updated.slice(-maxTurns) : updated;
+				console.log('[useMetricHistory] history updated', { turn, historyLength: final.length, lastEntry: final[final.length - 1] });
+				return final;
+			});
+		} else {
+			console.log('[useMetricHistory] value is null/undefined, skipping', { value });
 		}
 	}
 
 	function clear() {
-		history.length = 0;
+		history.set([]);
 	}
 
 	return {

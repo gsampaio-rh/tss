@@ -18,21 +18,37 @@
 	let showChartExplanation = false;
 
 	// VMG history tracking using composable
-	const { history: vmgHistoryRaw, track: trackVMG } = useMetricHistory(() => ({ vmg, efficiency: vmgPercent }), { maxTurns: 60 });
+	const { history: vmgHistoryStore, track: trackVMG } = useMetricHistory(() => ({ vmg, efficiency: vmgPercent }), { maxTurns: 60 });
 	let lastTrackedTurn = -1;
 
-	// Transform history to match chart format
-	$: vmgHistory = vmgHistoryRaw.map(entry => ({
-		time: entry.timestamp,
-		vmg: entry.value.vmg,
-		efficiency: entry.value.efficiency,
-		turn: entry.turn
-	}));
+	// Track VMG history (sample every turn) - this triggers reactivity
+	$: {
+		console.log('[VMGModal] Reactive statement fired', {
+			windwardMark: !!windwardMark,
+			vmg,
+			turnCount: $turnCount,
+			lastTrackedTurn,
+			shouldTrack: windwardMark && vmg > 0 && $turnCount !== undefined && $turnCount !== lastTrackedTurn
+		});
+		if (windwardMark && vmg > 0 && $turnCount !== undefined && $turnCount !== lastTrackedTurn) {
+			console.log('[VMGModal] Tracking VMG', { turn: $turnCount, vmg, efficiency: vmgPercent });
+			trackVMG($turnCount, { vmg, efficiency: vmgPercent });
+			lastTrackedTurn = $turnCount;
+		}
+	}
 
-	// Track VMG history (sample every turn)
-	$: if (windwardMark && vmg > 0 && $turnCount !== undefined && $turnCount !== lastTrackedTurn) {
-		trackVMG($turnCount, { vmg, efficiency: vmgPercent });
-		lastTrackedTurn = $turnCount;
+	// Transform history to match chart format - reactive to store changes
+	let vmgHistory: Array<{ time: number; vmg: number; efficiency: number; turn: number }> = [];
+	$: {
+		const raw = $vmgHistoryStore;
+		console.log('[VMGModal] Transforming history', { rawLength: raw.length, rawHistory: raw });
+		vmgHistory = raw.map(entry => ({
+			time: entry.timestamp,
+			vmg: entry.value.vmg,
+			efficiency: entry.value.efficiency,
+			turn: entry.turn
+		}));
+		console.log('[VMGModal] Transformed history', { length: vmgHistory.length, history: vmgHistory });
 	}
 
 	function handleClose() {
@@ -73,6 +89,7 @@
 		</div>
 
 		<!-- VMG History Chart -->
+		<!-- DEBUG: vmgHistory.length = {vmgHistory.length}, vmgHistoryRaw.length = {vmgHistoryRaw.length} -->
 		{#if vmgHistory.length > 0}
 			<div class="vmg-chart-container">
 				<div class="chart-header">

@@ -20,26 +20,30 @@
 	let showChartExplanation = false;
 
 	// Heading history tracking using composable
-	const { history: headingHistoryRaw, track: trackHeading } = useMetricHistory(() => ({ 
+	const { history: headingHistoryStore, track: trackHeading } = useMetricHistory(() => ({ 
 		heading: boat.rotation, 
 		optimalHeading, 
 		delta: headingDelta 
 	}), { maxTurns: 60 });
 	let lastTrackedTurn = -1;
 
-	// Transform history to match chart format
-	$: headingHistory = headingHistoryRaw.map(entry => ({
-		time: entry.timestamp,
-		heading: entry.value.heading,
-		optimalHeading: entry.value.optimalHeading,
-		delta: entry.value.delta,
-		turn: entry.turn
-	}));
-
-	// Track Heading history
+	// Track Heading history - this triggers reactivity
 	$: if ($turnCount !== undefined && $turnCount !== lastTrackedTurn) {
 		trackHeading($turnCount, { heading: boat.rotation, optimalHeading, delta: headingDelta });
 		lastTrackedTurn = $turnCount;
+	}
+
+	// Transform history to match chart format - reactive to store changes
+	let headingHistory: Array<{ time: number; heading: number; optimalHeading: number; delta: number; turn: number }> = [];
+	$: {
+		const raw = $headingHistoryStore;
+		headingHistory = raw.map(entry => ({
+			time: entry.timestamp,
+			heading: entry.value.heading,
+			optimalHeading: entry.value.optimalHeading,
+			delta: entry.value.delta,
+			turn: entry.turn
+		}));
 	}
 
 	function handleClose() {

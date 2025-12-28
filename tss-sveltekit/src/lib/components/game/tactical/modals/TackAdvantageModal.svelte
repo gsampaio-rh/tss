@@ -17,24 +17,34 @@
 	let showChartExplanation = false;
 
 	// Tack Advantage history tracking using composable
-	const { history: tackAdvantageHistoryRaw, track: trackTackAdvantage } = useMetricHistory(() => ({ 
+	const { history: tackAdvantageHistoryStore, track: trackTackAdvantage } = useMetricHistory(() => ({ 
 		advantage: tackAdvantage, 
 		percent: tackAdvantagePercent 
 	}), { maxTurns: 60 });
 	let lastTrackedTurn = -1;
 
-	// Transform history to match chart format
-	$: tackAdvantageHistory = tackAdvantageHistoryRaw.map(entry => ({
-		time: entry.timestamp,
-		advantage: entry.value.advantage,
-		percent: entry.value.percent,
-		turn: entry.turn
-	}));
-
-	// Track Tack Advantage history
+	// Track Tack Advantage history - this triggers reactivity
 	$: if ($turnCount !== undefined && $turnCount !== lastTrackedTurn) {
 		trackTackAdvantage($turnCount, { advantage: tackAdvantage, percent: tackAdvantagePercent });
 		lastTrackedTurn = $turnCount;
+	}
+
+	// Transform history to match chart format - reactive to store changes
+	let tackAdvantageHistory: Array<{ time: number; advantage: number; percent: number; turn: number }> = [];
+	$: {
+		const raw = $tackAdvantageHistoryStore;
+		console.log('[TackAdvantageModal] Transforming history', { raw, isArray: Array.isArray(raw), rawLength: raw?.length });
+		if (Array.isArray(raw)) {
+			tackAdvantageHistory = raw.map(entry => ({
+				time: entry.timestamp,
+				advantage: entry.value.advantage,
+				percent: entry.value.percent,
+				turn: entry.turn
+			}));
+			console.log('[TackAdvantageModal] Transformed history', { length: tackAdvantageHistory.length });
+		} else {
+			tackAdvantageHistory = [];
+		}
 	}
 
 	function handleClose() {
