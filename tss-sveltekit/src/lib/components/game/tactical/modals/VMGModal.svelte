@@ -22,33 +22,21 @@
 	let lastTrackedTurn = -1;
 
 	// Track VMG history (sample every turn) - this triggers reactivity
-	$: {
-		console.log('[VMGModal] Reactive statement fired', {
-			windwardMark: !!windwardMark,
-			vmg,
-			turnCount: $turnCount,
-			lastTrackedTurn,
-			shouldTrack: windwardMark && vmg > 0 && $turnCount !== undefined && $turnCount !== lastTrackedTurn
-		});
-		if (windwardMark && vmg > 0 && $turnCount !== undefined && $turnCount !== lastTrackedTurn) {
-			console.log('[VMGModal] Tracking VMG', { turn: $turnCount, vmg, efficiency: vmgPercent });
-			trackVMG($turnCount, { vmg, efficiency: vmgPercent });
-			lastTrackedTurn = $turnCount;
-		}
+	$: if (windwardMark && vmg > 0 && $turnCount !== undefined && $turnCount !== lastTrackedTurn) {
+		trackVMG($turnCount, { vmg, efficiency: vmgPercent });
+		lastTrackedTurn = $turnCount;
 	}
 
 	// Transform history to match chart format - reactive to store changes
 	let vmgHistory: Array<{ time: number; vmg: number; efficiency: number; turn: number }> = [];
 	$: {
 		const raw = $vmgHistoryStore;
-		console.log('[VMGModal] Transforming history', { rawLength: raw.length, rawHistory: raw });
 		vmgHistory = raw.map(entry => ({
 			time: entry.timestamp,
 			vmg: entry.value.vmg,
 			efficiency: entry.value.efficiency,
 			turn: entry.turn
 		}));
-		console.log('[VMGModal] Transformed history', { length: vmgHistory.length, history: vmgHistory });
 	}
 
 	function handleClose() {
