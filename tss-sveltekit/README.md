@@ -98,6 +98,7 @@ src/lib/
 
 ### Other
 
+- [Product Backlog](./BACKLOG.md) - Upcoming features and improvements
 - [Release Notes](./docs/RELEASE_NOTES.md) - Version history and release notes
 
 ## Key Technologies
