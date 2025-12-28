@@ -46,7 +46,6 @@ export function useMetricHistory<T>(
 	const history = writable<MetricHistoryEntry<T>[]>([]);
 
 	function track(turn: number, value: T) {
-		console.log('[useMetricHistory] track called', { turn, value });
 		if (value !== null && value !== undefined) {
 			history.update((current) => {
 				const updated = [
@@ -59,12 +58,8 @@ export function useMetricHistory<T>(
 				];
 
 				// Keep only last maxTurns entries
-				const final = updated.length > maxTurns ? updated.slice(-maxTurns) : updated;
-				console.log('[useMetricHistory] history updated', { turn, historyLength: final.length, lastEntry: final[final.length - 1] });
-				return final;
+				return updated.length > maxTurns ? updated.slice(-maxTurns) : updated;
 			});
-		} else {
-			console.log('[useMetricHistory] value is null/undefined, skipping', { value });
 		}
 	}
 

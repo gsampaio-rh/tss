@@ -89,7 +89,6 @@
 		</div>
 
 		<!-- VMG History Chart -->
-		<!-- DEBUG: vmgHistory.length = {vmgHistory.length}, vmgHistoryRaw.length = {vmgHistoryRaw.length} -->
 		{#if vmgHistory.length > 0}
 			<div class="vmg-chart-container">
 				<div class="chart-header">

@@ -33,7 +33,6 @@
 	let tackAdvantageHistory: Array<{ time: number; advantage: number; percent: number; turn: number }> = [];
 	$: {
 		const raw = $tackAdvantageHistoryStore;
-		console.log('[TackAdvantageModal] Transforming history', { raw, isArray: Array.isArray(raw), rawLength: raw?.length });
 		if (Array.isArray(raw)) {
 			tackAdvantageHistory = raw.map(entry => ({
 				time: entry.timestamp,
@@ -41,7 +40,6 @@
 				percent: entry.value.percent,
 				turn: entry.turn
 			}));
-			console.log('[TackAdvantageModal] Transformed history', { length: tackAdvantageHistory.length });
 		} else {
 			tackAdvantageHistory = [];
 		}

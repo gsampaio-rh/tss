@@ -23,31 +23,21 @@
 	let lastTrackedTurn = -1;
 
 	// Track ATW history (sample every turn) - this triggers reactivity
-	$: {
-		console.log('[ATWModal] Reactive statement fired', {
-			turnCount: $turnCount,
-			lastTrackedTurn,
-			shouldTrack: $turnCount !== undefined && $turnCount !== lastTrackedTurn
-		});
-		if ($turnCount !== undefined && $turnCount !== lastTrackedTurn) {
-			console.log('[ATWModal] Tracking ATW', { turn: $turnCount, atw, delta: atwDelta });
-			trackATW($turnCount, { atw, delta: atwDelta });
-			lastTrackedTurn = $turnCount;
-		}
+	$: if ($turnCount !== undefined && $turnCount !== lastTrackedTurn) {
+		trackATW($turnCount, { atw, delta: atwDelta });
+		lastTrackedTurn = $turnCount;
 	}
 
 	// Transform history to match chart format - reactive to store changes
 	let atwHistory: Array<{ time: number; atw: number; delta: number; turn: number }> = [];
 	$: {
 		const raw = $atwHistoryStore;
-		console.log('[ATWModal] Transforming history', { rawLength: raw.length });
 		atwHistory = raw.map(entry => ({
 			time: entry.timestamp,
 			atw: entry.value.atw,
 			delta: entry.value.delta,
 			turn: entry.turn
 		}));
-		console.log('[ATWModal] Transformed history', { length: atwHistory.length });
 	}
 
 	function handleClose() {
