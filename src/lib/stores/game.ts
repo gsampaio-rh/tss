@@ -1,6 +1,6 @@
 /**
- * Game Store - Compatibility Layer
- * Re-exports from gameStore.ts and gameActions.ts for backward compatibility
+ * Game Store
+ * Re-exports from gameStore.ts and gameActions.ts for convenient access
  */
 
 // Re-export all state stores

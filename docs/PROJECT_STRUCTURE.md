@@ -33,8 +33,8 @@ tss/
 │   │   │   ├── rendering/       # Canvas rendering utilities
 │   │   │   └── stores/          # Store utilities (middleware, composition)
 │   │   │
-│   │   ├── components/          # Legacy components (being migrated to presentation/)
-│   │   ├── stores/              # Legacy stores (being migrated)
+│   │   ├── components/          # Game components (game canvas, boats, tactical cards, etc.)
+│   │   ├── stores/              # Application state stores (game state, settings, wind scenarios)
 │   │   ├── types/               # TypeScript type definitions
 │   │   └── utils/               # Utility functions
 │   │
@@ -96,15 +96,15 @@ tss/
 - **Components**: Svelte components organized by concern (layout, shared, game)
 - **Hooks**: Reusable Svelte hooks for common patterns
 
-## Migration Status
+## Architecture Status
 
-The codebase is currently in a migration state:
+The codebase follows Clean Architecture principles:
 
-- ✅ **Domain Layer**: Fully migrated to Clean Architecture
-- ✅ **Application Layer**: Fully migrated with use cases and services
-- ✅ **Infrastructure Layer**: Core infrastructure in place
-- ✅ **Presentation Layer**: New components following Clean Architecture
-- 🔄 **Legacy Components**: `src/lib/components/` and `src/lib/stores/` are being gradually migrated to presentation layer
+- ✅ **Domain Layer**: Core business logic with entities, value objects, and domain services
+- ✅ **Application Layer**: Use cases and application services for orchestration
+- ✅ **Infrastructure Layer**: Technical implementations (logging, error handling, stores)
+- ✅ **Presentation Layer**: UI components organized by concern (layout, shared, game)
+- ✅ **Components & Stores**: Game-specific components and application state stores are organized in `src/lib/components/` and `src/lib/stores/` respectively
 
 ## File Naming Conventions
 

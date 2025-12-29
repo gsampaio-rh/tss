@@ -1,6 +1,6 @@
 /**
  * Game Adapter
- * Converts between GameEntity and legacy Game class for backward compatibility
+ * Converts between GameEntity (domain) and Game (application data type)
  */
 
 import { GameEntity } from './Game';
@@ -12,45 +12,45 @@ import type { WindScenario } from '../../types/wind';
 import { WindCalculationService } from '../services/WindCalculationService';
 
 /**
- * Convert GameEntity to legacy Game class
- * This maintains backward compatibility with existing code
+ * Convert GameEntity to Game data type
+ * Converts domain entity to application data type for use in stores and services
  */
-export function gameEntityToLegacyGame(gameEntity: GameEntity): Game {
-	const legacy = new Game();
-	const entityData = gameEntity.toLegacyGame();
+export function gameEntityToGame(gameEntity: GameEntity): Game {
+	const game = new Game();
+	const entityData = gameEntity.toGameData();
 	
 	// Copy all properties
-	legacy.players = entityData.players;
-	legacy.width = entityData.width;
-	legacy.height = entityData.height;
-	legacy.marks = entityData.marks;
-	legacy.wind = entityData.wind;
-	legacy.currentStartPriority = entityData.currentStartPriority;
-	legacy.turncount = entityData.turncount;
-	legacy.isStart = entityData.isStart;
-	legacy.name = entityData.name;
+	game.players = entityData.players;
+	game.width = entityData.width;
+	game.height = entityData.height;
+	game.marks = entityData.marks;
+	game.wind = entityData.wind;
+	game.currentStartPriority = entityData.currentStartPriority;
+	game.turncount = entityData.turncount;
+	game.isStart = entityData.isStart;
+	game.name = entityData.name;
 	
-	return legacy;
+	return game;
 }
 
 /**
- * Convert legacy Game class to GameEntity
+ * Convert Game data type to GameEntity
  */
-export function legacyGameToGameEntity(legacyGame: Game): GameEntity {
+export function gameToGameEntity(gameData: Game): GameEntity {
 	const gameEntity = new GameEntity();
 	
 	// Copy properties
-	gameEntity.setName(legacyGame.name);
-	gameEntity.setDimensions(legacyGame.width, legacyGame.height);
-	gameEntity.setWind([...legacyGame.wind]);
-	gameEntity.setTurnCount(legacyGame.turncount);
-	gameEntity.setIsStart(legacyGame.isStart);
-	gameEntity.setCurrentStartPriority(legacyGame.currentStartPriority);
-	gameEntity.setPlayers([...legacyGame.players]);
+	gameEntity.setName(gameData.name);
+	gameEntity.setDimensions(gameData.width, gameData.height);
+	gameEntity.setWind([...gameData.wind]);
+	gameEntity.setTurnCount(gameData.turncount);
+	gameEntity.setIsStart(gameData.isStart);
+	gameEntity.setCurrentStartPriority(gameData.currentStartPriority);
+	gameEntity.setPlayers([...gameData.players]);
 	
 	// Convert marks
 	gameEntity.setMarks(
-		legacyGame.marks.map(m => 
+		gameData.marks.map(m => 
 			new MarkEntity(new Position(m.x, m.y), m.type)
 		)
 	);

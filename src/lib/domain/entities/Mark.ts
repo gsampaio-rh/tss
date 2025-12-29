@@ -32,8 +32,8 @@ export class MarkEntity {
 		return this._position.equals(other._position) && this._type === other._type;
 	}
 
-	// Convert to legacy format for compatibility
-	toLegacyMark(): { x: number; y: number; type: MarkType } {
+	// Convert to Mark data format
+	toMarkData(): { x: number; y: number; type: MarkType } {
 		return {
 			x: this._position.x,
 			y: this._position.y,

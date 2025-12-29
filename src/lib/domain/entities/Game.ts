@@ -66,7 +66,7 @@ export class GameEntity {
 	}
 
 	get turncount(): number {
-		return this._turnCount; // Legacy compatibility
+		return this._turnCount; // Alias for compatibility with Game data type
 	}
 
 	get isStart(): boolean {
@@ -290,9 +290,10 @@ export class GameEntity {
 	}
 
 	/**
-	 * Convert to legacy Game format for compatibility
+	 * Convert to Game data format
+	 * Converts domain entity to application data type
 	 */
-	toLegacyGame(): {
+	toGameData(): {
 		players: Boat[];
 		width: number;
 		height: number;
@@ -307,7 +308,7 @@ export class GameEntity {
 			players: this._players,
 			width: this._width,
 			height: this._height,
-			marks: this._marks.map(m => m.toLegacyMark()),
+			marks: this._marks.map(m => m.toMarkData()),
 			wind: [...this._wind],
 			currentStartPriority: this._currentStartPriority,
 			turncount: this._turnCount,

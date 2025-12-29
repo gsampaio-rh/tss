@@ -11,7 +11,7 @@
 import { GameEngineService } from '$lib/domain/services/GameEngineService';
 import { WindCalculationService } from '$lib/domain/services/WindCalculationService';
 import { GameEntity } from '$lib/domain/entities/Game';
-import { gameEntityToLegacyGame } from '$lib/domain/entities/GameAdapter';
+import { gameEntityToGame } from '$lib/domain/entities/GameAdapter';
 import { Game, COLORS } from '$lib/types/game';
 import type { WindScenario } from '$lib/types/wind';
 import { Boat } from '$lib/types/boat';
@@ -21,8 +21,7 @@ import { logger } from '$lib/infrastructure/logging/logger';
  * Game Service
  * 
  * Provides high-level game operations by orchestrating domain services.
- * Converts between domain entities (GameEntity) and legacy Game objects
- * for backward compatibility.
+ * Converts between domain entities (GameEntity) and Game data types.
  */
 export class GameService {
 	/**
@@ -30,7 +29,7 @@ export class GameService {
 	 * 
 	 * Creates a GameEntity, initializes it with the wind scenario,
 	 * creates initial players, places boats on the start line, and
-	 * converts to legacy Game format for backward compatibility.
+	 * converts to Game data type for use in stores and services.
 	 * 
 	 * @param playerCount - Number of players to create (default: 2)
 	 * @param windScenario - Wind scenario to use for the game
@@ -132,22 +131,22 @@ export class GameService {
 			}
 		);
 		
-		// Convert to legacy Game format for backward compatibility
-		const legacyGame = gameEntityToLegacyGame(gameEntity);
+		// Convert to Game data type for use in stores and services
+		const game = gameEntityToGame(gameEntity);
 		
 		logger.info(
 			'[GameService] Game created successfully',
 			'GameService',
 			{
 				gameId: gameEntity.id,
-				gameName: legacyGame.name,
-				playersCount: legacyGame.players.length,
-				gameWidth: legacyGame.width,
-				gameHeight: legacyGame.height
+				gameName: game.name,
+				playersCount: game.players.length,
+				gameWidth: game.width,
+				gameHeight: game.height
 			}
 		);
 		
-		return legacyGame;
+		return game;
 	}
 
 	/**

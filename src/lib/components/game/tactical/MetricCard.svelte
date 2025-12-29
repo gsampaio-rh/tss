@@ -1,6 +1,5 @@
 <script lang="ts">
 	export let label: string;
-	export let showInfoIcon: boolean = false;
 	export let onInfoClick: (() => void) | null = null;
 	export let infoAriaLabel: string = '';
 </script>

@@ -212,8 +212,8 @@ export class BoatEntity {
 		return `boat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 	}
 
-	// Convert to legacy format for compatibility
-	toLegacyBoat(): {
+	// Convert to Boat data format
+	toBoatData(): {
 		x: number;
 		y: number;
 		rotation: number;
