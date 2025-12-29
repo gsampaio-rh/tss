@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Boat } from '$lib/types/boat';
 	import { currentWind, game } from '$lib/stores/game';
+	import { settings } from '$lib/stores/settings';
 	import { getBoatColorHex } from '$lib/types/game';
 
 	export let boat: Boat;
@@ -35,8 +36,11 @@
 	const BROAD_REACH = 150; // ±150° from wind
 	const RUNNING = 180; // ±180° from wind - downwind
 
-	// Arc radius (in game units) - reduced for less intrusive visualization
-	const ARC_RADIUS = 3.5;
+	// Base arc radius (in game units) - will be scaled by user setting
+	const BASE_ARC_RADIUS = 2.2;
+	
+	// Calculate arc radius based on user setting
+	$: ARC_RADIUS = BASE_ARC_RADIUS * $settings.windZonesSize;
 
 	// Calculate arc path for a sector
 	function getSectorPath(
@@ -56,24 +60,25 @@
 		return `M ${centerX} ${centerY} L ${startX} ${startY} A ${radius} ${radius} 0 ${largeArc} 1 ${endX} ${endY} Z`;
 	}
 
-	// Zone colors - reduced opacity for more subtle visualization
-	const ZONE_COLORS = {
-		deadZone: 'rgba(200, 50, 50, 0.25)', // Red - cannot sail
-		closeHauled: 'rgba(40, 167, 69, 0.3)', // Green - optimal upwind
-		closeReach: 'rgba(74, 144, 226, 0.25)', // Blue
-		beamReach: 'rgba(108, 117, 125, 0.25)', // Gray
-		broadReach: 'rgba(255, 193, 7, 0.25)', // Yellow
-		running: 'rgba(220, 53, 69, 0.25)' // Red - downwind
+	// Calculate zone colors with user-controlled opacity
+	$: zoneOpacity = $settings.windZonesOpacity;
+	$: ZONE_COLORS = {
+		deadZone: `rgba(200, 50, 50, ${zoneOpacity * 0.6})`, // Red - cannot sail
+		closeHauled: `rgba(40, 167, 69, ${zoneOpacity * 0.7})`, // Green - optimal upwind
+		closeReach: `rgba(74, 144, 226, ${zoneOpacity * 0.6})`, // Blue
+		beamReach: `rgba(108, 117, 125, ${zoneOpacity * 0.6})`, // Gray
+		broadReach: `rgba(255, 193, 7, ${zoneOpacity * 0.6})`, // Yellow
+		running: `rgba(220, 53, 69, ${zoneOpacity * 0.6})` // Red - downwind
 	};
 
-	// Zone stroke colors (for borders) - reduced opacity for subtlety
-	const ZONE_STROKES = {
-		deadZone: 'rgba(200, 50, 50, 0.5)',
-		closeHauled: 'rgba(40, 167, 69, 0.6)',
-		closeReach: 'rgba(74, 144, 226, 0.5)',
-		beamReach: 'rgba(108, 117, 125, 0.5)',
-		broadReach: 'rgba(255, 193, 7, 0.5)',
-		running: 'rgba(220, 53, 69, 0.5)'
+	// Zone stroke colors (thinner strokes, opacity controlled by settings)
+	$: ZONE_STROKES = {
+		deadZone: `rgba(200, 50, 50, ${zoneOpacity * 0.8})`,
+		closeHauled: `rgba(40, 167, 69, ${zoneOpacity * 0.9})`,
+		closeReach: `rgba(74, 144, 226, ${zoneOpacity * 0.8})`,
+		beamReach: `rgba(108, 117, 125, ${zoneOpacity * 0.8})`,
+		broadReach: `rgba(255, 193, 7, ${zoneOpacity * 0.8})`,
+		running: `rgba(220, 53, 69, ${zoneOpacity * 0.8})`
 	};
 
 	function formatSvgViewBox(left: number, top: number, width: number, height: number): string {
@@ -95,7 +100,7 @@
       width: 100%;
       height: 100%;
       pointer-events: none;
-      z-index: 18;
+      z-index: 15;
       opacity: 1;
     "
 	>
@@ -137,7 +142,8 @@
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir - DEAD_ZONE, windDir + DEAD_ZONE)}
 			fill={ZONE_COLORS.deadZone}
 			stroke={ZONE_STROKES.deadZone}
-			stroke-width="0.04"
+			stroke-width="0.025"
+			stroke-dasharray="0.15 0.1"
 			class="wind-zone dead-zone"
 		/>
 
@@ -146,14 +152,16 @@
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir - CLOSE_HAULED, windDir - DEAD_ZONE)}
 			fill={ZONE_COLORS.closeHauled}
 			stroke={ZONE_STROKES.closeHauled}
-			stroke-width="0.04"
+			stroke-width="0.025"
+			stroke-dasharray="0.15 0.1"
 			class="wind-zone close-hauled"
 		/>
 		<path
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir + DEAD_ZONE, windDir + CLOSE_HAULED)}
 			fill={ZONE_COLORS.closeHauled}
 			stroke={ZONE_STROKES.closeHauled}
-			stroke-width="0.04"
+			stroke-width="0.025"
+			stroke-dasharray="0.15 0.1"
 			class="wind-zone close-hauled"
 		/>
 
@@ -162,14 +170,16 @@
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir - CLOSE_REACH, windDir - CLOSE_HAULED)}
 			fill={ZONE_COLORS.closeReach}
 			stroke={ZONE_STROKES.closeReach}
-			stroke-width="0.04"
+			stroke-width="0.025"
+			stroke-dasharray="0.15 0.1"
 			class="wind-zone close-reach"
 		/>
 		<path
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir + CLOSE_HAULED, windDir + CLOSE_REACH)}
 			fill={ZONE_COLORS.closeReach}
 			stroke={ZONE_STROKES.closeReach}
-			stroke-width="0.04"
+			stroke-width="0.025"
+			stroke-dasharray="0.15 0.1"
 			class="wind-zone close-reach"
 		/>
 
@@ -178,14 +188,16 @@
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir - BEAM_REACH, windDir - CLOSE_REACH)}
 			fill={ZONE_COLORS.beamReach}
 			stroke={ZONE_STROKES.beamReach}
-			stroke-width="0.04"
+			stroke-width="0.025"
+			stroke-dasharray="0.15 0.1"
 			class="wind-zone beam-reach"
 		/>
 		<path
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir + CLOSE_REACH, windDir + BEAM_REACH)}
 			fill={ZONE_COLORS.beamReach}
 			stroke={ZONE_STROKES.beamReach}
-			stroke-width="0.04"
+			stroke-width="0.025"
+			stroke-dasharray="0.15 0.1"
 			class="wind-zone beam-reach"
 		/>
 
@@ -194,14 +206,16 @@
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir - BROAD_REACH, windDir - BEAM_REACH)}
 			fill={ZONE_COLORS.broadReach}
 			stroke={ZONE_STROKES.broadReach}
-			stroke-width="0.04"
+			stroke-width="0.025"
+			stroke-dasharray="0.15 0.1"
 			class="wind-zone broad-reach"
 		/>
 		<path
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir + BEAM_REACH, windDir + BROAD_REACH)}
 			fill={ZONE_COLORS.broadReach}
 			stroke={ZONE_STROKES.broadReach}
-			stroke-width="0.04"
+			stroke-width="0.025"
+			stroke-dasharray="0.15 0.1"
 			class="wind-zone broad-reach"
 		/>
 
@@ -210,14 +224,16 @@
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir - RUNNING, windDir - BROAD_REACH)}
 			fill={ZONE_COLORS.running}
 			stroke={ZONE_STROKES.running}
-			stroke-width="0.04"
+			stroke-width="0.025"
+			stroke-dasharray="0.15 0.1"
 			class="wind-zone running"
 		/>
 		<path
 			d={getSectorPath(boat.x, boat.y, ARC_RADIUS, windDir + BROAD_REACH, windDir + RUNNING)}
 			fill={ZONE_COLORS.running}
 			stroke={ZONE_STROKES.running}
-			stroke-width="0.04"
+			stroke-width="0.025"
+			stroke-dasharray="0.15 0.1"
 			class="wind-zone running"
 		/>
 	</svg>

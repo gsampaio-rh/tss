@@ -255,6 +255,50 @@
 			</div>
 		</label>
 
+		<!-- Wind Zones Opacity (only shown when wind zones are enabled) -->
+		{#if $settings.showWindZones}
+			<div class="setting-item setting-item-range">
+				<div class="setting-content">
+					<div class="setting-label">
+						<strong>Wind Zones Opacity</strong>
+						<small>{Math.round($settings.windZonesOpacity * 100)}%</small>
+					</div>
+					<input
+						type="range"
+						class="opacity-slider"
+						min="0"
+						max="1"
+						step="0.05"
+						value={$settings.windZonesOpacity}
+						oninput={(e) => {
+							const value = parseFloat((e.target as HTMLInputElement).value);
+							settings.update(s => ({ ...s, windZonesOpacity: value }));
+						}}
+					/>
+				</div>
+			</div>
+			<div class="setting-item setting-item-range">
+				<div class="setting-content">
+					<div class="setting-label">
+						<strong>Wind Zones Size</strong>
+						<small>{Math.round($settings.windZonesSize * 100)}%</small>
+					</div>
+					<input
+						type="range"
+						class="opacity-slider"
+						min="0.5"
+						max="2.0"
+						step="0.1"
+						value={$settings.windZonesSize}
+						oninput={(e) => {
+							const value = parseFloat((e.target as HTMLInputElement).value);
+							settings.update(s => ({ ...s, windZonesSize: value }));
+						}}
+					/>
+				</div>
+			</div>
+		{/if}
+
 		<!-- Show Dirty Air Zones -->
 		<label class="setting-item" class:checked={$settings.showDirtyAir} for="set-show-dirty-air">
 			<input
@@ -507,5 +551,49 @@
 		position: absolute;
 		opacity: 0;
 		pointer-events: none;
+	}
+
+	.setting-item-range {
+		cursor: default;
+		padding: 0.75rem;
+	}
+
+	.setting-item-range:hover {
+		background: #ffffff;
+		border-color: #e9ecef;
+	}
+
+	.setting-item-range .setting-content {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.opacity-slider {
+		width: 100%;
+		margin-top: 0.5rem;
+		height: 6px;
+		border-radius: 3px;
+		background: #e9ecef;
+		outline: none;
+		-webkit-appearance: none;
+	}
+
+	.opacity-slider::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 16px;
+		height: 16px;
+		border-radius: 50%;
+		background: #007bff;
+		cursor: pointer;
+	}
+
+	.opacity-slider::-moz-range-thumb {
+		width: 16px;
+		height: 16px;
+		border-radius: 50%;
+		background: #007bff;
+		cursor: pointer;
+		border: none;
 	}
 </style>

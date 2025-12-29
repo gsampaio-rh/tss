@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
+	import { browser } from '$app/environment';
 
 	export let open: boolean = false;
 	export let title: string = '';
@@ -40,22 +41,26 @@
 	}
 
 	onMount(() => {
-		document.addEventListener('keydown', handleKeydown);
-		return () => {
-			document.removeEventListener('keydown', handleKeydown);
-		};
+		if (browser) {
+			document.addEventListener('keydown', handleKeydown);
+			return () => {
+				document.removeEventListener('keydown', handleKeydown);
+			};
+		}
 	});
 
-	$: if (open && modalElement) {
+	$: if (open && modalElement && browser) {
 		// Focus the modal when it opens for keyboard accessibility
 		modalElement.focus();
 	}
 
-	$: if (open) {
-		// Prevent body scroll when modal is open
-		document.body.style.overflow = 'hidden';
-	} else {
-		document.body.style.overflow = '';
+	$: if (browser) {
+		if (open) {
+			// Prevent body scroll when modal is open
+			document.body.style.overflow = 'hidden';
+		} else {
+			document.body.style.overflow = '';
+		}
 	}
 </script>
 

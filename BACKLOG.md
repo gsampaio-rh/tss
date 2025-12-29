@@ -227,8 +227,9 @@ Enhance the visual design and user experience of the tell tales indicators. Whil
 ### 2. Wind Zones UI Improvements
 
 **Priority**: 🔴 High  
-**Status**: Not Started  
-**Estimated Effort**: 1 day
+**Status**: ✅ Completed  
+**Estimated Effort**: 1 day  
+**Actual Effort**: ~1 day
 
 #### Description
 Improve the visual design of wind zones. The current circle/arc visualization is too large and can be distracting or cover important game elements.
@@ -250,11 +251,11 @@ Improve the visual design of wind zones. The current circle/arc visualization is
   - Ensure zones are still informative when visible
 
 #### Acceptance Criteria
-- [ ] Wind zone circles/arcs are smaller and less intrusive
-- [ ] Zones don't obscure important game elements
-- [ ] Still clearly visible and informative
-- [ ] Visual design is polished and professional
-- [ ] Settings allow users to control visibility/opacity
+- [x] Wind zone circles/arcs are smaller and less intrusive (reduced from 3.5 to 2.2 units)
+- [x] Zones don't obscure important game elements (z-index lowered to 15, thinner strokes)
+- [x] Still clearly visible and informative (dashed stroke borders, user-controlled opacity)
+- [x] Visual design is polished and professional (thinner strokes, better opacity control)
+- [x] Settings allow users to control visibility/opacity (opacity slider added)
 
 #### Technical Notes
 - Modify `WindZones.svelte` component
