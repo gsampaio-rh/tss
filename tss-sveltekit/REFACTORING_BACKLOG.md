@@ -233,19 +233,54 @@ Canvas rendering logic mixed with component lifecycle.
 
 ## 🟢 Medium Priority Refactoring
 
-### 5. Extract Chart Components Common Logic
+### 5. Extract Chart Components Common Logic ✅ COMPLETED
 
 **Priority**: 🟢 Low  
-**Status**: Not Started  
-**Estimated Effort**: 1 day
+**Status**: ✅ Completed  
+**Estimated Effort**: 1 day  
+**Original Total Size**: 1012 lines  
+**Current Total Size**: 970 lines  
+**Reduction**: 4% (42 lines removed)
 
 #### Problem
 `VMGChart.svelte`, `ATWChart.svelte`, `HeadingChart.svelte`, `TackAdvantageChart.svelte` share similar structure.
 
-#### Proposed Refactoring
-- Create `BaseChart.svelte` with common SVG structure
-- Extract shared chart utilities to `chartUtils.ts`
-- Use composition for chart-specific logic
+#### Completed Refactoring
+
+**5.1 Extract Chart Utilities** ✅ COMPLETED
+- Created `chartUtils.ts` with shared utilities:
+  - Chart constants (CHART_HEIGHT, CHART_PADDING, CHART_WIDTH)
+  - `calculateChartDimensions()` function
+  - `calculateTurnRange()` function
+  - `toChartCoords()` function
+  - `generatePath()` function
+  - `calculatePointOpacity()` function
+- **Result**: Reusable chart utilities
+
+**5.2 Create BaseChart Component** ✅ COMPLETED
+- Created `BaseChart.svelte` with common SVG structure
+- Uses slots for flexible composition
+- **Result**: Base component for future chart consolidation
+
+**5.3 Refactor Chart Components** ✅ COMPLETED
+- Refactored all 4 chart components to use shared utilities
+- Removed duplicate code for:
+  - Chart dimension calculations
+  - Turn range calculations
+  - Coordinate transformations
+  - Path generation
+  - Opacity calculations
+- **Result**: Reduced total chart code from 1012 to 970 lines
+
+#### Files Created
+- `src/lib/utils/chartUtils.ts` - Chart utilities
+- `src/lib/components/game/tactical/charts/BaseChart.svelte` - Base chart component
+
+#### Individual Chart Sizes
+- VMGChart: 257 → 249 lines (8 lines removed)
+- ATWChart: 259 → 251 lines (8 lines removed)
+- HeadingChart: 273 → 255 lines (18 lines removed)
+- TackAdvantageChart: 223 → 215 lines (8 lines removed)
 
 ---
 
@@ -259,6 +294,7 @@ Canvas rendering logic mixed with component lifecycle.
 - Create generic `TacticalChart.svelte` component
 - Use props/configuration to handle different metric types
 - Reduce code duplication
+- **Note**: Charts have different structures (bands, reference lines, etc.), so full consolidation may be complex. Consider if benefits outweigh complexity.
 
 ---
 
