@@ -5,6 +5,6 @@
 @import './lib/styles/components.css';
 @import './lib/styles/game.css';
 
-/* Bootstrap CSS */
-@import 'bootstrap/dist/css/bootstrap.min.css';
+/* Bootstrap CSS - Using non-minified version to avoid source map issues */
+@import 'bootstrap/dist/css/bootstrap.css';
 

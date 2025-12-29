@@ -24,10 +24,7 @@ tss/
 ## 📚 Documentation
 
 - [SvelteKit App README](./tss-sveltekit/README.md) - Main application documentation
-- [Release Notes](./tss-sveltekit/RELEASE_NOTES.md) - Version history and release notes
-- [Product Backlog](./tss-sveltekit/BACKLOG.md) - Feature backlog and sprint planning
-- [Wind Dynamics](./docs/WIND_DYNAMICS.md) - Wind mechanics explanation
-- [Wind Mechanics Spec](./docs/WIND_MECHANICS_SPEC.md) - Complete wind mechanics specification
+- [Release Notes](./tss-sveltekit/docs/RELEASE_NOTES.md) - Version history and release notes
 
 ## 🎯 Quick Start
 
