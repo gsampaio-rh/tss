@@ -2,10 +2,10 @@
  * Wind Particle System
  * 
  * Manages the lifecycle and physics of wind particles for visualization.
- * Separates particle system logic from rendering concerns.
+ * Uses streaks with transforms, shared gradients, depth layering, streamlines, and gusts.
  */
 
-import { createTeardropPath, createGradient } from '$lib/utils/windParticleUtils';
+import { createUnitStreakPath, createSharedGradients } from '$lib/utils/windParticleUtils';
 
 export interface Particle {
 	element: SVGPathElement;
@@ -18,8 +18,10 @@ export interface Particle {
 	opacity: number;
 	size: number;
 	speed: number; // Base speed multiplier
-	dropLength: number; // Length of the teardrop
-	dropWidth: number; // Width at the head
+	streakLength: number; // Length of the streak
+	streakWidth: number; // Width at the head
+	isNear: boolean; // Depth layer (near = bigger, brighter)
+	streamlineId: number; // Which streamline this particle belongs to
 }
 
 export interface WindVector {
@@ -37,6 +39,10 @@ export interface ParticleSystemConfig {
 	game: GameDimensions | null;
 	currentWind: number; // Wind angle in game units
 	showWindIndicators: boolean;
+	density?: number; // 0.5-2.0 multiplier for particle density (default 1.0)
+	opacity?: number; // 0-1 range for particle opacity (default 0.6)
+	speed?: number; // 0.5-2.0 multiplier for particle speed (default 1.0)
+	length?: number; // 0.5-2.0 multiplier for streak length (default 1.0)
 }
 
 export interface ParticleSystemCallbacks {
@@ -54,9 +60,19 @@ export class WindParticleSystem {
 	private svgElement: SVGElement | null = null;
 	private defsElement: SVGDefsElement | null = null;
 	private lastTime = 0;
-	private gradientIdCounter = 0;
 	private config: ParticleSystemConfig;
 	private callbacks: ParticleSystemCallbacks;
+	
+	// Streamlines: coherent bands of particles
+	private streamlines: Array<{ x: number; y: number; angle: number }> = [];
+	private numStreamlines = 6;
+	
+	// Gust system: time-varying wind magnitude
+	private gustTime = 0;
+	private gustMagnitude = 1.0;
+	
+	// Noise function for turbulence
+	private noiseSeed = Math.random() * 1000;
 
 	constructor(config: ParticleSystemConfig, callbacks: ParticleSystemCallbacks = {}) {
 		this.config = config;
@@ -69,30 +85,172 @@ export class WindParticleSystem {
 	initialize(svgElement: SVGElement): void {
 		this.svgElement = svgElement;
 		this.defsElement = null;
-		this.gradientIdCounter = 0;
+		this.gustTime = 0;
+		this.gustMagnitude = 1.0;
 	}
 
 	/**
-	 * Get wind vector at a given position
+	 * Simple noise function for turbulence
 	 */
-	private getWindVector(x: number, y: number): WindVector {
+	private noise(x: number, y: number, t: number): number {
+		const n = Math.sin(x * 0.02 + this.noiseSeed) * Math.cos(y * 0.02 + this.noiseSeed * 1.3) * Math.sin(t * 0.2 + this.noiseSeed * 0.7);
+		return (n + 1) / 2; // Normalize to 0..1
+	}
+
+	/**
+	 * Smooth noise for more coherent turbulence
+	 */
+	private smoothNoise(x: number, y: number, t: number): number {
+		const n1 = this.noise(x, y, t);
+		const n2 = this.noise(x * 0.6, y * 0.6, t * 0.8);
+		return (n1 * 0.7 + n2 * 0.3);
+	}
+
+	/**
+	 * Initialize streamlines across the map
+	 */
+	private initStreamlines(): void {
+		if (!this.config.game) return;
+		
+		this.streamlines = [];
+		for (let i = 0; i < this.numStreamlines; i++) {
+			// Random positions across the map
+			const x = Math.random() * this.config.game.width;
+			const y = Math.random() * this.config.game.height;
+			const angle = Math.random() * Math.PI * 2;
+			this.streamlines.push({ x, y, angle });
+		}
+	}
+
+	/**
+	 * Get wind vector at a given position with streamlines and gusts
+	 */
+	private getWindVector(x: number, y: number, time: number): WindVector {
 		if (!this.config.game) return { vx: 0, vy: 0, magnitude: 0 };
 
 		const windDisplayAngle = this.config.currentWind * 2;
 		const moveAngleDeg = windDisplayAngle + 180; // Wind flows in opposite direction
 		const moveAngleRad = (moveAngleDeg * Math.PI) / 180;
 
-		// Base wind magnitude (can be varied based on position for turbulence)
-		const baseMagnitude = 1.0;
+		// Base wind direction
+		const baseVx = Math.sin(moveAngleRad);
+		const baseVy = -Math.cos(moveAngleRad);
 
-		// Add slight turbulence based on position
-		const turbulence = Math.sin(x * 0.1) * Math.cos(y * 0.1) * 0.1;
-		const magnitude = baseMagnitude + turbulence;
+		// Gust magnitude (varies slowly with time)
+		const gustNoise = this.smoothNoise(0, 0, time * 0.1);
+		this.gustMagnitude = 0.8 + gustNoise * 0.4; // 0.8-1.2
+		
+		// Add occasional pulses
+		const pulse = Math.sin(time * 0.05) > 0.95 ? 1.3 : 1.0;
+		const finalGustMagnitude = this.gustMagnitude * pulse;
 
-		const vx = Math.sin(moveAngleRad) * magnitude;
-		const vy = -Math.cos(moveAngleRad) * magnitude;
+		// Streamline influence: particles are pulled slightly toward nearest streamline
+		let streamlineInfluenceX = 0;
+		let streamlineInfluenceY = 0;
+		if (this.streamlines.length > 0) {
+			let minDist = Infinity;
+			let nearestStreamline = this.streamlines[0];
+			
+			for (const streamline of this.streamlines) {
+				const dx = x - streamline.x;
+				const dy = y - streamline.y;
+				const dist = Math.sqrt(dx * dx + dy * dy);
+				if (dist < minDist) {
+					minDist = dist;
+					nearestStreamline = streamline;
+				}
+			}
+			
+			// Pull strength decreases with distance
+			const pullStrength = 0.15 * Math.exp(-minDist / (this.config.game.width * 0.3));
+			streamlineInfluenceX = Math.cos(nearestStreamline.angle) * pullStrength;
+			streamlineInfluenceY = Math.sin(nearestStreamline.angle) * pullStrength;
+		}
 
-		return { vx, vy, magnitude: Math.abs(magnitude) };
+		// Perpendicular turbulence (Brownian jitter)
+		const perpAngle = moveAngleRad + Math.PI / 2;
+		const turbulence = this.smoothNoise(x * 0.02, y * 0.02, time * 0.2);
+		const perpMagnitude = (turbulence - 0.5) * 0.15; // -0.075 to 0.075
+		const perpX = Math.cos(perpAngle) * perpMagnitude;
+		const perpY = Math.sin(perpAngle) * perpMagnitude;
+
+		// Combine all components
+		const vx = (baseVx + streamlineInfluenceX + perpX) * finalGustMagnitude;
+		const vy = (baseVy + streamlineInfluenceY + perpY) * finalGustMagnitude;
+		const magnitude = Math.sqrt(vx * vx + vy * vy);
+
+		return { vx, vy, magnitude };
+	}
+
+	/**
+	 * Determine upwind edge based on wind direction
+	 */
+	private getUpwindEdge(): { edge: number; startX: number; startY: number } {
+		if (!this.config.game) {
+			return { edge: 0, startX: 0, startY: 0 };
+		}
+
+		const windDisplayAngle = this.config.currentWind * 2;
+		const moveAngleDeg = windDisplayAngle + 180; // Wind flows in opposite direction
+		const moveAngleRad = (moveAngleDeg * Math.PI) / 180;
+
+		// Determine which edge is upwind (where wind comes from)
+		const vx = Math.sin(moveAngleRad);
+		const vy = -Math.cos(moveAngleRad);
+
+		// Find the edge with the strongest component
+		let edge = 0; // 0=top, 1=right, 2=bottom, 3=left
+		let startX = 0;
+		let startY = 0;
+
+		if (Math.abs(vy) > Math.abs(vx)) {
+			// Vertical component dominates
+			if (vy < 0) {
+				edge = 2; // Bottom edge (wind coming from bottom)
+				startX = Math.random() * this.config.game.width;
+				startY = this.config.game.height + 2;
+			} else {
+				edge = 0; // Top edge (wind coming from top)
+				startX = Math.random() * this.config.game.width;
+				startY = -2;
+			}
+		} else {
+			// Horizontal component dominates
+			if (vx < 0) {
+				edge = 1; // Right edge (wind coming from right)
+				startX = this.config.game.width + 2;
+				startY = Math.random() * this.config.game.height;
+			} else {
+				edge = 3; // Left edge (wind coming from left)
+				startX = -2;
+				startY = Math.random() * this.config.game.height;
+			}
+		}
+
+		// Add some randomness to adjacent edges (10% spill)
+		if (Math.random() < 0.1) {
+			const adjacentEdge = (edge + Math.floor(Math.random() * 2) * 2 - 1 + 4) % 4;
+			switch (adjacentEdge) {
+				case 0: // Top
+					startX = Math.random() * this.config.game.width;
+					startY = -2;
+					break;
+				case 1: // Right
+					startX = this.config.game.width + 2;
+					startY = Math.random() * this.config.game.height;
+					break;
+				case 2: // Bottom
+					startX = Math.random() * this.config.game.width;
+					startY = this.config.game.height + 2;
+					break;
+				case 3: // Left
+					startX = -2;
+					startY = Math.random() * this.config.game.height;
+					break;
+			}
+		}
+
+		return { edge, startX, startY };
 	}
 
 	/**
@@ -102,71 +260,59 @@ export class WindParticleSystem {
 		if (!this.config.game || !this.svgElement) return null;
 
 		const particle = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-		// Apply styles directly since we're creating elements dynamically
 		particle.setAttribute(
 			'style',
 			'pointer-events: none; z-index: 1; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; shape-rendering: geometricPrecision;'
 		);
 
-		// Spawn from edges with some randomness
-		const edge = Math.floor(Math.random() * 4);
-		let startX: number, startY: number;
-
-		switch (edge) {
-			case 0: // Top
-				startX = Math.random() * this.config.game.width;
-				startY = -2;
-				break;
-			case 1: // Right
-				startX = this.config.game.width + 2;
-				startY = Math.random() * this.config.game.height;
-				break;
-			case 2: // Bottom
-				startX = Math.random() * this.config.game.width;
-				startY = this.config.game.height + 2;
-				break;
-			case 3: // Left
-				startX = -2;
-				startY = Math.random() * this.config.game.height;
-				break;
-			default:
-				startX = Math.random() * this.config.game.width;
-				startY = Math.random() * this.config.game.height;
-		}
+		// Spawn from upwind edge
+		const { startX, startY } = this.getUpwindEdge();
 
 		// Get initial wind vector
-		const wind = this.getWindVector(startX, startY);
+		const wind = this.getWindVector(startX, startY, this.gustTime);
 		const angle = Math.atan2(wind.vy, wind.vx);
 
+		// Depth layering: 30% near, 70% far
+		const isNear = Math.random() < 0.3;
+		
+		// Get settings with defaults
+		const speedSetting = this.config.speed ?? 1.0;
+		const opacitySetting = this.config.opacity ?? 0.6;
+		const lengthSetting = this.config.length ?? 1.0;
+		
 		// Particle properties with variation
-		const speedMultiplier = 0.08 + Math.random() * 0.12; // 0.08-0.20
-		const maxAge = 150 + Math.random() * 150; // 150-300 frames
-		const baseOpacity = 0.5 + Math.random() * 0.3; // 0.5-0.8
-		const size = 0.8 + Math.random() * 0.6; // 0.8-1.4
+		const baseSpeedMultiplier = isNear ? 0.12 + Math.random() * 0.08 : 0.08 + Math.random() * 0.12;
+		const speedMultiplier = baseSpeedMultiplier * speedSetting;
+		const maxAge = 200 + Math.random() * 200; // 200-400 frames (longer streaks)
+		const baseOpacityRaw = isNear ? 0.6 + Math.random() * 0.2 : 0.3 + Math.random() * 0.2;
+		const baseOpacity = baseOpacityRaw * opacitySetting;
+		const size = isNear ? 1.0 + Math.random() * 0.4 : 0.6 + Math.random() * 0.4;
 
-		// Teardrop dimensions - bigger
-		const dropLength = 0.35 + Math.random() * 0.25; // 0.35-0.60 (bigger)
-		const dropWidth = 0.12 + Math.random() * 0.08; // 0.12-0.20 (bigger)
+		// Streak dimensions - longer and thinner
+		const baseLength = isNear ? 0.5 : 0.4;
+		const streakLength = (baseLength + Math.random() * 0.3) * size * lengthSetting; // Longer streaks with length multiplier
+		const streakWidth = (0.08 + Math.random() * 0.06) * size; // Thinner head
 
-		// Create teardrop path - rotated 180 degrees (angle + PI)
-		const pathData = createTeardropPath(
-			startX,
-			startY,
-			angle + Math.PI,
-			dropLength * size,
-			dropWidth * size
-		);
-		particle.setAttribute('d', pathData);
+		// Assign to a streamline
+		const streamlineId = Math.floor(Math.random() * this.numStreamlines);
 
-		// Create gradient
-		const gradientId = `windDrop${this.gradientIdCounter++}`;
-		const { defsElement } = createGradient(this.svgElement, this.defsElement, gradientId, baseOpacity);
-		this.defsElement = defsElement;
+		// Create unit streak path (centered at origin, pointing right)
+		const unitPath = createUnitStreakPath(1.0, 0.15);
+		particle.setAttribute('d', unitPath);
+		particle.setAttribute('transform-origin', '0 0');
 
+		// Use shared gradient (near or far)
+		const gradientId = isNear ? 'windNear' : 'windFar';
 		particle.setAttribute('fill', `url(#${gradientId})`);
 		particle.setAttribute('stroke', 'none');
-		particle.setAttribute('data-gradient-id', gradientId);
-		particle.setAttribute('data-opacity', baseOpacity.toFixed(3));
+
+		// Initial transform
+		const angleDeg = (angle * 180) / Math.PI;
+		particle.setAttribute(
+			'transform',
+			`translate(${startX.toFixed(2)} ${startY.toFixed(2)}) rotate(${angleDeg}) scale(${streakLength.toFixed(3)})`
+		);
+		particle.style.opacity = `${baseOpacity}`;
 
 		if (this.svgElement) {
 			this.svgElement.appendChild(particle);
@@ -183,8 +329,10 @@ export class WindParticleSystem {
 			opacity: baseOpacity,
 			size,
 			speed: speedMultiplier,
-			dropLength: dropLength * size,
-			dropWidth: dropWidth * size
+			streakLength,
+			streakWidth,
+			isNear,
+			streamlineId
 		};
 
 		this.callbacks.onParticleCreated?.(particleData);
@@ -192,21 +340,12 @@ export class WindParticleSystem {
 	}
 
 	/**
-	 * Update particle shape and opacity
+	 * Update particle position and transform
 	 */
-	private updateParticleShape(particle: Particle): void {
-		// Calculate angle from velocity - rotated 180 degrees
-		const angle = Math.atan2(particle.vy, particle.vx) + Math.PI;
-
-		// Update teardrop path
-		const pathData = createTeardropPath(
-			particle.x,
-			particle.y,
-			angle,
-			particle.dropLength,
-			particle.dropWidth
-		);
-		particle.element.setAttribute('d', pathData);
+	private updateParticleShape(particle: Particle, time: number): void {
+		// Calculate angle from velocity
+		const angle = Math.atan2(particle.vy, particle.vx);
+		const angleDeg = (angle * 180) / Math.PI;
 
 		// Update opacity based on age
 		const ageOpacity =
@@ -218,32 +357,18 @@ export class WindParticleSystem {
 
 		const finalOpacity = particle.opacity * ageOpacity;
 
-		// Update gradient opacity
-		const gradientId = particle.element.getAttribute('data-gradient-id');
-		if (gradientId && this.defsElement) {
-			const gradient = this.defsElement.querySelector(`#${gradientId}`) as SVGLinearGradientElement;
-			if (gradient) {
-				const stops = gradient.querySelectorAll('stop');
-				stops[0]?.setAttribute('stop-color', `hsla(200, 70%, 90%, ${finalOpacity})`);
-				stops[1]?.setAttribute('stop-color', `hsla(205, 65%, 75%, ${finalOpacity * 0.95})`);
-				stops[2]?.setAttribute('stop-color', `hsla(210, 55%, 60%, ${finalOpacity * 0.8})`);
-				stops[3]?.setAttribute('stop-color', `hsla(215, 45%, 50%, ${finalOpacity * 0.5})`);
-			}
-		}
+		// Update transform (much cheaper than rewriting path)
+		particle.element.setAttribute(
+			'transform',
+			`translate(${particle.x.toFixed(2)} ${particle.y.toFixed(2)}) rotate(${angleDeg}) scale(${particle.streakLength.toFixed(3)})`
+		);
+		particle.element.style.opacity = `${finalOpacity}`;
 	}
 
 	/**
 	 * Remove a particle and clean up its resources
 	 */
 	private removeParticle(particle: Particle, index: number): void {
-		// Clean up gradient before removing particle
-		const gradientId = particle.element.getAttribute('data-gradient-id');
-		if (gradientId && this.defsElement) {
-			const gradient = this.defsElement.querySelector(`#${gradientId}`);
-			if (gradient) {
-				gradient.remove();
-			}
-		}
 		particle.element.remove();
 		this.particles.splice(index, 1);
 		this.callbacks.onParticleRemoved?.(particle);
@@ -255,15 +380,8 @@ export class WindParticleSystem {
 	initParticles(): void {
 		if (!this.config.game || !this.config.showWindIndicators || !this.svgElement) return;
 
-		// Clean up all existing particles and gradients
+		// Clean up all existing particles
 		this.particles.forEach(particle => {
-			const gradientId = particle.element.getAttribute('data-gradient-id');
-			if (gradientId && this.defsElement) {
-				const gradient = this.defsElement.querySelector(`#${gradientId}`);
-				if (gradient) {
-					gradient.remove();
-				}
-			}
 			particle.element.remove();
 		});
 		this.particles = [];
@@ -272,14 +390,20 @@ export class WindParticleSystem {
 		while (this.svgElement.firstChild) {
 			this.svgElement.removeChild(this.svgElement.firstChild);
 		}
-		this.defsElement = null; // Reset defs
-		this.gradientIdCounter = 0;
+		this.defsElement = null;
 
-		// Spawn initial particles - density based on wind magnitude
-		const wind = this.getWindVector(this.config.game.width / 2, this.config.game.height / 2);
-		const baseDensity = 300; // Base particle count
-		const densityMultiplier = 0.8 + wind.magnitude * 0.4; // Scale by wind strength
-		const particleCount = Math.floor(baseDensity * densityMultiplier);
+		// Create shared gradients
+		this.defsElement = createSharedGradients(this.svgElement, null);
+
+		// Initialize streamlines
+		this.initStreamlines();
+
+		// Reduced particle count: 150-200 instead of 300+
+		const densitySetting = this.config.density ?? 1.0;
+		const baseDensity = 175;
+		const wind = this.getWindVector(this.config.game.width / 2, this.config.game.height / 2, this.gustTime);
+		const densityMultiplier = 0.8 + wind.magnitude * 0.4;
+		const particleCount = Math.floor(baseDensity * densityMultiplier * densitySetting);
 
 		for (let i = 0; i < particleCount; i++) {
 			const p = this.createParticle();
@@ -301,21 +425,23 @@ export class WindParticleSystem {
 
 		const deltaTime = Math.min((currentTime - this.lastTime) / 16.67, 2.0); // Cap at 2x normal speed
 		this.lastTime = currentTime;
+		this.gustTime = currentTime / 1000; // Convert to seconds
 
 		// Get wind at center for density calculation
-		const centerWind = this.getWindVector(this.config.game.width / 2, this.config.game.height / 2);
-		const targetDensity = Math.floor(300 * (0.8 + centerWind.magnitude * 0.4));
+		const densitySetting = this.config.density ?? 1.0;
+		const centerWind = this.getWindVector(this.config.game.width / 2, this.config.game.height / 2, this.gustTime);
+		const targetDensity = Math.floor(175 * (0.8 + centerWind.magnitude * 0.4) * densitySetting);
 
 		for (let i = this.particles.length - 1; i >= 0; i--) {
 			const particle = this.particles[i];
 
 			particle.age++;
 
-			// Get wind vector at current position (for turbulence)
-			const wind = this.getWindVector(particle.x, particle.y);
+			// Get wind vector at current position (with streamlines and gusts)
+			const wind = this.getWindVector(particle.x, particle.y, this.gustTime);
 
 			// Update velocity based on wind field (smooth interpolation)
-			const smoothing = 0.1; // How quickly velocity adapts to wind
+			const smoothing = particle.isNear ? 0.12 : 0.08; // Near particles respond faster
 			particle.vx += (wind.vx * particle.speed - particle.vx) * smoothing;
 			particle.vy += (wind.vy * particle.speed - particle.vy) * smoothing;
 
@@ -323,8 +449,8 @@ export class WindParticleSystem {
 			particle.x += particle.vx * deltaTime;
 			particle.y += particle.vy * deltaTime;
 
-			// Update teardrop shape
-			this.updateParticleShape(particle);
+			// Update streak transform
+			this.updateParticleShape(particle, this.gustTime);
 
 			// Remove particles that are too old or left the screen
 			const margin = 10;
@@ -384,13 +510,6 @@ export class WindParticleSystem {
 	cleanup(): void {
 		this.stopAnimation();
 		this.particles.forEach(particle => {
-			const gradientId = particle.element.getAttribute('data-gradient-id');
-			if (gradientId && this.defsElement) {
-				const gradient = this.defsElement.querySelector(`#${gradientId}`);
-				if (gradient) {
-					gradient.remove();
-				}
-			}
 			particle.element.remove();
 		});
 		this.particles = [];
@@ -400,7 +519,7 @@ export class WindParticleSystem {
 			}
 		}
 		this.defsElement = null;
-		this.gradientIdCounter = 0;
+		this.streamlines = [];
 	}
 
 	/**
@@ -408,6 +527,10 @@ export class WindParticleSystem {
 	 */
 	updateConfig(config: Partial<ParticleSystemConfig>): void {
 		this.config = { ...this.config, ...config };
+		// Reinitialize streamlines if game dimensions changed
+		if (config.game && this.streamlines.length === 0) {
+			this.initStreamlines();
+		}
 	}
 
 	/**
@@ -417,4 +540,3 @@ export class WindParticleSystem {
 		return this.particles.length;
 	}
 }
-

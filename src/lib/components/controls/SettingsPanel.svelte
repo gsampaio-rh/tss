@@ -175,6 +175,90 @@
 			</div>
 		</label>
 
+		<!-- Wind Particles Controls (only shown when wind particles are enabled) -->
+		{#if $settings.showWindIndicators}
+			<div class="setting-item setting-item-range">
+				<div class="setting-content">
+					<div class="setting-label">
+						<strong>Particle Density</strong>
+						<small>{Math.round($settings.windParticlesDensity * 100)}%</small>
+					</div>
+					<input
+						type="range"
+						class="opacity-slider"
+						min="0.5"
+						max="2.0"
+						step="0.1"
+						value={$settings.windParticlesDensity}
+						oninput={(e) => {
+							const value = parseFloat((e.target as HTMLInputElement).value);
+							settings.update(s => ({ ...s, windParticlesDensity: value }));
+						}}
+					/>
+				</div>
+			</div>
+			<div class="setting-item setting-item-range">
+				<div class="setting-content">
+					<div class="setting-label">
+						<strong>Particle Opacity</strong>
+						<small>{Math.round($settings.windParticlesOpacity * 100)}%</small>
+					</div>
+					<input
+						type="range"
+						class="opacity-slider"
+						min="0"
+						max="1"
+						step="0.05"
+						value={$settings.windParticlesOpacity}
+						oninput={(e) => {
+							const value = parseFloat((e.target as HTMLInputElement).value);
+							settings.update(s => ({ ...s, windParticlesOpacity: value }));
+						}}
+					/>
+				</div>
+			</div>
+			<div class="setting-item setting-item-range">
+				<div class="setting-content">
+					<div class="setting-label">
+						<strong>Particle Speed</strong>
+						<small>{Math.round($settings.windParticlesSpeed * 100)}%</small>
+					</div>
+					<input
+						type="range"
+						class="opacity-slider"
+						min="0.5"
+						max="2.0"
+						step="0.1"
+						value={$settings.windParticlesSpeed}
+						oninput={(e) => {
+							const value = parseFloat((e.target as HTMLInputElement).value);
+							settings.update(s => ({ ...s, windParticlesSpeed: value }));
+						}}
+					/>
+				</div>
+			</div>
+			<div class="setting-item setting-item-range">
+				<div class="setting-content">
+					<div class="setting-label">
+						<strong>Streak Length</strong>
+						<small>{Math.round($settings.windParticlesLength * 100)}%</small>
+					</div>
+					<input
+						type="range"
+						class="opacity-slider"
+						min="0.5"
+						max="2.0"
+						step="0.1"
+						value={$settings.windParticlesLength}
+						oninput={(e) => {
+							const value = parseFloat((e.target as HTMLInputElement).value);
+							settings.update(s => ({ ...s, windParticlesLength: value }));
+						}}
+					/>
+				</div>
+			</div>
+		{/if}
+
 		<!-- Show Grid -->
 		<label class="setting-item" class:checked={$settings.showGrid} for="set-show-grid">
 			<input

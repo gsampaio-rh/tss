@@ -10,6 +10,10 @@ export interface Settings {
 	showWindZones: boolean;
 	windZonesOpacity: number; // 0-1 range for wind zones opacity
 	windZonesSize: number; // 0.5-2.0 multiplier for wind zones size (1.0 = default)
+	windParticlesDensity: number; // 0.5-2.0 multiplier for particle density (1.0 = default)
+	windParticlesOpacity: number; // 0-1 range for particle opacity (0.6 = default)
+	windParticlesSpeed: number; // 0.5-2.0 multiplier for particle speed (1.0 = default)
+	windParticlesLength: number; // 0.5-2.0 multiplier for streak length (1.0 = default)
 	showDirtyAir: boolean;
 	enableDirtyAirEffects: boolean;
 }
@@ -23,6 +27,10 @@ const defaultSettings: Settings = {
 	showWindZones: true,
 	windZonesOpacity: 0.4, // Default opacity (40%)
 	windZonesSize: 1.0, // Default size multiplier (100%)
+	windParticlesDensity: 1.0, // Default density multiplier (100%)
+	windParticlesOpacity: 0.6, // Default opacity (60%)
+	windParticlesSpeed: 1.0, // Default speed multiplier (100%)
+	windParticlesLength: 1.0, // Default length multiplier (100%)
 	showDirtyAir: false,
 	enableDirtyAirEffects: false
 };

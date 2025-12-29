@@ -14,7 +14,11 @@
 			{
 				game: $game ? { width: $game.width, height: $game.height } : null,
 				currentWind: $currentWind || 0,
-				showWindIndicators: $settings.showWindIndicators
+				showWindIndicators: $settings.showWindIndicators,
+				density: $settings.windParticlesDensity,
+				opacity: $settings.windParticlesOpacity,
+				speed: $settings.windParticlesSpeed,
+				length: $settings.windParticlesLength
 			},
 			{
 				// Optional callbacks for future enhancements
@@ -28,10 +32,15 @@
 		particleSystem.updateConfig({
 			game: $game ? { width: $game.width, height: $game.height } : null,
 			currentWind: $currentWind || 0,
-			showWindIndicators: $settings.showWindIndicators
+			showWindIndicators: $settings.showWindIndicators,
+			density: $settings.windParticlesDensity,
+			opacity: $settings.windParticlesOpacity,
+			speed: $settings.windParticlesSpeed,
+			length: $settings.windParticlesLength
 		});
 
 		if ($game && $settings.showWindIndicators) {
+			// Reinitialize particles when settings change to apply new values
 			particleSystem.initParticles();
 		} else {
 			particleSystem.cleanup();

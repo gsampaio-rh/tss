@@ -12,162 +12,168 @@ export function formatSvgViewBox(left: number, top: number, width: number, heigh
 }
 
 /**
- * Create teardrop/droplet shape path - elegant and simple
+ * Create unit streak path (centered at origin, pointing right)
+ * This is a tapered capsule: small rounded head, long thin tail
+ * Designed to be transformed (translate, rotate, scale) rather than regenerated
  */
-export function createTeardropPath(
-	x: number,
-	y: number,
-	angle: number,
-	length: number,
-	width: number
-): string {
-	// Head center (rounded front) - 70% along the length
-	const headX = x + Math.cos(angle) * length * 0.7;
-	const headY = y + Math.sin(angle) * length * 0.7;
-	const headRadius = width * 0.5;
-
-	// Tail point (sharp end) - 30% behind center
-	const tailX = x - Math.cos(angle) * length * 0.3;
-	const tailY = y - Math.sin(angle) * length * 0.3;
-
-	// Perpendicular direction for width
-	const perpAngle = angle + Math.PI / 2;
-
-	// Create smooth teardrop using quadratic curves
+export function createUnitStreakPath(length: number = 1.0, headWidth: number = 0.15): string {
+	// Head: small rounded cap at the front (right side, x > 0)
+	const headRadius = headWidth * 0.5;
+	const headX = length * 0.4; // Head is 40% along the length
+	
+	// Tail: tapers to near-zero at the back (left side, x < 0)
+	const tailX = -length * 0.6;
+	
+	// Create a tapered streak using quadratic curves
 	// Start from tail (point)
-	let pathData = `M ${tailX.toFixed(2)} ${tailY.toFixed(2)}`;
-
+	let pathData = `M ${tailX.toFixed(3)} 0`;
+	
 	// Left side: smooth curve from tail to head
-	const numPoints = 8;
+	const numPoints = 6;
 	for (let i = 1; i <= numPoints; i++) {
 		const t = i / numPoints;
 		// Smooth easing for natural taper
 		const easeT = t * t * (3 - 2 * t); // Smoothstep
-
+		
 		// Position along the length
 		const posX = tailX + (headX - tailX) * easeT;
-		const posY = tailY + (headY - tailY) * easeT;
-
+		
 		// Width tapers smoothly from head to tail
-		const currentWidth = headRadius * (1 - easeT * 0.99);
-
-		// Perpendicular offset
-		const offsetX = Math.cos(perpAngle) * currentWidth;
-		const offsetY = Math.sin(perpAngle) * currentWidth;
-
+		const currentWidth = headRadius * (1 - easeT * 0.98);
+		
 		if (i === 1) {
-			pathData += ` L ${(posX + offsetX).toFixed(2)} ${(posY + offsetY).toFixed(2)}`;
+			pathData += ` L ${posX.toFixed(3)} ${currentWidth.toFixed(3)}`;
 		} else {
-			// Use quadratic curve for smoothness
 			const prevT = (i - 1) / numPoints;
 			const prevEaseT = prevT * prevT * (3 - 2 * prevT);
 			const prevPosX = tailX + (headX - tailX) * prevEaseT;
-			const prevPosY = tailY + (headY - tailY) * prevEaseT;
-			const prevWidth = headRadius * (1 - prevEaseT * 0.99);
-			const prevOffsetX = Math.cos(perpAngle) * prevWidth;
-			const prevOffsetY = Math.sin(perpAngle) * prevWidth;
-
-			const controlX = (prevPosX + prevOffsetX + posX + offsetX) / 2;
-			const controlY = (prevPosY + prevOffsetY + posY + offsetY) / 2;
-			pathData += ` Q ${controlX.toFixed(2)} ${controlY.toFixed(2)} ${(posX + offsetX).toFixed(2)} ${(posY + offsetY).toFixed(2)}`;
+			const prevWidth = headRadius * (1 - prevEaseT * 0.98);
+			
+			const controlX = (prevPosX + posX) / 2;
+			const controlY = (prevWidth + currentWidth) / 2;
+			pathData += ` Q ${controlX.toFixed(3)} ${controlY.toFixed(3)} ${posX.toFixed(3)} ${currentWidth.toFixed(3)}`;
 		}
 	}
-
-	// Rounded head (semi-circle) - 6 points for smooth arc
-	const headPoints = 6;
+	
+	// Rounded head (semi-circle) - 4 points for smooth arc
+	const headPoints = 4;
 	for (let i = 0; i <= headPoints; i++) {
-		const headAngle = angle + Math.PI / 2 + (i / headPoints) * Math.PI;
+		const headAngle = Math.PI / 2 + (i / headPoints) * Math.PI;
 		const headPointX = headX + Math.cos(headAngle) * headRadius;
-		const headPointY = headY + Math.sin(headAngle) * headRadius;
-
+		const headPointY = Math.sin(headAngle) * headRadius;
+		
 		if (i === 0) {
-			pathData += ` L ${headPointX.toFixed(2)} ${headPointY.toFixed(2)}`;
+			pathData += ` L ${headPointX.toFixed(3)} ${headPointY.toFixed(3)}`;
 		} else {
-			// Smooth arc using quadratic curves
-			pathData += ` Q ${headX.toFixed(2)} ${headY.toFixed(2)} ${headPointX.toFixed(2)} ${headPointY.toFixed(2)}`;
+			pathData += ` Q ${headX.toFixed(3)} 0 ${headPointX.toFixed(3)} ${headPointY.toFixed(3)}`;
 		}
 	}
-
+	
 	// Right side (mirror of left) - back to tail
 	for (let i = numPoints - 1; i >= 0; i--) {
 		const t = i / numPoints;
 		const easeT = t * t * (3 - 2 * t);
-
+		
 		const posX = tailX + (headX - tailX) * easeT;
-		const posY = tailY + (headY - tailY) * easeT;
-		const currentWidth = headRadius * (1 - easeT * 0.99);
-
-		const offsetX = Math.cos(perpAngle) * currentWidth;
-		const offsetY = Math.sin(perpAngle) * currentWidth;
-
+		const currentWidth = headRadius * (1 - easeT * 0.98);
+		
 		if (i === numPoints - 1) {
-			pathData += ` L ${(posX - offsetX).toFixed(2)} ${(posY - offsetY).toFixed(2)}`;
+			pathData += ` L ${posX.toFixed(3)} ${(-currentWidth).toFixed(3)}`;
 		} else {
 			const prevT = (i + 1) / numPoints;
 			const prevEaseT = prevT * prevT * (3 - 2 * prevT);
 			const prevPosX = tailX + (headX - tailX) * prevEaseT;
-			const prevPosY = tailY + (headY - tailY) * prevEaseT;
-			const prevWidth = headRadius * (1 - prevEaseT * 0.99);
-			const prevOffsetX = Math.cos(perpAngle) * prevWidth;
-			const prevOffsetY = Math.sin(perpAngle) * prevWidth;
-
-			const controlX = (prevPosX - prevOffsetX + posX - offsetX) / 2;
-			const controlY = (prevPosY - prevOffsetY + posY - offsetY) / 2;
-			pathData += ` Q ${controlX.toFixed(2)} ${controlY.toFixed(2)} ${(posX - offsetX).toFixed(2)} ${(posY - offsetY).toFixed(2)}`;
+			const prevWidth = headRadius * (1 - prevEaseT * 0.98);
+			
+			const controlX = (prevPosX + posX) / 2;
+			const controlY = (-prevWidth - currentWidth) / 2;
+			pathData += ` Q ${controlX.toFixed(3)} ${controlY.toFixed(3)} ${posX.toFixed(3)} ${(-currentWidth).toFixed(3)}`;
 		}
 	}
-
+	
 	pathData += ` Z`;
 	return pathData;
 }
 
 /**
- * Create gradient for teardrop (bright at head, darker at tail)
+ * Create shared gradients for wind particles (near and far layers)
+ * These gradients are created once and reused by all particles
  */
-export function createGradient(
+export function createSharedGradients(
 	svg: SVGElement,
-	defsElement: SVGDefsElement | null,
-	id: string,
-	opacity: number
-): { gradient: SVGLinearGradientElement; defsElement: SVGDefsElement } {
+	defsElement: SVGDefsElement | null
+): SVGDefsElement {
 	let defs = defsElement;
 	if (!defs) {
 		defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
 		svg.insertBefore(defs, svg.firstChild);
 	}
 
-	const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-	gradient.setAttribute('id', id);
-	gradient.setAttribute('x1', '0%');
-	gradient.setAttribute('y1', '0%');
-	gradient.setAttribute('x2', '100%');
-	gradient.setAttribute('y2', '0%');
+	// Check if gradients already exist
+	if (defs.querySelector('#windNear') && defs.querySelector('#windFar')) {
+		return defs;
+	}
 
-	// Bright white/light blue at head (0%)
-	const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-	stop1.setAttribute('offset', '0%');
-	stop1.setAttribute('stop-color', `hsla(200, 70%, 90%, ${opacity})`);
-	gradient.appendChild(stop1);
+	// Near gradient (brighter, higher opacity)
+	const gradientNear = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+	gradientNear.setAttribute('id', 'windNear');
+	gradientNear.setAttribute('x1', '0%');
+	gradientNear.setAttribute('y1', '0%');
+	gradientNear.setAttribute('x2', '100%');
+	gradientNear.setAttribute('y2', '0%');
 
-	// Light blue in middle (40%)
-	const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-	stop2.setAttribute('offset', '40%');
-	stop2.setAttribute('stop-color', `hsla(205, 65%, 75%, ${opacity * 0.95})`);
-	gradient.appendChild(stop2);
+	const stopNear1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+	stopNear1.setAttribute('offset', '0%');
+	stopNear1.setAttribute('stop-color', 'hsla(200, 50%, 85%, 0.7)'); // Brighter at head
+	gradientNear.appendChild(stopNear1);
 
-	// Medium blue (70%)
-	const stop3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-	stop3.setAttribute('offset', '70%');
-	stop3.setAttribute('stop-color', `hsla(210, 55%, 60%, ${opacity * 0.8})`);
-	gradient.appendChild(stop3);
+	const stopNear2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+	stopNear2.setAttribute('offset', '40%');
+	stopNear2.setAttribute('stop-color', 'hsla(205, 45%, 70%, 0.65)');
+	gradientNear.appendChild(stopNear2);
 
-	// Darker blue at tail (100%)
-	const stop4 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-	stop4.setAttribute('offset', '100%');
-	stop4.setAttribute('stop-color', `hsla(215, 45%, 50%, ${opacity * 0.5})`);
-	gradient.appendChild(stop4);
+	const stopNear3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+	stopNear3.setAttribute('offset', '70%');
+	stopNear3.setAttribute('stop-color', 'hsla(210, 40%, 60%, 0.5)');
+	gradientNear.appendChild(stopNear3);
 
-	defs.appendChild(gradient);
-	return { gradient, defsElement: defs };
+	const stopNear4 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+	stopNear4.setAttribute('offset', '100%');
+	stopNear4.setAttribute('stop-color', 'hsla(215, 35%, 50%, 0.3)'); // Fades at tail
+	gradientNear.appendChild(stopNear4);
+
+	defs.appendChild(gradientNear);
+
+	// Far gradient (dimmer, lower opacity)
+	const gradientFar = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+	gradientFar.setAttribute('id', 'windFar');
+	gradientFar.setAttribute('x1', '0%');
+	gradientFar.setAttribute('y1', '0%');
+	gradientFar.setAttribute('x2', '100%');
+	gradientFar.setAttribute('y2', '0%');
+
+	const stopFar1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+	stopFar1.setAttribute('offset', '0%');
+	stopFar1.setAttribute('stop-color', 'hsla(200, 40%, 80%, 0.4)');
+	gradientFar.appendChild(stopFar1);
+
+	const stopFar2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+	stopFar2.setAttribute('offset', '40%');
+	stopFar2.setAttribute('stop-color', 'hsla(205, 35%, 65%, 0.35)');
+	gradientFar.appendChild(stopFar2);
+
+	const stopFar3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+	stopFar3.setAttribute('offset', '70%');
+	stopFar3.setAttribute('stop-color', 'hsla(210, 30%, 55%, 0.25)');
+	gradientFar.appendChild(stopFar3);
+
+	const stopFar4 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+	stopFar4.setAttribute('offset', '100%');
+	stopFar4.setAttribute('stop-color', 'hsla(215, 25%, 45%, 0.15)');
+	gradientFar.appendChild(stopFar4);
+
+	defs.appendChild(gradientFar);
+
+	return defs;
 }
 
