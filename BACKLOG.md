@@ -269,8 +269,9 @@ Improve the visual design of wind zones. The current circle/arc visualization is
 ### 3. Speed-Based Movement System
 
 **Priority**: 🔴 High  
-**Status**: Not Started  
-**Estimated Effort**: 3-5 days
+**Status**: ✅ Completed  
+**Estimated Effort**: 3-5 days  
+**Actual Effort**: ~2 hours
 
 #### Description
 Implement speed variations based on sailing angle relative to optimal power. Boats should advance different distances depending on whether they're sailing at the optimal angle for power or not.
@@ -288,12 +289,12 @@ Implement speed variations based on sailing angle relative to optimal power. Boa
   - Visual feedback showing speed differences
 
 #### Acceptance Criteria
-- [ ] Speed varies based on angle to wind (ATW)
-- [ ] Optimal angle (45°) provides full speed
-- [ ] Pinching reduces speed proportionally
-- [ ] Footing reduces speed proportionally
-- [ ] Movement distance reflects speed changes
-- [ ] Visual indicators show speed differences
+- [x] Speed varies based on angle to wind (ATW)
+- [x] Optimal angle (45°) provides full speed (1.0 multiplier)
+- [x] Pinching (<42° ATW) reduces speed proportionally (0.7-0.9 range)
+- [x] Footing (>50° ATW) reduces speed proportionally (0.7-0.9 range)
+- [x] Movement distance reflects speed changes (applied to Forward and ToMark movement)
+- [x] Visual indicators show speed differences (TacticalCardService updated to show actual speed)
 
 #### Technical Notes
 - Modify `BoatMovementService` to calculate speed multiplier based on ATW

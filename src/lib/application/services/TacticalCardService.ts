@@ -18,8 +18,10 @@ import {
 	calculateLiftHeader,
 	OPT_UPWIND_ANGLE
 } from '$lib/utils/gameLogic';
+import { BoatMovementService } from '$lib/domain/services/BoatMovementService';
+import { Angle } from '$lib/domain/value-objects/Angle';
 
-const BOAT_SPEED = 1.0;
+const BOAT_SPEED = 1.0; // Base speed (full speed at optimal angle)
 
 export interface TacticalMetrics {
 	// ATW (Angle to Wind)
@@ -134,9 +136,15 @@ export function calculateTacticalMetrics(input: TacticalCardInput): TacticalMetr
 	});
 	const atwStatusLabel = atwStatusInfo.label;
 
-	// 2. VMG
+	// Calculate speed multiplier based on ATW (for VMG and speed calculations)
+	const boatHeading = boat ? Angle.fromDegrees(boat.rotation) : Angle.fromDegrees(0);
+	const windDirection = Angle.fromDegrees(windDir);
+	const speedMultiplier = boat ? BoatMovementService.calculateSpeedMultiplier(boatHeading, windDirection) : 1.0;
+	const actualSpeed = BOAT_SPEED * speedMultiplier;
+
+	// 2. VMG (using actual speed based on ATW)
 	const vmg = windwardMark
-		? calculateVMG(boat.rotation, boat.x, boat.y, windwardMark.x, windwardMark.y, BOAT_SPEED)
+		? calculateVMG(boat.rotation, boat.x, boat.y, windwardMark.x, windwardMark.y, actualSpeed)
 		: 0;
 	const vmgEfficiency = windwardMark
 		? calculateVMGEfficiency(
@@ -193,9 +201,9 @@ export function calculateTacticalMetrics(input: TacticalCardInput): TacticalMetr
 	});
 	const headingStatusLabel = headingStatusInfo.label;
 
-	// 5. Speed
-	const currentSpeed = BOAT_SPEED;
-	const targetSpeed = BOAT_SPEED;
+	// 5. Speed (using speedMultiplier and actualSpeed calculated above for VMG)
+	const currentSpeed = actualSpeed;
+	const targetSpeed = BOAT_SPEED; // Optimal speed (at 45° ATW)
 	const speedDelta = currentSpeed - targetSpeed;
 
 	// 6. Mode

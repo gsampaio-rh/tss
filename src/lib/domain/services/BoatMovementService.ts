@@ -27,6 +27,54 @@ export interface BoatMovementResult {
  */
 export class BoatMovementService {
 	/**
+	 * Calculate speed multiplier based on Angle to Wind (ATW)
+	 * 
+	 * Speed varies based on how close the boat is to optimal sailing angle:
+	 * - Optimal angle (45° ATW) = Full speed (1.0)
+	 * - Pinching (<42° ATW) = Reduced speed (0.7-0.9)
+	 * - Footing (>50° ATW) = Reduced speed (0.7-0.9)
+	 * - Speed varies smoothly based on angle deviation
+	 * 
+	 * @param boatHeading - Boat's current heading
+	 * @param windDirection - Wind direction
+	 * @returns Speed multiplier (0.0-1.0)
+	 */
+	static calculateSpeedMultiplier(boatHeading: Angle, windDirection: Angle): number {
+		// Calculate Angle to Wind (ATW) - absolute difference between heading and wind
+		const atw = Math.abs(TacticalAnalysisService.angleDiff(windDirection, boatHeading));
+		
+		// Optimal ATW is 45° (provides full speed)
+		const OPTIMAL_ATW = 45;
+		
+		// Speed reduction thresholds
+		const PINCH_THRESHOLD = 42; // Below this, boat is pinching (too close to wind)
+		const FOOT_THRESHOLD = 50;  // Above this, boat is footing (too wide)
+		
+		// Minimum speed multiplier (for very poor angles)
+		const MIN_SPEED = 0.7;
+		
+		// Calculate speed based on ATW
+		if (atw >= PINCH_THRESHOLD && atw <= FOOT_THRESHOLD) {
+			// Optimal range: full speed
+			return 1.0;
+		} else if (atw < PINCH_THRESHOLD) {
+			// Pinching: speed decreases as ATW decreases
+			// Linear interpolation from MIN_SPEED at 0° to 1.0 at PINCH_THRESHOLD
+			const deviation = PINCH_THRESHOLD - atw;
+			const maxDeviation = PINCH_THRESHOLD; // Maximum deviation (at 0°)
+			const speedReduction = (deviation / maxDeviation) * (1.0 - MIN_SPEED);
+			return Math.max(MIN_SPEED, 1.0 - speedReduction);
+		} else {
+			// Footing: speed decreases as ATW increases
+			// Linear interpolation from 1.0 at FOOT_THRESHOLD to MIN_SPEED at 90°
+			const deviation = atw - FOOT_THRESHOLD;
+			const maxDeviation = 90 - FOOT_THRESHOLD; // Maximum deviation (at 90°)
+			const speedReduction = Math.min(1.0, deviation / maxDeviation) * (1.0 - MIN_SPEED);
+			return Math.max(MIN_SPEED, 1.0 - speedReduction);
+		}
+	}
+
+	/**
 	 * Execute a boat turn based on turn type
 	 * 
 	 * Executes a boat's turn based on the selected turn type (Forward, Tack, ToMark).
@@ -108,10 +156,16 @@ export class BoatMovementService {
 			}
 		}
 
-		// Apply dirty air effects if enabled
-		let speedMultiplier = 1.0;
+		// Calculate speed multiplier based on Angle to Wind (ATW)
+		// This makes boats slower when pinching or footing
+		let speedMultiplier = BoatMovementService.calculateSpeedMultiplier(
+			currentRotation,
+			currentWind
+		);
+		
 		let angleAdjustment = 0;
 
+		// Apply dirty air effects if enabled (multiplies with ATW-based speed)
 		if (enableDirtyAirEffects) {
 			const dirtyAirEffect = DirtyAirService.getDirtyAirEffect(
 				boat,
@@ -121,8 +175,9 @@ export class BoatMovementService {
 			);
 
 			if (dirtyAirEffect.inDirtyAir) {
-				// Reduce speed by 15-30% based on intensity
-				speedMultiplier = 1.0 - dirtyAirEffect.intensity * 0.3;
+				// Reduce speed by 15-30% based on intensity (multiplies with ATW speed)
+				const dirtyAirMultiplier = 1.0 - dirtyAirEffect.intensity * 0.3;
+				speedMultiplier *= dirtyAirMultiplier;
 				// Adjust angle (foot off) by up to 5 degrees
 				angleAdjustment = dirtyAirEffect.intensity * 5;
 			}
@@ -226,19 +281,25 @@ export class BoatMovementService {
 							}
 						}
 						
+						// Execute ToMark movement (speed multiplier calculated inside based on actual heading)
 						currentPosition = BoatMovementService.executeToMarkMovement(
 							currentPosition,
 							markPosition,
 							currentTack,
 							moveDist,
 							game,
-							currentRotation
+							currentRotation,
+							currentWind,
+							speedMultiplier // Pass speed multiplier for dirty air effects
 						);
 						points.push(currentPosition);
 						moveDist = 0.0;
 					} else {
 						// Forward movement
 						const adjustedRotation = currentRotation.add(Angle.fromDegrees(angleAdjustment));
+						
+						// Apply speed multiplier to movement distance
+						// Speed multiplier accounts for ATW (pinching/footing) and dirty air
 						const effectiveMoveDist = moveDist * speedMultiplier;
 
 						const newX =
@@ -274,6 +335,7 @@ export class BoatMovementService {
 
 	/**
 	 * Execute "ToMark" movement logic
+	 * Speed multiplier is calculated based on the actual heading angle used
 	 */
 	private static executeToMarkMovement(
 		currentPosition: Position,
@@ -281,16 +343,25 @@ export class BoatMovementService {
 		tack: boolean,
 		moveDist: number,
 		game: Game,
-		currentRotation: Angle
+		currentRotation: Angle,
+		currentWind: Angle,
+		baseSpeedMultiplier: number
 	): Position {
 		if (game.isOutLaneline(currentPosition.x, currentPosition.y)) {
-			// Head directly to mark
+			// Head directly to mark - calculate speed based on course angle
 			const courseAngle = NavigationService.getCourseAxis(currentPosition, markPosition);
-			const newX = currentPosition.x + Math.sin(courseAngle.radians) * moveDist;
-			const newY = currentPosition.y - Math.cos(courseAngle.radians) * moveDist;
+			const toMarkSpeedMultiplier = BoatMovementService.calculateSpeedMultiplier(
+				courseAngle,
+				currentWind
+			);
+			const effectiveDist = moveDist * toMarkSpeedMultiplier;
+			
+			const newX = currentPosition.x + Math.sin(courseAngle.radians) * effectiveDist;
+			const newY = currentPosition.y - Math.cos(courseAngle.radians) * effectiveDist;
 			return new Position(newX, newY);
 		} else {
-			// Follow layline
+			// Follow layline - uses optimal 45° angle, so speed should be full
+			// But we'll use the base speed multiplier for consistency
 			const laylineWind = Angle.fromDegrees(game.getWind(game.turncount));
 			let lanelineAngle: Angle;
 			let moveAngle: Angle;
@@ -309,13 +380,16 @@ export class BoatMovementService {
 				lanelineAngle
 			);
 
-			if (lanelineDistance < moveDist) {
+			// Apply speed multiplier (moveAngle is at optimal 45°, but use base multiplier for dirty air)
+			const effectiveDist = moveDist * baseSpeedMultiplier;
+
+			if (lanelineDistance < effectiveDist) {
 				const newX = currentPosition.x + Math.sin(moveAngle.radians) * lanelineDistance;
 				const newY = currentPosition.y - Math.cos(moveAngle.radians) * lanelineDistance;
 				return new Position(newX, newY);
 			} else {
-				const newX = currentPosition.x + Math.sin(moveAngle.radians) * moveDist;
-				const newY = currentPosition.y - Math.cos(moveAngle.radians) * moveDist;
+				const newX = currentPosition.x + Math.sin(moveAngle.radians) * effectiveDist;
+				const newY = currentPosition.y - Math.cos(moveAngle.radians) * effectiveDist;
 				return new Position(newX, newY);
 			}
 		}
