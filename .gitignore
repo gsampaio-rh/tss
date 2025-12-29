@@ -1,35 +1,23 @@
-# Dependencies
-node_modules/
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+node_modules
 
-# Build outputs
-.svelte-kit/
-build/
-dist/
-.output/
-
-# Environment
-.env
-.env.*
-!.env.example
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
-npm-debug.log*
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
 
-# Temporary files
-*.tmp
-*.temp
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
