@@ -3,8 +3,6 @@
 		game,
 		players,
 		marks,
-		gameWidth,
-		gameHeight,
 		currentWind,
 		turnCount
 	} from '$lib/stores/game';
@@ -20,6 +18,11 @@
 	import WindZones from './WindZones.svelte';
 	import DirtyAirZones from './DirtyAirZones.svelte';
 	import { onMount, onDestroy } from 'svelte';
+	import { renderGameAreaSize } from '$lib/infrastructure/rendering/CanvasRenderer';
+	import { formatCssPx, formatCssDeg } from '$lib/utils/cssFormat';
+	import { formatSvgViewBox } from '$lib/utils/windParticleUtils';
+	import { getTrackPoints } from '$lib/utils/trackUtils';
+	import { calculateLaylineEndpoints } from '$lib/utils/laylineUtils';
 
 	let gameArea: HTMLDivElement;
 	let gameCont: HTMLDivElement;
@@ -37,52 +40,9 @@
 		}
 	}
 
-	function formatCssPx(val: number): string {
-		return val.toFixed(3) + 'px';
-	}
-
-	function formatCssDeg(val: number): string {
-		return val.toFixed(3) + 'deg';
-	}
-
-	function formatSvgViewBox(left: number, top: number, width: number, height: number): string {
-		return `${left.toFixed(3)} ${top.toFixed(3)} ${width.toFixed(3)} ${height.toFixed(3)}`;
-	}
-
 	function renderGridSize() {
 		if (!$game || !gameCont || !gameArea) return;
-
-		const w = gameCont.clientWidth;
-		const h = gameCont.clientHeight;
-
-		if (w === 0 || h === 0) return; // Container not sized yet
-
-		// Game area should have the actual game size in pixels
-		const gameWidthPx = $game.width * GRID_SIZE;
-		const gameHeightPx = $game.height * GRID_SIZE;
-
-		// Set game-area to actual game dimensions
-		gameArea.style.width = formatCssPx(gameWidthPx);
-		gameArea.style.height = formatCssPx(gameHeightPx);
-
-		// Calculate scale to fit within container
-		const scaleX = w / gameWidthPx;
-		const scaleY = h / gameHeightPx;
-
-		// Use the smaller scale to ensure content fits completely within container
-		// This prevents overflow-x into sidebars
-		const scale = Math.min(scaleX, scaleY);
-
-		// Center the game-area within the container
-		const scaledWidth = gameWidthPx * scale;
-		const scaledHeight = gameHeightPx * scale;
-		const left = (w - scaledWidth) / 2;
-		const top = (h - scaledHeight) / 2;
-
-		// Apply transform to scale and position
-		// The overflow: hidden on game-canvas-wrapper and game-stage-container will clip any overflow
-		gameArea.style.transform = `translate(${left}px, ${top}px) scale(${scale})`;
-		gameArea.style.transformOrigin = 'top left';
+		renderGameAreaSize(gameArea, { width: $game.width, height: $game.height }, gameCont);
 	}
 
 	// Only re-render when game dimensions change
@@ -96,9 +56,6 @@
 			});
 		}
 	}
-
-	// Only re-render when container size changes (removed afterUpdate to prevent constant reflows)
-	// Container size changes are handled by resize event listener
 
 	onMount(() => {
 		// Create a MutationObserver to watch for changes to body attributes
@@ -155,67 +112,28 @@
 		}
 	});
 
-	// Generate track points for a player
-	function getTrackPoints(player: (typeof $players)[0]): string {
-		if (!$game) return '';
-
-		let points = '';
-		for (let i = 0; i < player.turns.length && i < $game.turncount + 1; i++) {
-			for (let j = 0; j < player.turns[i].points.length; j++) {
-				const pt = player.turns[i].points[j];
-				points += ' ' + pt.x.toFixed(3) + ',' + pt.y.toFixed(3);
-			}
-		}
-		return points;
-	}
-
 	// Wind direction display
 	$: windDisplayAngle = $currentWind * 2;
 	$: windLabel = $currentWind > 0 ? `+${$currentWind}º` : `${$currentWind}º`;
 
 	// Up mark position (mark index 2)
 	$: upMark = $marks[2];
-	$: upMarkX = upMark ? upMark.x * GRID_SIZE : 0;
-	$: upMarkY = upMark ? upMark.y * GRID_SIZE : 0;
 
 	// Start line (between marks[0] and marks[1])
 	$: startMark1 = $marks[0];
 	$: startMark2 = $marks[1];
-	$: startLineX1 = startMark1 ? startMark1.x * GRID_SIZE : 0;
-	$: startLineY1 = startMark1 ? startMark1.y * GRID_SIZE : 0;
-	$: startLineX2 = startMark2 ? startMark2.x * GRID_SIZE : 0;
-	$: startLineY2 = startMark2 ? startMark2.y * GRID_SIZE : 0;
 
-	// Layline angles (matches original game logic)
-	// These are the angles boats sail at when on the layline: -45-wind (port) and 45-wind (starboard)
-	$: portLaylineAngle = -45 - $currentWind;
-	$: starboardLaylineAngle = 45 - $currentWind;
-
-	// Laylines extend FROM the mark BACKWARD (downwind) toward the start area
-	// They show the boundary: "if you're outside this line, you can't make the mark without tacking"
-	// Length: extend far enough to intersect the approach corridor from the start
-	$: laylineLength = $game ? Math.max($game.width, $game.height) * 1.5 : 100;
-
-	// Calculate where laylines should extend to (toward start area)
-	// They should intersect the approach corridor where boats are sailing from
-	$: startLineCenterX =
-		startMark1 && startMark2 ? (startMark1.x + startMark2.x) / 2 : $game ? $game.width / 2 : 0;
-	$: startLineY = startMark1 ? startMark1.y : $game ? $game.height - 2 : 0;
-
-	// Extend laylines from mark backward along the layline angles
-	// This creates the boundary that intersects the approach corridor
-	$: portLaylineEndX = upMark
-		? upMark.x + Math.sin(((portLaylineAngle + 180) * Math.PI) / 180) * laylineLength
-		: 0;
-	$: portLaylineEndY = upMark
-		? upMark.y - Math.cos(((portLaylineAngle + 180) * Math.PI) / 180) * laylineLength
-		: 0;
-	$: starboardLaylineEndX = upMark
-		? upMark.x + Math.sin(((starboardLaylineAngle + 180) * Math.PI) / 180) * laylineLength
-		: 0;
-	$: starboardLaylineEndY = upMark
-		? upMark.y - Math.cos(((starboardLaylineAngle + 180) * Math.PI) / 180) * laylineLength
-		: 0;
+	// Layline calculations
+	$: laylineEndpoints = calculateLaylineEndpoints({
+		currentWind: $currentWind || 0,
+		upMark: upMark || null,
+		gameWidth: $game?.width || 0,
+		gameHeight: $game?.height || 0
+	});
+	$: portLaylineEndX = laylineEndpoints.port.x;
+	$: portLaylineEndY = laylineEndpoints.port.y;
+	$: starboardLaylineEndX = laylineEndpoints.starboard.x;
+	$: starboardLaylineEndY = laylineEndpoints.starboard.y;
 </script>
 
 {#if $game}
@@ -252,7 +170,7 @@
 						<polyline
 							class="player-track"
 							data-player-index={playerIndex.toString()}
-							points={getTrackPoints(player)}
+							points={getTrackPoints(player, $game?.turncount || 0)}
 							stroke={trackColor}
 							fill="none"
 							stroke-width={trackWidth}
