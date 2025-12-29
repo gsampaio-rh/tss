@@ -154,6 +154,44 @@
 	animation: pulse 1s ease-in-out infinite;
 }
 
+.header-badges {
+	display: flex;
+	gap: var(--spacing-xs);
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.penalty-badge {
+	background: rgba(220, 53, 69, 0.9);
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: var(--border-radius-sm);
+	font-size: var(--font-size-sm);
+	font-weight: var(--font-weight-semibold);
+	animation: pulse 1s ease-in-out infinite;
+}
+
+.penalty-badge.executing {
+	background: rgba(139, 0, 0, 0.9);
+	animation: pulse-executing 0.8s ease-in-out infinite;
+}
+
+.racing-warning-badge {
+	background: rgba(255, 170, 0, 0.9);
+	color: #000;
+	padding: 4px 8px;
+	border-radius: var(--border-radius-sm);
+	font-size: var(--font-size-sm);
+	font-weight: var(--font-weight-semibold);
+	animation: pulse-warning-badge 1.5s ease-in-out infinite;
+}
+
+.racing-warning-badge.critical {
+	background: rgba(255, 68, 68, 0.9);
+	color: #fff;
+	animation: pulse-critical-badge 1s ease-in-out infinite;
+}
+
 @keyframes pulse {
 	0%,
 	100% {
@@ -161,6 +199,42 @@
 	}
 	50% {
 		opacity: 0.7;
+	}
+}
+
+@keyframes pulse-executing {
+	0%,
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 0.7;
+		transform: scale(1.1);
+	}
+}
+
+@keyframes pulse-warning-badge {
+	0%,
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 0.85;
+		transform: scale(1.03);
+	}
+}
+
+@keyframes pulse-critical-badge {
+	0%,
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 0.8;
+		transform: scale(1.08);
 	}
 }
 

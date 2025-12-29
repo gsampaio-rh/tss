@@ -9,6 +9,7 @@
  */
 
 import type { Boat } from '$lib/types/boat';
+import type { Game } from '$lib/types/game';
 import {
 	angleDiff,
 	getOptimalHeading,
@@ -19,6 +20,7 @@ import {
 	OPT_UPWIND_ANGLE
 } from '$lib/utils/gameLogic';
 import { BoatMovementService } from '$lib/domain/services/BoatMovementService';
+import { RacingRulesService } from '$lib/domain/services/RacingRulesService';
 import { Angle } from '$lib/domain/value-objects/Angle';
 
 const BOAT_SPEED = 1.0; // Base speed (full speed at optimal angle)
@@ -79,6 +81,18 @@ export interface TacticalMetrics {
 
 	// Decision Flag
 	decisionFlag: 'TACK NOW' | 'TACK SOON' | 'HOLD';
+
+	// Racing Rules
+	racingWarnings: Array<{
+		otherBoat: Boat;
+		situation: string;
+		collisionRisk: string;
+		warningLevel: 'warning' | 'critical';
+		warningMessage: string;
+	}>;
+	hasPenalty: boolean;
+	penaltyTurnsRemaining: number;
+	isExecutingPenalty: boolean;
 }
 
 export interface TacticalCardInput {
@@ -87,6 +101,7 @@ export interface TacticalCardInput {
 	windDir: number; // in degrees
 	previousWindDir: number; // in degrees
 	previousVMG?: number; // for trend calculation
+	game?: Game | null; // Optional game for racing rules checking
 }
 
 /**
@@ -264,6 +279,35 @@ export function calculateTacticalMetrics(input: TacticalCardInput): TacticalMetr
 		decisionFlag = 'HOLD';
 	}
 
+	// 10. Racing Rules Warnings and Penalties
+	let racingWarnings: Array<{
+		otherBoat: Boat;
+		situation: string;
+		collisionRisk: string;
+		warningLevel: 'warning' | 'critical';
+		warningMessage: string;
+	}> = [];
+	let hasPenalty = false;
+	let penaltyTurnsRemaining = 0;
+	let isExecutingPenalty = false;
+
+	if (input.game) {
+		// Check for approaching violations
+		const warnings = RacingRulesService.checkApproachingViolations(boat, input.game);
+		racingWarnings = warnings.map(w => ({
+			otherBoat: w.otherBoat,
+			situation: w.situation,
+			collisionRisk: w.collisionRisk.riskLevel,
+			warningLevel: w.warningLevel,
+			warningMessage: w.warningMessage
+		}));
+
+		// Check penalty status
+		hasPenalty = boat.penaltyTurnsRemaining > 0;
+		penaltyTurnsRemaining = boat.penaltyTurnsRemaining;
+		isExecutingPenalty = boat.isExecutingPenalty || false;
+	}
+
 	return {
 		// ATW
 		atw,
@@ -319,7 +363,13 @@ export function calculateTacticalMetrics(input: TacticalCardInput): TacticalMetr
 		powerLevel,
 
 		// Decision Flag
-		decisionFlag
+		decisionFlag,
+
+		// Racing Rules
+		racingWarnings,
+		hasPenalty,
+		penaltyTurnsRemaining,
+		isExecutingPenalty
 	};
 }
 

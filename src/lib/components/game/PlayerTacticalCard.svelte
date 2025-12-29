@@ -21,6 +21,7 @@
 	import TackAdvantageMetricCard from './tactical/TackAdvantageMetricCard.svelte';
 	import ModeMetricCard from './tactical/ModeMetricCard.svelte';
 	import LiftHeaderMetricCard from './tactical/LiftHeaderMetricCard.svelte';
+	import { game } from '$lib/stores/game';
 	import './tactical/PlayerTacticalCard.css';
 
 	export let boat: Boat;
@@ -51,7 +52,8 @@
 				windwardMark,
 				windDir,
 				previousWindDir,
-				previousVMG
+				previousVMG,
+				game: $game
 			});
 			// Update previousVMG for next calculation
 			if (metrics) {
@@ -110,6 +112,12 @@
 	$: powerLevel = metrics?.powerLevel ?? 0;
 
 	$: decisionFlag = metrics?.decisionFlag ?? 'HOLD';
+
+	// Racing Rules
+	$: racingWarnings = metrics?.racingWarnings ?? [];
+	$: hasPenalty = metrics?.hasPenalty ?? false;
+	$: penaltyTurnsRemaining = metrics?.penaltyTurnsRemaining ?? 0;
+	$: isExecutingPenalty = metrics?.isExecutingPenalty ?? false;
 
 	// Calculate position rank
 	$: position = windwardMark && $players
@@ -192,11 +200,29 @@
 					</div>
 				</div>
 			</div>
-			{#if decisionFlag !== 'HOLD'}
-				<div class="decision-badge" class:urgent={decisionFlag === 'TACK NOW'}>
-					{decisionFlag}
-				</div>
-			{/if}
+			<div class="header-badges">
+				{#if decisionFlag !== 'HOLD'}
+					<div class="decision-badge" class:urgent={decisionFlag === 'TACK NOW'}>
+						{decisionFlag}
+					</div>
+				{/if}
+				{#if hasPenalty}
+					<div class="penalty-badge" class:executing={isExecutingPenalty}>
+						{penaltyTurnsRemaining === 1 ? '360°' : '720°'} Penalty
+					</div>
+				{/if}
+				{#if racingWarnings.length > 0}
+					{#each racingWarnings as warning}
+						<div
+							class="racing-warning-badge"
+							class:critical={warning.warningLevel === 'critical'}
+							title="Racing Rules: {warning.warningMessage} (vs {warning.otherBoat.name || 'other boat'})"
+						>
+							⚠ {warning.warningMessage}
+						</div>
+					{/each}
+				{/if}
+			</div>
 		</div>
 
 		<!-- Tell Tales Indicators -->

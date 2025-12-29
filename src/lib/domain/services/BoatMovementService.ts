@@ -8,6 +8,7 @@ import { Angle } from '../value-objects/Angle';
 import { NavigationService } from './NavigationService';
 import { DirtyAirService } from './DirtyAirService';
 import { TacticalAnalysisService } from './TacticalAnalysisService';
+import { RacingRulesService, PenaltyType } from './RacingRulesService';
 import type { Boat } from '../../types/boat';
 import type { Game } from '../../types/game';
 import { TurnType } from '../../types/game';
@@ -128,6 +129,24 @@ export class BoatMovementService {
 
 		// Get current wind for this turn
 		const currentWind = Angle.fromDegrees(game.getWind(game.turncount));
+
+		// Handle penalty turns first (if boat is executing a penalty)
+		// Penalty turns: boat must complete 360° rotation (or 720° for serious violations)
+		// During penalty, boat rotates in place without forward movement
+		if (boat.penaltyTurnsRemaining > 0) {
+			boat.isExecutingPenalty = true;
+			// Execute penalty turn: rotate 360° in place
+			// Boat rotates but doesn't move forward
+			currentRotation = currentRotation.add(Angle.fromDegrees(360));
+			boat.penaltyTurnsRemaining--;
+			if (boat.penaltyTurnsRemaining === 0) {
+				boat.isExecutingPenalty = false;
+			}
+			// After penalty, boat continues on its current course
+			boat.turntype = TurnType.Forward;
+			// Don't move forward during penalty - just rotate
+			moveDist = 0;
+		}
 
 		// Handle tacking
 		if (boat.turntype === TurnType.Tack) {
@@ -307,8 +326,76 @@ export class BoatMovementService {
 						const newY =
 							currentPosition.y - Math.cos(adjustedRotation.radians) * effectiveMoveDist;
 
-						currentPosition = new Position(newX, newY);
-						points.push(currentPosition);
+						const newPosition = new Position(newX, newY);
+
+						// Check racing rules before moving
+						const violations = RacingRulesService.checkMovementViolations(
+							boat,
+							newPosition,
+							game
+						);
+
+						// If there are violations and boat must keep clear, prevent movement or apply penalty
+						let movementBlocked = false;
+						if (violations.length > 0) {
+							for (const violation of violations) {
+								if (violation.mustKeepClear && violation.violation) {
+									// Check collision risk
+									if (violation.otherBoat) {
+										const collisionRisk = RacingRulesService.detectCollisionRisk(
+											boat,
+											violation.otherBoat,
+											game
+										);
+
+										// Apply penalty if there's a collision risk or boats are too close
+										// Penalties are applied for medium/high/imminent risk or actual collisions
+										if (collisionRisk.riskLevel === 'imminent' || 
+										    collisionRisk.riskLevel === 'high' ||
+										    collisionRisk.willCollide ||
+										    collisionRisk.riskLevel === 'medium') {
+											const penalty = RacingRulesService.determinePenalty(
+												violation,
+												collisionRisk
+											);
+											
+											if (penalty === PenaltyType.TURN_360) {
+												boat.penaltyTurnsRemaining = 1;
+												// Log penalty application
+												if (typeof console !== 'undefined' && console.warn) {
+													console.warn(
+														`[RACING RULES] ${boat.name || 'Boat'} received 360° penalty for violating right-of-way against ${violation.otherBoat.name || 'other boat'}`
+													);
+												}
+											} else if (penalty === PenaltyType.TURN_720) {
+												boat.penaltyTurnsRemaining = 2;
+												// Log penalty application
+												if (typeof console !== 'undefined' && console.warn) {
+													console.warn(
+														`[RACING RULES] ${boat.name || 'Boat'} received 720° penalty for serious violation against ${violation.otherBoat.name || 'other boat'}`
+													);
+												}
+											}
+										}
+
+										// Prevent movement that would cause collision or violate rules
+										// Boat stays in place this turn
+										movementBlocked = true;
+										break;
+									}
+								}
+							}
+						}
+
+						if (movementBlocked) {
+							// Stay in place
+							currentPosition = initialPosition;
+							points.push(currentPosition);
+						} else {
+							// No violations, proceed with movement
+							currentPosition = newPosition;
+							points.push(currentPosition);
+						}
 						moveDist = 0.0;
 					}
 				}

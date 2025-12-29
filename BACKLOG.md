@@ -310,8 +310,9 @@ Implement speed variations based on sailing angle relative to optimal power. Boa
 ### 4. Racing Rules Implementation
 
 **Priority**: 🔴 High  
-**Status**: Not Started  
-**Estimated Effort**: 5-7 days
+**Status**: ✅ Completed  
+**Estimated Effort**: 5-7 days  
+**Actual Effort**: ~4 hours
 
 #### Description
 Implement sailing racing rules, particularly right-of-way rules. Boats on starboard tack have right-of-way over boats on port tack.
@@ -334,19 +335,25 @@ Implement sailing racing rules, particularly right-of-way rules. Boats on starbo
   - Visual indication of penalty turns
 
 #### Acceptance Criteria
-- [ ] Starboard tack boats have right-of-way
-- [ ] Port tack boats must keep clear
-- [ ] Collision detection prevents illegal moves
-- [ ] Penalty system for rule violations
-- [ ] Visual indicators for right-of-way situations
-- [ ] Warnings when boats are on collision course
+- [x] Starboard tack boats have right-of-way
+- [x] Port tack boats must keep clear
+- [x] Collision detection prevents illegal moves
+- [x] Penalty system for rule violations (360° and 720° turns)
+- [x] Visual indicators for right-of-way situations (on map and tactical card)
+- [x] Warnings when boats are on collision course (one turn before penalty)
+- [x] Descriptive warning messages (e.g., "Keep Clear - Starboard")
+- [x] Penalty badges in tactical card showing active penalties
 
 #### Technical Notes
-- Create `RacingRulesService` in domain layer
-- Implement collision detection algorithm
-- Add penalty turn system
-- Update `BoatMovementService` to check rules before movement
-- May need to add "keep clear" indicators in UI
+- ✅ Created `RacingRulesService` in domain layer with right-of-way logic
+- ✅ Implemented collision detection algorithm with risk assessment (none/low/medium/high/imminent)
+- ✅ Added penalty turn system (360° for standard violations, 720° for serious violations)
+- ✅ Updated `BoatMovementService` to check rules before movement and apply penalties
+- ✅ Added visual warning indicators on map (pulsing circles, one turn before penalty)
+- ✅ Added warning/penalty badges in tactical card with descriptive messages
+- ✅ Exported all penalties and alerts types for external use
+- ✅ Warning messages are descriptive: "Keep Clear - Starboard", "Keep Clear - Leeward", etc.
+- ✅ Penalty execution: boats rotate 360° in place without forward movement
 
 ---
 

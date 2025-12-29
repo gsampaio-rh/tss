@@ -15,9 +15,10 @@
 	import GridLabels from './GridLabels.svelte';
 	import GridLines from './GridLines.svelte';
 	import BoatTacticalLines from './BoatTacticalLines.svelte';
-	import WindZones from './WindZones.svelte';
-	import DirtyAirZones from './DirtyAirZones.svelte';
-	import { onMount, onDestroy } from 'svelte';
+import WindZones from './WindZones.svelte';
+import DirtyAirZones from './DirtyAirZones.svelte';
+import RacingRulesWarnings from './RacingRulesWarnings.svelte';
+import { onMount, onDestroy } from 'svelte';
 	import { renderGameAreaSize } from '$lib/infrastructure/rendering/CanvasRenderer';
 	import { formatCssPx, formatCssDeg } from '$lib/utils/cssFormat';
 	import { formatSvgViewBox } from '$lib/utils/windParticleUtils';
@@ -201,6 +202,13 @@
 					<DirtyAirZones boat={player} {playerIndex} show={true} />
 				{/each}
 			{/if}
+
+			<!-- Racing Rules Warnings (visual indicators for approaching violations) -->
+			{#each $players as player, playerIndex (playerIndex)}
+				{#if $game}
+					<RacingRulesWarnings boat={player} {playerIndex} game={$game} />
+				{/if}
+			{/each}
 
 			<!-- Boats -->
 			{#if $settings.showBoats}

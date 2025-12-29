@@ -33,6 +33,10 @@ export class Boat {
 	turntype: TurnType = TurnType.Forward;
 	isAI: boolean = false; // Whether this boat is AI-controlled
 	aiDifficulty?: 'easy' | 'medium' | 'hard'; // AI difficulty level
+	
+	// Racing rules penalty state
+	penaltyTurnsRemaining: number = 0; // Number of penalty turns remaining (360° = 1 turn, 720° = 2 turns)
+	isExecutingPenalty: boolean = false; // Whether boat is currently executing a penalty turn
 
 	// UI elements (will be replaced by Svelte components)
 	html?: HTMLElement;
@@ -56,6 +60,8 @@ export class Boat {
 		this.startPos = 1;
 		this.color = color;
 		this.turntype = TurnType.Forward;
+		this.penaltyTurnsRemaining = 0;
+		this.isExecutingPenalty = false;
 	}
 
 	getTurn(): TurnType {
