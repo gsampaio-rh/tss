@@ -7,6 +7,14 @@
 
 	let svgElement: SVGElement;
 	let particleSystem: WindParticleSystem | null = null;
+	
+	// Track previous values to detect what actually changed
+	let prevGameDimensions: { width: number; height: number } | null = null;
+	let prevShowWindIndicators: boolean | null = null;
+	let prevDensity: number | null = null;
+	let prevOpacity: number | null = null;
+	let prevSpeed: number | null = null;
+	let prevLength: number | null = null;
 
 	// Initialize particle system when SVG element is available
 	$: if (svgElement && !particleSystem) {
@@ -25,12 +33,43 @@
 			}
 		);
 		particleSystem.initialize(svgElement);
+		
+		// Initialize tracking variables
+		if ($game) {
+			prevGameDimensions = { width: $game.width, height: $game.height };
+		}
+		prevShowWindIndicators = $settings.showWindIndicators;
+		prevDensity = $settings.windParticlesDensity;
+		prevOpacity = $settings.windParticlesOpacity;
+		prevSpeed = $settings.windParticlesSpeed;
+		prevLength = $settings.windParticlesLength;
+		
+		// Initialize particles immediately when system is created
+		if ($game && $settings.showWindIndicators) {
+			particleSystem.initParticles();
+		}
 	}
 
 	// Update particle system when game or settings change
 	$: if (particleSystem && svgElement) {
+		const gameDimensions = $game ? { width: $game.width, height: $game.height } : null;
+		
+		// Check if we need to reinitialize (settings changed, dimensions changed, or visibility changed)
+		// Skip check on first run (when prevGameDimensions is null but system exists)
+		const needsReinit = 
+			prevGameDimensions === null ||
+			!gameDimensions ||
+			prevGameDimensions.width !== gameDimensions.width ||
+			prevGameDimensions.height !== gameDimensions.height ||
+			prevShowWindIndicators !== $settings.showWindIndicators ||
+			prevDensity !== $settings.windParticlesDensity ||
+			prevOpacity !== $settings.windParticlesOpacity ||
+			prevSpeed !== $settings.windParticlesSpeed ||
+			prevLength !== $settings.windParticlesLength;
+		
+		// Always update config (wind direction changes smoothly without reinit)
 		particleSystem.updateConfig({
-			game: $game ? { width: $game.width, height: $game.height } : null,
+			game: gameDimensions,
 			currentWind: $currentWind || 0,
 			showWindIndicators: $settings.showWindIndicators,
 			density: $settings.windParticlesDensity,
@@ -40,11 +79,24 @@
 		});
 
 		if ($game && $settings.showWindIndicators) {
-			// Reinitialize particles when settings change to apply new values
-			particleSystem.initParticles();
+			if (needsReinit) {
+				// Only reinitialize when necessary (settings/dimensions changed)
+				particleSystem.initParticles();
+			}
+			// Otherwise, particles will smoothly adapt to wind direction changes
 		} else {
 			particleSystem.cleanup();
 		}
+		
+		// Update tracking variables
+		if (gameDimensions) {
+			prevGameDimensions = gameDimensions;
+		}
+		prevShowWindIndicators = $settings.showWindIndicators;
+		prevDensity = $settings.windParticlesDensity;
+		prevOpacity = $settings.windParticlesOpacity;
+		prevSpeed = $settings.windParticlesSpeed;
+		prevLength = $settings.windParticlesLength;
 	}
 
 	// Update viewBox when game dimensions change
