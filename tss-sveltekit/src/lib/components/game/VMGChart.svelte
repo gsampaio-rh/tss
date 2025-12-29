@@ -1,4 +1,15 @@
 <script lang="ts">
+	import {
+		CHART_HEIGHT,
+		CHART_PADDING,
+		CHART_WIDTH,
+		calculateChartDimensions,
+		calculateTurnRange,
+		toChartCoords as toChartCoordsUtil,
+		generatePath,
+		calculatePointOpacity
+	} from '$lib/utils/chartUtils';
+
 	export let history: Array<{ time: number; vmg: number; efficiency: number; turn?: number }>;
 	export let optimalVMG: number;
 	export let currentStatusColor: string;
@@ -7,13 +18,8 @@
 
 	let showTooltip = false;
 
-	const CHART_HEIGHT = 140;
-	const CHART_PADDING = { top: 30, right: 20, bottom: 20, left: 40 };
-	const CHART_WIDTH = 400;
-
 	// Calculate chart dimensions
-	$: chartWidth = CHART_WIDTH - CHART_PADDING.left - CHART_PADDING.right;
-	$: chartHeight = CHART_HEIGHT - CHART_PADDING.top - CHART_PADDING.bottom;
+	$: ({ chartWidth, chartHeight } = calculateChartDimensions());
 
 	// Calculate VMG range for Y-axis
 	$: vmgValues = history.length > 0 ? history.map(h => h.vmg) : [];
@@ -26,44 +32,30 @@
 	$: vmgRange = maxVMG - minVMG || 1;
 
 	// Calculate turn range for X-axis
-	$: if (history.length > 0) {
-		const turns = history.map(h => h.turn ?? 0);
-		const minTurn = Math.min(...turns);
-		const maxTurn = Math.max(...turns);
-		turnRange = maxTurn - minTurn || 1;
-		turnStart = minTurn;
-	} else {
-		turnRange = 1;
-		turnStart = 0;
-	}
-	let turnRange = 1;
-	let turnStart = 0;
+	$: ({ turnStart, turnRange } = calculateTurnRange(history));
 
 	// Convert data point to chart coordinates (using turn number for X-axis)
 	function toChartCoords(turn: number, vmg: number): [number, number] {
-		const x = ((turn - turnStart) / turnRange) * chartWidth + CHART_PADDING.left;
-		const y =
-			CHART_HEIGHT -
-			CHART_PADDING.bottom -
-			((vmg - minVMG) / vmgRange) * chartHeight;
-		return [x, y];
+		const coords = toChartCoordsUtil(
+			turn,
+			vmg,
+			turnStart,
+			turnRange,
+			minVMG,
+			vmgRange,
+			chartWidth,
+			chartHeight,
+			CHART_PADDING,
+			CHART_HEIGHT
+		);
+		return [coords.x, coords.y];
 	}
 
 	// Generate path for VMG line
-	$: vmgPath = (() => {
-		if (history.length === 0) return '';
-		if (history.length === 1) {
-			const turn = history[0].turn ?? 0;
-			const [x, y] = toChartCoords(turn, history[0].vmg);
-			return `M ${x} ${y} L ${x} ${y}`;
-		}
-		const points = history.map(h => {
-			const turn = h.turn ?? 0;
-			const [x, y] = toChartCoords(turn, h.vmg);
-			return `${x},${y}`;
-		});
-		return `M ${points[0]} L ${points.slice(1).join(' L ')}`;
-	})();
+	$: vmgPath = generatePath(history, 'vmg', (turn, vmg) => {
+		const [x, y] = toChartCoords(turn, vmg);
+		return { x, y };
+	});
 
 	// Generate efficiency bands (only if we have data)
 	$: excellentBandY = history.length > 0 
@@ -169,7 +161,7 @@
 			{@const pointEfficiency = Math.round(point.efficiency * 100)}
 			{@const pointStatusColor = pointEfficiency >= 95 ? '#28a745' : pointEfficiency >= 85 ? '#ffc107' : '#dc3545'}
 			{@const turnDiff = (lastPoint.turn ?? 0) - turn}
-			{@const opacity = Math.max(0.3, 1 - (turnDiff / 60) * 0.5)}
+			{@const opacity = calculatePointOpacity(turnDiff)}
 			<circle
 				cx={x}
 				cy={y}

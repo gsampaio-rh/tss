@@ -1,4 +1,15 @@
 <script lang="ts">
+	import {
+		CHART_HEIGHT,
+		CHART_PADDING,
+		CHART_WIDTH,
+		calculateChartDimensions,
+		calculateTurnRange,
+		toChartCoords as toChartCoordsUtil,
+		generatePath,
+		calculatePointOpacity
+	} from '$lib/utils/chartUtils';
+
 	export let history: Array<{ time: number; atw: number; delta: number; turn?: number }>;
 	export let targetATW: number;
 	export let currentStatusColor: string;
@@ -7,13 +18,8 @@
 
 	let showTooltip = false;
 
-	const CHART_HEIGHT = 140;
-	const CHART_PADDING = { top: 30, right: 20, bottom: 20, left: 40 };
-	const CHART_WIDTH = 400;
-
 	// Calculate chart dimensions
-	$: chartWidth = CHART_WIDTH - CHART_PADDING.left - CHART_PADDING.right;
-	$: chartHeight = CHART_HEIGHT - CHART_PADDING.top - CHART_PADDING.bottom;
+	$: ({ chartWidth, chartHeight } = calculateChartDimensions());
 
 	// Calculate ATW range for Y-axis (show target ± range)
 	$: atwValues = history.map(h => h.atw);
@@ -22,44 +28,30 @@
 	$: atwRange = maxATW - minATW || 1;
 
 	// Calculate turn range for X-axis
-	$: if (history.length > 0) {
-		const turns = history.map(h => h.turn ?? 0);
-		const minTurn = Math.min(...turns);
-		const maxTurn = Math.max(...turns);
-		turnRange = maxTurn - minTurn || 1;
-		turnStart = minTurn;
-	} else {
-		turnRange = 1;
-		turnStart = 0;
-	}
-	let turnRange = 1;
-	let turnStart = 0;
+	$: ({ turnStart, turnRange } = calculateTurnRange(history));
 
 	// Convert data point to chart coordinates (using turn number for X-axis)
 	function toChartCoords(turn: number, atw: number): [number, number] {
-		const x = ((turn - turnStart) / turnRange) * chartWidth + CHART_PADDING.left;
-		const y =
-			CHART_HEIGHT -
-			CHART_PADDING.bottom -
-			((atw - minATW) / atwRange) * chartHeight;
-		return [x, y];
+		const coords = toChartCoordsUtil(
+			turn,
+			atw,
+			turnStart,
+			turnRange,
+			minATW,
+			atwRange,
+			chartWidth,
+			chartHeight,
+			CHART_PADDING,
+			CHART_HEIGHT
+		);
+		return [coords.x, coords.y];
 	}
 
 	// Generate path for ATW line
-	$: atwPath = (() => {
-		if (history.length === 0) return '';
-		if (history.length === 1) {
-			const turn = history[0].turn ?? 0;
-			const [x, y] = toChartCoords(turn, history[0].atw);
-			return `M ${x} ${y} L ${x} ${y}`;
-		}
-		const points = history.map(h => {
-			const turn = h.turn ?? 0;
-			const [x, y] = toChartCoords(turn, h.atw);
-			return `${x},${y}`;
-		});
-		return `M ${points[0]} L ${points.slice(1).join(' L ')}`;
-	})();
+	$: atwPath = generatePath(history, 'atw', (turn, atw) => {
+		const [x, y] = toChartCoords(turn, atw);
+		return { x, y };
+	});
 
 	// Generate efficiency bands based on delta from target
 	$: excellentBandTop = history.length > 0 
@@ -171,7 +163,7 @@
 			{@const pointDelta = Math.abs(point.delta)}
 			{@const pointStatusColor = pointDelta <= 2 ? '#28a745' : pointDelta <= 5 ? '#ffc107' : '#dc3545'}
 			{@const turnDiff = (lastPoint.turn ?? 0) - turn}
-			{@const opacity = Math.max(0.3, 1 - (turnDiff / 60) * 0.5)}
+			{@const opacity = calculatePointOpacity(turnDiff)}
 			<circle
 				cx={x}
 				cy={y}
