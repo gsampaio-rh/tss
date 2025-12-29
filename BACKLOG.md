@@ -165,6 +165,65 @@ Add tell tales indicators to the player tactical card. Tell tales are visual ind
 
 ---
 
+### 1.5. Improve Tell Tales Design
+
+**Priority**: 🟡 Medium  
+**Status**: Not Started  
+**Estimated Effort**: 2-3 days
+
+#### Description
+Enhance the visual design and user experience of the tell tales indicators. While the current implementation is functional, there's room for improvement in visual clarity, realism, and user feedback.
+
+#### Requirements
+- **Visual Enhancements**:
+  - Improve visual clarity and readability
+  - Make tell tales more prominent/easier to see
+  - Better color contrast and visibility
+  - Consider alternative visual styles (ribbons, flags, etc.)
+
+- **Realism Improvements**:
+  - More realistic wind flow representation
+  - Better animation smoothness and organic feel
+  - Enhanced visual feedback for different states
+  - Consider adding wind speed indicators
+
+- **User Experience**:
+  - Clearer indication of what action to take
+  - Better integration with tactical card layout
+  - Optional: Add tooltips explaining tell tale states
+  - Consider adding numerical indicators (wind angle, etc.)
+
+- **Design Options to Explore**:
+  - Ribbon-style tell tales (more realistic)
+  - Flag-style indicators
+  - Enhanced color gradients
+  - Size/scale adjustments
+  - Better label positioning
+
+#### Acceptance Criteria
+- [ ] Tell tales are more visually prominent and clear
+- [ ] Improved visual design (more polished/professional)
+- [ ] Better user feedback (clearer what to do)
+- [ ] Maintains current functionality (flowing/stalled states)
+- [ ] Better integration with tactical card UI
+- [ ] Optional: Tooltips or additional context
+
+#### Technical Notes
+- Review and refine `TellTales.svelte` component
+- Experiment with different SVG path styles
+- Consider CSS improvements (gradients, shadows, etc.)
+- May need to adjust animation timing/curves
+- Test different visual styles and get user feedback
+
+#### UI/UX Considerations
+- Visual prominence: Should be easy to see at a glance
+- Clarity: Users should immediately understand state
+- Polish: Professional, refined appearance
+- Integration: Fits well with overall UI design
+- Accessibility: Works for colorblind users
+
+---
+
 ### 2. Wind Zones UI Improvements
 
 **Priority**: 🔴 High  
@@ -347,6 +406,117 @@ Add comprehensive end-of-game statistics and enhanced track visualization with t
 
 ---
 
+### 6. Better Wind Dynamics (Gusts & Lulls)
+
+**Priority**: 🔴 High  
+**Status**: Not Started  
+**Estimated Effort**: 4-6 days
+
+#### Description
+Implement more realistic wind dynamics with gusts (sudden increases in wind speed) and lulls (sudden decreases). This will add tactical depth as players must adapt to changing wind conditions in real-time.
+
+#### Requirements
+- **Gusts**:
+  - Sudden increases in wind speed (e.g., +2 to +5 knots)
+  - Random occurrence based on wind scenario
+  - Visual indicators (wind particles intensify, boat speed increases)
+  - Duration: 1-3 turns
+  - Frequency: Configurable per wind scenario
+
+- **Lulls**:
+  - Sudden decreases in wind speed (e.g., -2 to -5 knots)
+  - Random occurrence based on wind scenario
+  - Visual indicators (wind particles slow, boat speed decreases)
+  - Duration: 1-3 turns
+  - Frequency: Configurable per wind scenario
+
+- **Wind Variability**:
+  - Base wind speed varies within a range (e.g., 10 knots ± 2 knots)
+  - Smooth transitions between gust/lull states
+  - Visual feedback showing current wind strength
+
+- **Tactical Impact**:
+  - Gusts provide speed advantage (faster VMG)
+  - Lulls reduce speed (slower VMG)
+  - Players must anticipate and react to changes
+  - Different wind scenarios have different gust/lull patterns
+
+#### Acceptance Criteria
+- [ ] Gusts occur randomly during races
+- [ ] Lulls occur randomly during races
+- [ ] Wind speed varies smoothly between states
+- [ ] Visual indicators show gust/lull states
+- [ ] Boat speed responds to wind changes
+- [ ] Wind scenarios can configure gust/lull frequency
+- [ ] Tactical metrics (VMG, speed) reflect wind changes
+
+#### Technical Notes
+- Modify `WindCalculationService` to add gust/lull logic
+- Update wind scenario structure to include gust/lull parameters
+- Enhance `WindParticles` component to show intensity changes
+- Update `BoatMovementService` to respond to wind speed changes
+- May need to add wind speed display in UI
+- Consider adding gust/lull prediction indicators
+
+#### UI/UX Considerations
+- Visual wind intensity indicators (particle density, color)
+- Wind speed display in tactical card or game canvas
+- Optional: Gust/lull warnings/alerts
+- Smooth animations for wind transitions
+
+---
+
+### 7. Fix Boat Start Position Spacing
+
+**Priority**: 🔴 High  
+**Status**: Not Started  
+**Estimated Effort**: 1-2 days
+
+#### Description
+Boats are currently starting too close to each other on the start line, making it difficult to distinguish between boats and creating visual clutter. Increase spacing between boats at the start.
+
+#### Requirements
+- **Spacing Calculation**:
+  - Increase minimum distance between boats at start
+  - Ensure boats don't overlap visually
+  - Maintain fair start line distribution
+  - Consider different start positions (port, middle, starboard)
+
+- **Start Line Distribution**:
+  - Even spacing across available start line length
+  - Respect start position preferences (port/middle/starboard)
+  - Ensure boats fit within game boundaries
+  - Visual clarity: boats should be easily distinguishable
+
+- **Visual Improvements**:
+  - Clear separation between boats
+  - No overlapping boat graphics
+  - Easy to identify each boat's position
+  - Maintains tactical start line positioning
+
+#### Acceptance Criteria
+- [ ] Boats have adequate spacing at start (minimum 2-3 boat lengths apart)
+- [ ] No visual overlap between boats
+- [ ] Start positions (port/middle/starboard) are respected
+- [ ] Boats fit within game boundaries
+- [ ] Visual clarity improved (easy to distinguish boats)
+- [ ] Works with 2-12 players
+
+#### Technical Notes
+- Modify `GameSetupService.placeBoatsOnStart()` method
+- Update spacing calculations in boat placement logic
+- Consider boat length in spacing calculations
+- Test with different numbers of players (2, 4, 6, 8, 12)
+- May need to adjust start line length or boat size scaling
+
+#### UI/UX Considerations
+- Clear visual separation between boats
+- Easy to identify each boat's color and position
+- Start line should accommodate all boats comfortably
+- Consider zoom/scale options if needed
+
+---
+
 ## 🟢 Medium Priority Features
 
 ### 4. Advanced Tactical Analysis
@@ -504,11 +674,13 @@ To request a new feature:
 
 **Sprint Goals** (Next 2 weeks):
 1. ✅ **Contextual help for race insights** - Completed: Info modals with history charts for VMG, ATW, Heading, and Tack Advantage
-2. **Tell tales indicators** - Add visual wind flow indicators to player tactical card
+2. ✅ **Tell tales indicators** - Completed: Visual wind flow indicators with snake-like animations
 3. **Wind zones UI improvements** - Reduce circle size, improve visual design
-4. Speed-based movement system
-5. Racing rules implementation
-6. Enhanced game statistics
+4. **Better wind dynamics** - Add gusts and lulls for more realistic wind behavior
+5. **Fix boat start position spacing** - Increase spacing between boats at start line
+6. Speed-based movement system
+7. Racing rules implementation
+8. Enhanced game statistics
 
 ---
 
