@@ -26,7 +26,7 @@ This guide provides detailed information for developers working on the Tactical 
 ```bash
 # Clone the repository
 git clone https://github.com/your-repo/tss.git
-cd tss/tss-sveltekit
+cd tss
 
 # Install dependencies
 npm install

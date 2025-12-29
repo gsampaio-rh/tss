@@ -23,7 +23,7 @@ Thank you for your interest in contributing to TSS! This document provides guide
 2. Clone your fork:
    ```bash
    git clone https://github.com/your-username/tss.git
-   cd tss/tss-sveltekit
+   cd tss
    ```
 
 3. Install dependencies:
