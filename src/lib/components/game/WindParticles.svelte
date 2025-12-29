@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { game, currentWind } from '$lib/stores/game';
+	import { game, currentWind, players } from '$lib/stores/game';
 	import { settings } from '$lib/stores/settings';
 	import { WindParticleSystem } from '$lib/domain/services/WindParticleSystem';
 	import { formatSvgViewBox } from '$lib/utils/windParticleUtils';
+	import type { BoatPosition } from '$lib/domain/services/WindParticleSystem';
 
 	let svgElement: SVGElement;
 	let particleSystem: WindParticleSystem | null = null;
@@ -16,6 +17,13 @@
 	let prevSpeed: number | null = null;
 	let prevLength: number | null = null;
 
+	// Convert boats to boat positions for particle system
+	$: boatPositions = $players.map((boat): BoatPosition => ({
+		x: boat.x,
+		y: boat.y,
+		rotation: boat.rotation
+	}));
+
 	// Initialize particle system when SVG element is available
 	$: if (svgElement && !particleSystem) {
 		particleSystem = new WindParticleSystem(
@@ -23,6 +31,7 @@
 				game: $game ? { width: $game.width, height: $game.height } : null,
 				currentWind: $currentWind || 0,
 				showWindIndicators: $settings.showWindIndicators,
+				boats: boatPositions,
 				density: $settings.windParticlesDensity,
 				opacity: $settings.windParticlesOpacity,
 				speed: $settings.windParticlesSpeed,
@@ -72,6 +81,7 @@
 			game: gameDimensions,
 			currentWind: $currentWind || 0,
 			showWindIndicators: $settings.showWindIndicators,
+			boats: boatPositions,
 			density: $settings.windParticlesDensity,
 			opacity: $settings.windParticlesOpacity,
 			speed: $settings.windParticlesSpeed,

@@ -17,11 +17,14 @@ export interface Particle {
 	maxAge: number;
 	opacity: number;
 	size: number;
-	speed: number; // Base speed multiplier
+	speed: number; // Base speed multiplier (stored, not modified)
+	baseSpeed: number; // Original speed multiplier (for dirty air calculations)
 	streakLength: number; // Length of the streak
 	streakWidth: number; // Width at the head
 	isNear: boolean; // Depth layer (near = bigger, brighter)
 	streamlineId: number; // Which streamline this particle belongs to
+	dirtyAirWeight: number; // 0-1 weight for dirty air effects
+	dirtyAirBoatId: number | null; // Which boat is affecting this particle
 }
 
 export interface WindVector {
@@ -35,10 +38,17 @@ export interface GameDimensions {
 	height: number;
 }
 
+export interface BoatPosition {
+	x: number;
+	y: number;
+	rotation: number; // Boat heading in degrees
+}
+
 export interface ParticleSystemConfig {
 	game: GameDimensions | null;
 	currentWind: number; // Wind angle in game units
 	showWindIndicators: boolean;
+	boats?: BoatPosition[]; // Array of boat positions for dirty air detection
 	density?: number; // 0.5-2.0 multiplier for particle density (default 1.0)
 	opacity?: number; // 0-1 range for particle opacity (default 0.6)
 	speed?: number; // 0.5-2.0 multiplier for particle speed (default 1.0)
@@ -95,6 +105,123 @@ export class WindParticleSystem {
 	private noise(x: number, y: number, t: number): number {
 		const n = Math.sin(x * 0.02 + this.noiseSeed) * Math.cos(y * 0.02 + this.noiseSeed * 1.3) * Math.sin(t * 0.2 + this.noiseSeed * 0.7);
 		return (n + 1) / 2; // Normalize to 0..1
+	}
+
+	/**
+	 * Smoothstep function for smooth falloffs
+	 */
+	private smoothstep(edge0: number, edge1: number, x: number): number {
+		const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+		return t * t * (3 - 2 * t);
+	}
+
+	/**
+	 * Detect dirty air influence from boats
+	 * Returns weight (0-1) and boat ID affecting the particle
+	 */
+	private detectDirtyAir(particleX: number, particleY: number, windDir: { vx: number; vy: number }): { weight: number; boatId: number | null } {
+		if (!this.config.boats || this.config.boats.length === 0) {
+			return { weight: 0, boatId: null };
+		}
+
+		const BOAT_LENGTH = 1.0; // Approximate boat length in game units
+		const PLUME_LENGTH = 12 * BOAT_LENGTH; // 12 boat lengths downwind
+		const PLUME_WIDTH_BASE = 0.5 * BOAT_LENGTH; // Base width at boat
+		const PLUME_SPREAD = 0.25; // Width growth per unit distance
+
+		let maxWeight = 0;
+		let affectingBoatId: number | null = null;
+
+		for (let i = 0; i < this.config.boats.length; i++) {
+			const boat = this.config.boats[i];
+			
+			// Vector from boat to particle
+			const dx = particleX - boat.x;
+			const dy = particleY - boat.y;
+			
+			// Wind-aligned coordinates
+			const windMag = Math.sqrt(windDir.vx * windDir.vx + windDir.vy * windDir.vy);
+			if (windMag < 0.001) continue;
+			
+			const windNormX = windDir.vx / windMag;
+			const windNormY = windDir.vy / windMag;
+			
+			// Downwind distance (positive = downwind of boat)
+			const d = dx * windNormX + dy * windNormY;
+			
+			// Skip if upwind of boat
+			if (d < 0) continue;
+			
+			// Skip if too far downwind
+			if (d > PLUME_LENGTH) continue;
+			
+			// Perpendicular distance (side distance)
+			const perpX = -windNormY;
+			const perpY = windNormX;
+			const s = dx * perpX + dy * perpY;
+			
+			// Plume half-width at this distance
+			const halfWidth = PLUME_WIDTH_BASE + PLUME_SPREAD * d;
+			
+			// Skip if outside plume width
+			if (Math.abs(s) > halfWidth) continue;
+			
+			// Calculate influence weight with smooth falloffs
+			const w_d = this.smoothstep(PLUME_LENGTH, 0, d); // Longitudinal falloff
+			const w_s = this.smoothstep(halfWidth, 0, Math.abs(s)); // Lateral falloff
+			const weight = w_d * w_s;
+			
+			if (weight > maxWeight) {
+				maxWeight = weight;
+				affectingBoatId = i;
+			}
+		}
+
+		return { weight: maxWeight, boatId: affectingBoatId };
+	}
+
+	/**
+	 * Apply dirty air effects to particle velocity
+	 */
+	private applyDirtyAirEffects(particle: Particle, wind: WindVector, time: number): void {
+		if (particle.dirtyAirWeight < 0.01) return;
+
+		const w = particle.dirtyAirWeight;
+		
+		// A. Slowdown (20-50% reduction) - apply to effective speed
+		const slowdownFactor = 1.0 - 0.4 * w; // Max 40% slowdown
+		const effectiveSpeed = particle.baseSpeed * slowdownFactor;
+		
+		// B. Turbulent jitter (perpendicular to wind)
+		const windMag = Math.sqrt(wind.vx * wind.vx + wind.vy * wind.vy);
+		if (windMag > 0.001) {
+			const windPerpX = -wind.vy / windMag;
+			const windPerpY = wind.vx / windMag;
+			
+			const turbStrength = 0.15; // 15% of base speed
+			const noiseVal = this.noise(particle.x * 0.1, particle.y * 0.1, time * 0.3);
+			const turbAmount = (noiseVal - 0.5) * 2; // -1 to 1
+			
+			particle.vx += windPerpX * turbAmount * turbStrength * w * effectiveSpeed;
+			particle.vy += windPerpY * turbAmount * turbStrength * w * effectiveSpeed;
+		}
+		
+		// C. Edge curl (rolling effect at plume edges)
+		// This creates the "rolling sheet" look at plume boundaries
+		if (w > 0.3) { // Only apply curl near edges
+			const windMag = Math.sqrt(wind.vx * wind.vx + wind.vy * wind.vy);
+			if (windMag > 0.001) {
+				const windPerpX = -wind.vy / windMag;
+				const windPerpY = wind.vx / windMag;
+				
+				// Edge strength increases with weight (stronger at edges)
+				const edgeStrength = 0.1 * w;
+				const curlAmount = Math.sin(time * 2 + particle.x * 0.5) * edgeStrength;
+				
+				particle.vx += windPerpX * curlAmount * effectiveSpeed;
+				particle.vy += windPerpY * curlAmount * effectiveSpeed;
+			}
+		}
 	}
 
 	/**
@@ -329,10 +456,13 @@ export class WindParticleSystem {
 			opacity: baseOpacity,
 			size,
 			speed: speedMultiplier,
+			baseSpeed: speedMultiplier,
 			streakLength,
 			streakWidth,
 			isNear,
-			streamlineId
+			streamlineId,
+			dirtyAirWeight: 0,
+			dirtyAirBoatId: null
 		};
 
 		this.callbacks.onParticleCreated?.(particleData);
@@ -355,7 +485,20 @@ export class WindParticleSystem {
 					? (particle.maxAge - particle.age) / 20 // Fade out
 					: 1;
 
-		const finalOpacity = particle.opacity * ageOpacity;
+		// Apply dirty air opacity reduction
+		const dirtyAirOpacity = particle.dirtyAirWeight > 0.01 ? (1 - 0.3 * particle.dirtyAirWeight) : 1;
+		const finalOpacity = particle.opacity * ageOpacity * dirtyAirOpacity;
+
+		// Update gradient based on dirty air state
+		if (particle.dirtyAirWeight > 0.01) {
+			// Use red gradient for dirty air
+			const gradientId = particle.isNear ? 'windNearDirty' : 'windFarDirty';
+			particle.element.setAttribute('fill', `url(#${gradientId})`);
+		} else {
+			// Use normal gradient for clean air
+			const gradientId = particle.isNear ? 'windNear' : 'windFar';
+			particle.element.setAttribute('fill', `url(#${gradientId})`);
+		}
 
 		// Update transform (much cheaper than rewriting path)
 		particle.element.setAttribute(
@@ -440,16 +583,30 @@ export class WindParticleSystem {
 			// Get wind vector at current position (with streamlines and gusts)
 			const wind = this.getWindVector(particle.x, particle.y, this.gustTime);
 
+			// Detect dirty air influence
+			const dirtyAir = this.detectDirtyAir(particle.x, particle.y, { vx: wind.vx, vy: wind.vy });
+			particle.dirtyAirWeight = dirtyAir.weight;
+			particle.dirtyAirBoatId = dirtyAir.boatId;
+
+			// Apply dirty air effects before updating velocity
+			if (particle.dirtyAirWeight > 0.01) {
+				this.applyDirtyAirEffects(particle, wind, this.gustTime);
+			}
+
 			// Update velocity based on wind field (smooth interpolation)
+			// Apply dirty air slowdown to effective speed
+			const slowdownFactor = particle.dirtyAirWeight > 0.01 ? (1.0 - 0.4 * particle.dirtyAirWeight) : 1.0;
+			const effectiveSpeed = particle.baseSpeed * slowdownFactor;
+			
 			const smoothing = particle.isNear ? 0.12 : 0.08; // Near particles respond faster
-			particle.vx += (wind.vx * particle.speed - particle.vx) * smoothing;
-			particle.vy += (wind.vy * particle.speed - particle.vy) * smoothing;
+			particle.vx += (wind.vx * effectiveSpeed - particle.vx) * smoothing;
+			particle.vy += (wind.vy * effectiveSpeed - particle.vy) * smoothing;
 
 			// Update position using velocity (Euler integration)
 			particle.x += particle.vx * deltaTime;
 			particle.y += particle.vy * deltaTime;
 
-			// Update streak transform
+			// Update streak transform and visual styling
 			this.updateParticleShape(particle, this.gustTime);
 
 			// Remove particles that are too old or left the screen

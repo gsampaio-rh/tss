@@ -187,7 +187,7 @@
 						type="range"
 						class="opacity-slider"
 						min="0.5"
-						max="2.0"
+						max="5.0"
 						step="0.1"
 						value={$settings.windParticlesDensity}
 						oninput={(e) => {
@@ -207,7 +207,7 @@
 						type="range"
 						class="opacity-slider"
 						min="0"
-						max="1"
+						max="3.0"
 						step="0.05"
 						value={$settings.windParticlesOpacity}
 						oninput={(e) => {

@@ -110,7 +110,8 @@ export function createSharedGradients(
 	}
 
 	// Check if gradients already exist
-	if (defs.querySelector('#windNear') && defs.querySelector('#windFar')) {
+	if (defs.querySelector('#windNear') && defs.querySelector('#windFar') && 
+	    defs.querySelector('#windNearDirty') && defs.querySelector('#windFarDirty')) {
 		return defs;
 	}
 
@@ -173,6 +174,66 @@ export function createSharedGradients(
 	gradientFar.appendChild(stopFar4);
 
 	defs.appendChild(gradientFar);
+
+	// Near dirty air gradient (red tinted, higher opacity)
+	const gradientNearDirty = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+	gradientNearDirty.setAttribute('id', 'windNearDirty');
+	gradientNearDirty.setAttribute('x1', '0%');
+	gradientNearDirty.setAttribute('y1', '0%');
+	gradientNearDirty.setAttribute('x2', '100%');
+	gradientNearDirty.setAttribute('y2', '0%');
+
+	const stopNearDirty1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+	stopNearDirty1.setAttribute('offset', '0%');
+	stopNearDirty1.setAttribute('stop-color', 'hsla(0, 60%, 75%, 0.7)'); // Red tint at head
+	gradientNearDirty.appendChild(stopNearDirty1);
+
+	const stopNearDirty2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+	stopNearDirty2.setAttribute('offset', '40%');
+	stopNearDirty2.setAttribute('stop-color', 'hsla(5, 55%, 65%, 0.65)');
+	gradientNearDirty.appendChild(stopNearDirty2);
+
+	const stopNearDirty3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+	stopNearDirty3.setAttribute('offset', '70%');
+	stopNearDirty3.setAttribute('stop-color', 'hsla(10, 50%, 55%, 0.5)');
+	gradientNearDirty.appendChild(stopNearDirty3);
+
+	const stopNearDirty4 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+	stopNearDirty4.setAttribute('offset', '100%');
+	stopNearDirty4.setAttribute('stop-color', 'hsla(15, 45%, 45%, 0.3)'); // Fades at tail
+	gradientNearDirty.appendChild(stopNearDirty4);
+
+	defs.appendChild(gradientNearDirty);
+
+	// Far dirty air gradient (red tinted, lower opacity)
+	const gradientFarDirty = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+	gradientFarDirty.setAttribute('id', 'windFarDirty');
+	gradientFarDirty.setAttribute('x1', '0%');
+	gradientFarDirty.setAttribute('y1', '0%');
+	gradientFarDirty.setAttribute('x2', '100%');
+	gradientFarDirty.setAttribute('y2', '0%');
+
+	const stopFarDirty1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+	stopFarDirty1.setAttribute('offset', '0%');
+	stopFarDirty1.setAttribute('stop-color', 'hsla(0, 50%, 70%, 0.4)');
+	gradientFarDirty.appendChild(stopFarDirty1);
+
+	const stopFarDirty2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+	stopFarDirty2.setAttribute('offset', '40%');
+	stopFarDirty2.setAttribute('stop-color', 'hsla(5, 45%, 60%, 0.35)');
+	gradientFarDirty.appendChild(stopFarDirty2);
+
+	const stopFarDirty3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+	stopFarDirty3.setAttribute('offset', '70%');
+	stopFarDirty3.setAttribute('stop-color', 'hsla(10, 40%, 50%, 0.25)');
+	gradientFarDirty.appendChild(stopFarDirty3);
+
+	const stopFarDirty4 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+	stopFarDirty4.setAttribute('offset', '100%');
+	stopFarDirty4.setAttribute('stop-color', 'hsla(15, 35%, 40%, 0.15)');
+	gradientFarDirty.appendChild(stopFarDirty4);
+
+	defs.appendChild(gradientFarDirty);
 
 	return defs;
 }
