@@ -168,11 +168,9 @@ Add tell tales indicators to the player tactical card. Tell tales are visual ind
 ### 1.5. Improve Tell Tales Design
 
 **Priority**: 🟡 Medium  
-**Status**: Not Started  
-**Estimated Effort**: 2-3 days
-
-#### Description
-Enhance the visual design and user experience of the tell tales indicators. While the current implementation is functional, there's room for improvement in visual clarity, realism, and user feedback.
+**Status**: ✅ Completed  
+**Estimated Effort**: 2-3 days  
+**Actual Effort**: ~2 hours
 
 #### Requirements
 - **Visual Enhancements**:
@@ -201,19 +199,24 @@ Enhance the visual design and user experience of the tell tales indicators. Whil
   - Better label positioning
 
 #### Acceptance Criteria
-- [ ] Tell tales are more visually prominent and clear
-- [ ] Improved visual design (more polished/professional)
-- [ ] Better user feedback (clearer what to do)
-- [ ] Maintains current functionality (flowing/stalled states)
-- [ ] Better integration with tactical card UI
-- [ ] Optional: Tooltips or additional context
+- [x] Tell tales are more visually prominent and clear (3 strands per side, tape points, sail outline)
+- [x] Improved visual design (physics-based animation, tapered strands, less saturated colors)
+- [x] Better user feedback (3-state system: FLOW, ON_EDGE, STALL with smooth transitions)
+- [x] Maintains current functionality (flowing/stalled states, plus ON_EDGE state)
+- [x] Better integration with tactical card UI (improved layout, better labels)
+- [x] Realistic physics-based animation (noise functions, non-periodic motion)
 
 #### Technical Notes
-- Review and refine `TellTales.svelte` component
-- Experiment with different SVG path styles
-- Consider CSS improvements (gradients, shadows, etc.)
-- May need to adjust animation timing/curves
-- Test different visual styles and get user feedback
+- ✅ Replaced morphing animation with physics-based noise animation
+- ✅ Added 3 strands per side with slight variations (hash offsets for unique motion)
+- ✅ Implemented tapered strands (body + highlight) for depth and realism
+- ✅ Added tape/attachment points and subtle sail outline (luff curve)
+- ✅ Implemented 3-state system (FLOW, ON_EDGE, STALL) with smooth transitions
+- ✅ Updated colors to less saturated (muted green/red/yellow)
+- ✅ Animation parameters vary by state (amplitude, frequency, jitter, flick chance)
+- ✅ Non-periodic motion using deterministic noise functions
+- ✅ Tip moves more than root for realistic strand behavior
+- ✅ Removed heavy drop shadows, added subtle translucency
 
 #### UI/UX Considerations
 - Visual prominence: Should be easy to see at a glance
