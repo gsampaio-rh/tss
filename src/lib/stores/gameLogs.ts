@@ -1,6 +1,8 @@
 import { writable } from 'svelte/store';
 import type { Boat } from '../types/boat';
+import type { Game } from '../types/game';
 import type { WindScenario } from '../types/wind';
+import { RacingRulesService } from '../domain/services/RacingRulesService';
 
 export interface BoatLogEntry {
 	playerIndex: number;
@@ -14,6 +16,8 @@ export interface BoatLogEntry {
 	finished: boolean;
 	startPos?: number;
 	startPriority?: number;
+	penaltyTurnsRemaining?: number; // Number of penalty turns remaining (360° = 1 turn, 720° = 2 turns)
+	isExecutingPenalty?: boolean; // Whether boat is currently executing a penalty turn
 }
 
 export interface WindLogEntry {
@@ -24,11 +28,27 @@ export interface WindLogEntry {
 	timestamp: number;
 }
 
+export interface RacingRulesLogEntry {
+	playerIndex: number;
+	warnings?: Array<{
+		otherBoatIndex: number;
+		situation: string;
+		collisionRisk: string;
+		warningLevel: 'warning' | 'critical';
+		warningMessage: string;
+	}>;
+	penaltyApplied?: {
+		type: 'TURN_360' | 'TURN_720';
+		reason: string;
+	};
+}
+
 export interface TurnLogEntry {
 	turn: number;
 	timestamp: number;
 	wind: WindLogEntry;
 	boats: BoatLogEntry[];
+	racingRules?: RacingRulesLogEntry[]; // Optional: racing rules violations and warnings per boat
 }
 
 export interface GameLog {
@@ -61,7 +81,9 @@ function createBoatLogEntry(boat: Boat, playerIndex: number): BoatLogEntry {
 		turntype: boat.turntype,
 		finished: boat.finished !== false,
 		startPos: boat.startPos,
-		startPriority: boat.startPriority
+		startPriority: boat.startPriority,
+		penaltyTurnsRemaining: boat.penaltyTurnsRemaining,
+		isExecutingPenalty: boat.isExecutingPenalty
 	};
 }
 
@@ -107,7 +129,7 @@ function createGameLogStore() {
 			set(currentLog);
 		},
 
-		logTurn: (turn: number, windValue: number, boats: Boat[]) => {
+		logTurn: (turn: number, windValue: number, boats: Boat[], game?: Game | null) => {
 			if (!currentLog) return;
 
 			const windDisplayAngle = windValue * 2;
@@ -121,11 +143,43 @@ function createGameLogStore() {
 				timestamp: Date.now()
 			};
 
+			// Capture racing rules warnings and penalties if game is provided
+			const racingRules: RacingRulesLogEntry[] = [];
+			if (game) {
+				for (let i = 0; i < boats.length; i++) {
+					const boat = boats[i];
+					const warnings = RacingRulesService.checkApproachingViolations(boat, game);
+					const hasPenalty = boat.penaltyTurnsRemaining > 0;
+					
+					if (warnings.length > 0 || hasPenalty) {
+						const entry: RacingRulesLogEntry = {
+							playerIndex: i,
+							warnings: warnings.length > 0 ? warnings.map(w => {
+								const otherBoatIndex = boats.findIndex(b => b === w.otherBoat);
+								return {
+									otherBoatIndex: otherBoatIndex >= 0 ? otherBoatIndex : -1,
+									situation: w.situation,
+									collisionRisk: w.collisionRisk.riskLevel,
+									warningLevel: w.warningLevel,
+									warningMessage: w.warningMessage
+								};
+							}) : undefined,
+							penaltyApplied: hasPenalty ? {
+								type: boat.penaltyTurnsRemaining === 1 ? 'TURN_360' : 'TURN_720',
+								reason: boat.isExecutingPenalty ? 'Executing penalty turn' : 'Penalty pending'
+							} : undefined
+						};
+						racingRules.push(entry);
+					}
+				}
+			}
+
 			const turnEntry: TurnLogEntry = {
 				turn,
 				timestamp: Date.now(),
 				wind: windEntry,
-				boats: boats.map((boat, idx) => createBoatLogEntry(boat, idx))
+				boats: boats.map((boat, idx) => createBoatLogEntry(boat, idx)),
+				racingRules: racingRules.length > 0 ? racingRules : undefined
 			};
 
 			currentLog.turns.push(turnEntry);

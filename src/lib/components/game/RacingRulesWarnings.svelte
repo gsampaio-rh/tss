@@ -6,7 +6,6 @@
 	import { formatSvgViewBox } from '$lib/utils/windParticleUtils';
 
 	export let boat: Boat;
-	export let playerIndex: number;
 	export let game: Game | null = null;
 
 	// Check for approaching violations

@@ -409,9 +409,9 @@ export const gameActions = {
 			players.set([...currentGame.players]); // Create new array reference for reactivity
 			turnCount.set(currentGame.turncount);
 
-			// Log this turn
+			// Log this turn (including racing rules warnings and penalties)
 			const currentWind = currentGame.getWind(currentGame.turncount);
-			gameLogs.logTurn(currentGame.turncount, currentWind, currentGame.players);
+			gameLogs.logTurn(currentGame.turncount, currentWind, currentGame.players, currentGame);
 
 			logger.info(`Turn ${currentGame.turncount} completed`, 'gameActions');
 		} catch (error) {

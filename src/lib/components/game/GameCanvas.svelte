@@ -206,7 +206,7 @@ import { onMount, onDestroy } from 'svelte';
 			<!-- Racing Rules Warnings (visual indicators for approaching violations) -->
 			{#each $players as player, playerIndex (playerIndex)}
 				{#if $game}
-					<RacingRulesWarnings boat={player} {playerIndex} game={$game} />
+					<RacingRulesWarnings boat={player} game={$game} />
 				{/if}
 			{/each}
 
