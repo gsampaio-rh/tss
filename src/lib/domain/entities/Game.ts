@@ -221,10 +221,26 @@ export class GameEntity {
 	}
 
 	/**
-	 * Place boats on start line
+	 * Place boats on start line and update start marks to accommodate all boats
 	 */
 	placeBoatsOnStart(): void {
-		GameSetupService.placeBoatsOnStart(this._players, this._marks, this._height);
+		// Get base start size from wind scenario (if available) or use default
+		// We'll use a default of 15, but the method will calculate based on boat count
+		const baseStartSize = 15; // Default, could be extracted from scenario if needed
+		
+		// Place boats and update marks dynamically
+		const updatedMarks = GameSetupService.placeBoatsOnStart(
+			this._players,
+			this._marks,
+			this._height,
+			this._width,
+			baseStartSize
+		);
+		
+		// Update marks if they were changed
+		if (updatedMarks !== this._marks) {
+			this.setMarks(updatedMarks);
+		}
 	}
 
 	/**

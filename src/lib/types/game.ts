@@ -184,6 +184,29 @@ export class Game {
 	}
 
 	placeBoatsOnStart(): void {
+		// Calculate required start line size based on boat count
+		const BOAT_SPACING = 2.5;
+		const EDGE_OFFSET = 1.5;
+		const MIN_MARGIN = 2.0;
+		const baseStartSize = 15;
+
+		if (this.players.length > 0) {
+			// Calculate space needed for boats
+			const spaceNeeded = EDGE_OFFSET + (this.players.length - 1) * BOAT_SPACING + EDGE_OFFSET + MIN_MARGIN * 2;
+			const requiredStartSize = Math.max(baseStartSize, spaceNeeded);
+			const maxStartSize = this.width - 4; // Leave 2 units margin on each side
+			const actualStartSize = Math.min(requiredStartSize, maxStartSize);
+
+			// Update start marks to accommodate all boats
+			const leftX = (this.width - actualStartSize) / 2;
+			const rightX = this.width - (this.width - actualStartSize) / 2;
+
+			if (this.marks.length >= 2) {
+				this.marks[0].x = leftX;
+				this.marks[1].x = rightX;
+			}
+		}
+
 		const boatsStartLeft: Boat[] = [];
 		const boatsStartMiddle: Boat[] = [];
 		const boatsStartRight: Boat[] = [];
@@ -214,36 +237,42 @@ export class Game {
 		boatsStartMiddle.sort(compareBoatStartPriority);
 		boatsStartRight.sort(compareBoatStartPriority);
 
-		const startdist = 0.5;
+		// Spacing between boats: 2.5 game units (approximately 2-3 boat lengths)
+		// This ensures boats are clearly separated and easy to distinguish
+		const BOAT_SPACING_FINAL = 2.5;
+		const EDGE_OFFSET_FINAL = 1.5; // Distance from mark to first boat
+
+		const leftMark = this.marks[0];
+		const rightMark = this.marks[1];
+		const middleX = (leftMark.x + rightMark.x) / 2;
+
+		// Place boats on left side (from left mark outward)
 		for (let i = 0; i < boatsStartLeft.length; i++) {
-			boatsStartLeft[i].x = this.marks[0].x + 1 + i * startdist;
+			boatsStartLeft[i].x = leftMark.x + EDGE_OFFSET_FINAL + i * BOAT_SPACING_FINAL;
 			boatsStartLeft[i].y = this.height - 2;
 		}
 
+		// Place boats in middle (centered around middle, alternating left/right)
 		for (let i = 0; i < boatsStartMiddle.length; i++) {
-			let k = 0.5;
-			switch (i) {
-				case 0:
-				case 1:
-					k = 1;
-					break;
-				case 3:
-					k = 0.6;
-					break;
-			}
-			if (i < 2) {
-				k = 1;
-			}
-			if (i % 2 === 0) {
-				boatsStartMiddle[i].x = -i * startdist * k + this.width / 2;
+			// Calculate offset from center: boats alternate left/right
+			// First boat at center, then spread outward symmetrically
+			// Pattern: center, right, left, further right, further left, etc.
+			if (i === 0) {
+				// First boat at center
+				boatsStartMiddle[i].x = middleX;
 			} else {
-				boatsStartMiddle[i].x = i * startdist * k + this.width / 2;
+				// Subsequent boats alternate left/right
+				const pairIndex = Math.floor((i - 1) / 2) + 1; // 1, 1, 2, 2, 3, 3, ...
+				const direction = i % 2 === 1 ? 1 : -1; // Odd indices go right, even go left
+				const offset = pairIndex * BOAT_SPACING_FINAL;
+				boatsStartMiddle[i].x = middleX + direction * offset;
 			}
 			boatsStartMiddle[i].y = this.height - 2;
 		}
 
+		// Place boats on right side (from right mark outward)
 		for (let i = 0; i < boatsStartRight.length; i++) {
-			boatsStartRight[i].x = this.marks[1].x - 1 - i * startdist;
+			boatsStartRight[i].x = rightMark.x - EDGE_OFFSET_FINAL - i * BOAT_SPACING_FINAL;
 			boatsStartRight[i].y = this.height - 2;
 		}
 	}
