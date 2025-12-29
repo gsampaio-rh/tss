@@ -59,7 +59,7 @@ npm test:coverage    # Run tests with coverage
 ## Project Structure
 
 ```
-tss-sveltekit/
+tss/
 ├── src/
 │   ├── lib/
 │   │   ├── domain/          # Domain Layer
