@@ -188,20 +188,46 @@ Large component with complex particle system logic.
 
 ---
 
-### 4. Refactor GameCanvas.svelte (430 lines)
+### 4. Refactor GameCanvas.svelte (430 lines → 348 lines) ✅ COMPLETED
 
 **Priority**: 🟡 Medium  
-**Status**: Not Started  
+**Status**: ✅ Completed  
 **Estimated Effort**: 1-2 days  
-**Current Size**: 430 lines
+**Original Size**: 430 lines  
+**Current Size**: 348 lines  
+**Reduction**: 19% (82 lines removed)
 
 #### Problem
 Canvas rendering logic mixed with component lifecycle.
 
-#### Proposed Refactoring
-- Extract canvas rendering to `CanvasRenderer.ts`
-- Separate drawing logic from component
-- Use composition for different render layers
+#### Completed Refactoring
+
+**4.1 Extract Canvas Rendering Logic** ✅ COMPLETED
+- Created `CanvasRenderer.ts` for canvas scaling/positioning logic
+- Separated rendering calculations from component
+- **Result**: Reusable rendering utilities
+
+**4.2 Extract Formatting Utilities** ✅ COMPLETED
+- Created `cssFormat.ts` for CSS formatting utilities
+- Extracted `formatCssPx()` and `formatCssDeg()` functions
+- Reused `formatSvgViewBox()` from `windParticleUtils.ts`
+- **Result**: Reusable formatting utilities
+
+**4.3 Extract Track Rendering Logic** ✅ COMPLETED
+- Created `trackUtils.ts` for track rendering utilities
+- Extracted `getTrackPoints()` function
+- **Result**: Reusable track rendering utilities
+
+**4.4 Extract Layline Calculations** ✅ COMPLETED
+- Created `laylineUtils.ts` for layline calculations
+- Extracted `calculateLaylineAngles()` and `calculateLaylineEndpoints()` functions
+- **Result**: Reusable layline calculation utilities
+
+#### Files Created
+- `src/lib/infrastructure/rendering/CanvasRenderer.ts` - Canvas rendering service
+- `src/lib/utils/cssFormat.ts` - CSS formatting utilities
+- `src/lib/utils/trackUtils.ts` - Track rendering utilities
+- `src/lib/utils/laylineUtils.ts` - Layline calculation utilities
 
 ---
 
