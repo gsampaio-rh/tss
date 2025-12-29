@@ -4,11 +4,11 @@
  * Helper functions for calculating layline positions and angles.
  */
 
-import type { MarkEntity } from '$lib/domain/entities/Mark';
+import type { Mark } from '$lib/types/game';
 
 export interface LaylineConfig {
 	currentWind: number; // Wind angle in game units
-	upMark: MarkEntity | null;
+	upMark: Mark | null;
 	gameWidth: number;
 	gameHeight: number;
 }
