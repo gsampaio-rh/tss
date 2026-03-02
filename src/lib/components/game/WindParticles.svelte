@@ -91,7 +91,7 @@
 		if ($game && $settings.showWindIndicators) {
 			if (needsReinit) {
 				// Only reinitialize when necessary (settings/dimensions changed)
-				particleSystem.initParticles();
+			particleSystem.initParticles();
 			}
 			// Otherwise, particles will smoothly adapt to wind direction changes
 		} else {

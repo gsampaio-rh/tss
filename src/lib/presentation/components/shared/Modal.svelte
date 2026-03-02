@@ -42,10 +42,10 @@
 
 	onMount(() => {
 		if (browser) {
-			document.addEventListener('keydown', handleKeydown);
-			return () => {
-				document.removeEventListener('keydown', handleKeydown);
-			};
+		document.addEventListener('keydown', handleKeydown);
+		return () => {
+			document.removeEventListener('keydown', handleKeydown);
+		};
 		}
 	});
 
@@ -56,10 +56,10 @@
 
 	$: if (browser) {
 		if (open) {
-			// Prevent body scroll when modal is open
-			document.body.style.overflow = 'hidden';
-		} else {
-			document.body.style.overflow = '';
+		// Prevent body scroll when modal is open
+		document.body.style.overflow = 'hidden';
+	} else {
+		document.body.style.overflow = '';
 		}
 	}
 </script>

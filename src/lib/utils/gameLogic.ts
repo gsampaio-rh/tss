@@ -154,9 +154,132 @@ export function calculateVMGEfficiency(
 	return currentVMG / optimalVMG;
 }
 
+// Blanket Zone: leeward and behind, triangular
+const BLANKET_LENGTH = 8; // boat lengths
+const BLANKET_WIDTH_START = 0.3;
+const BLANKET_WIDTH_END = 3.5;
+const BLANKET_ANGLE_SPREAD = 30; // degrees
+
+// Backwind Zone: windward and behind, larger, irregular
+const BACKWIND_LENGTH = 10; // boat lengths
+const BACKWIND_WIDTH_START = 0.5;
+const BACKWIND_WIDTH_END = 5.0;
+const BACKWIND_ANGLE_SPREAD = 45; // degrees
+const BACKWIND_CURVE_FACTOR = 0.3;
+
 /**
- * Check if a point is inside a dirty air zone (trapezoid)
- * Dirty air zones extend leeward (downwind) from a boat
+ * Check if a point is within the Blanket Zone (leeward, triangular)
+ * Based on reference diagrams: direct wind shadow of the sails
+ */
+function isPointInBlanketZone(
+	pointX: number,
+	pointY: number,
+	sourceBoatX: number,
+	sourceBoatY: number,
+	windDir: number
+): { inZone: boolean; intensity: number } {
+	const leewardAngle = (windDir + 180) % 360;
+	const leewardRad = (leewardAngle * Math.PI) / 180;
+	
+	const dx = pointX - sourceBoatX;
+	const dy = pointY - sourceBoatY;
+	
+	// Downwind distance
+	const downwindDist = dx * Math.sin(leewardRad) - dy * Math.cos(leewardRad);
+	if (downwindDist < 0 || downwindDist > BLANKET_LENGTH) {
+		return { inZone: false, intensity: 0 };
+	}
+	
+	// Perpendicular distance (negative = leeward)
+	const perpRad = leewardRad + Math.PI / 2;
+	const perpDist = dx * Math.sin(perpRad) - dy * Math.cos(perpRad);
+	
+	if (perpDist > 0) {
+		return { inZone: false, intensity: 0 };
+	}
+	
+	// Triangular width
+	const t = downwindDist / BLANKET_LENGTH;
+	const halfWidth = (BLANKET_WIDTH_START + (BLANKET_WIDTH_END - BLANKET_WIDTH_START) * t) / 2;
+	
+	if (Math.abs(perpDist) > halfWidth) {
+		return { inZone: false, intensity: 0 };
+	}
+	
+	// Angle check
+	const pointAngle = ((Math.atan2(dx, -dy) * 180) / Math.PI + 360) % 360;
+	const angleDiffValue = Math.abs(angleDiff(pointAngle, leewardAngle));
+	if (angleDiffValue > BLANKET_ANGLE_SPREAD) {
+		return { inZone: false, intensity: 0 };
+	}
+	
+	const distanceFactor = 1 - t;
+	const centerFactor = 1 - Math.abs(perpDist) / halfWidth;
+	const intensity = Math.max(0, Math.min(1, distanceFactor * centerFactor * 0.9));
+	
+	return { inZone: true, intensity };
+}
+
+/**
+ * Check if a point is within the Backwind Zone (windward, irregular/curved)
+ * Based on reference diagrams: deflection of wind by sails
+ */
+function isPointInBackwindZone(
+	pointX: number,
+	pointY: number,
+	sourceBoatX: number,
+	sourceBoatY: number,
+	windDir: number
+): { inZone: boolean; intensity: number } {
+	const leewardAngle = (windDir + 180) % 360;
+	const leewardRad = (leewardAngle * Math.PI) / 180;
+	
+	const dx = pointX - sourceBoatX;
+	const dy = pointY - sourceBoatY;
+	
+	// Downwind distance
+	const downwindDist = dx * Math.sin(leewardRad) - dy * Math.cos(leewardRad);
+	if (downwindDist < 0 || downwindDist > BACKWIND_LENGTH) {
+		return { inZone: false, intensity: 0 };
+	}
+	
+	// Perpendicular distance (positive = windward)
+	const perpRad = leewardRad + Math.PI / 2;
+	const perpDist = dx * Math.sin(perpRad) - dy * Math.cos(perpRad);
+	
+	if (perpDist < 0) {
+		return { inZone: false, intensity: 0 };
+	}
+	
+	// Irregular width with curvature
+	const t = downwindDist / BACKWIND_LENGTH;
+	const baseWidth = BACKWIND_WIDTH_START + (BACKWIND_WIDTH_END - BACKWIND_WIDTH_START) * t;
+	const curveOffset = Math.sin(t * Math.PI) * BACKWIND_CURVE_FACTOR * BACKWIND_WIDTH_END;
+	const halfWidth = (baseWidth + curveOffset) / 2;
+	
+	if (perpDist > halfWidth) {
+		return { inZone: false, intensity: 0 };
+	}
+	
+	// Angle check
+	const pointAngle = ((Math.atan2(dx, -dy) * 180) / Math.PI + 360) % 360;
+	const windwardAngle = (leewardAngle + 180) % 360;
+	const angleDiffValue = Math.abs(angleDiff(pointAngle, windwardAngle));
+	if (angleDiffValue > BACKWIND_ANGLE_SPREAD) {
+		return { inZone: false, intensity: 0 };
+	}
+	
+	const distanceFactor = 1 - t;
+	const centerFactor = 1 - perpDist / halfWidth;
+	const edgeFactor = 1.0 + (curveOffset / baseWidth) * 0.2;
+	const intensity = Math.max(0, Math.min(1, distanceFactor * centerFactor * edgeFactor));
+	
+	return { inZone: true, intensity };
+}
+
+/**
+ * Check if a point is inside a dirty air zone (legacy method for compatibility)
+ * Now checks both blanket and backwind zones
  */
 export function isPointInDirtyAirZone(
 	pointX: number,
@@ -169,55 +292,18 @@ export function isPointInDirtyAirZone(
 	zoneWidthEnd: number = 4,
 	angleSpread: number = 35
 ): { inZone: boolean; intensity: number } {
-	// Calculate leeward direction (opposite to wind)
-	const leewardAngle = (windDir + 180) % 360;
-	const leewardRad = (leewardAngle * Math.PI) / 180;
-
-	// Vector from source boat to point
-	const dx = pointX - sourceBoatX;
-	const dy = pointY - sourceBoatY;
-
-	// Distance from source boat
-	const dist = Math.sqrt(dx * dx + dy * dy);
-
-	// If point is too far, it's not in the zone
-	if (dist > zoneLength * 1.2) {
-		return { inZone: false, intensity: 0 };
+	// Check both zones and return maximum intensity
+	const blanketCheck = isPointInBlanketZone(pointX, pointY, sourceBoatX, sourceBoatY, windDir);
+	const backwindCheck = isPointInBackwindZone(pointX, pointY, sourceBoatX, sourceBoatY, windDir);
+	
+	if (blanketCheck.inZone || backwindCheck.inZone) {
+		return {
+			inZone: true,
+			intensity: Math.max(blanketCheck.intensity, backwindCheck.intensity)
+		};
 	}
-
-	// Angle from source boat to point
-	const pointAngle = ((Math.atan2(dx, -dy) * 180) / Math.PI + 360) % 360;
-	const angleDiffValue = Math.abs(angleDiff(pointAngle, leewardAngle));
-
-	// Check if point is within the angular spread
-	if (angleDiffValue > angleSpread) {
-		return { inZone: false, intensity: 0 };
-	}
-
-	// Calculate zone width at this distance
-	const t = Math.min(dist / zoneLength, 1); // Normalized distance (0 to 1)
-	const zoneWidth = zoneWidthStart + (zoneWidthEnd - zoneWidthStart) * t;
-
-	// Check if point is within the width (perpendicular distance from center line)
-	const centerLineAngle = leewardAngle;
-	const perpAngle = (centerLineAngle + 90) % 360;
-	const perpRad = (perpAngle * Math.PI) / 180;
-
-	// Project point onto perpendicular line
-	const perpDist = Math.abs(dx * Math.sin(perpRad) - dy * Math.cos(perpRad));
-
-	if (perpDist > zoneWidth / 2) {
-		return { inZone: false, intensity: 0 };
-	}
-
-	// Calculate intensity based on distance and position
-	// Closer to source boat = higher intensity
-	// Closer to center line = higher intensity
-	const distanceFactor = 1 - dist / zoneLength; // 1 at boat, 0 at end
-	const centerFactor = 1 - perpDist / (zoneWidth / 2); // 1 at center, 0 at edge
-	const intensity = Math.max(0, Math.min(1, distanceFactor * centerFactor));
-
-	return { inZone: true, intensity };
+	
+	return { inZone: false, intensity: 0 };
 }
 
 /**
@@ -234,41 +320,33 @@ export function getDirtyAirEffect(
 	let maxIntensity = 0;
 	const affectedBy: number[] = [];
 
-	for (let i = 0; i < allBoats.length; i++) {
+		for (let i = 0; i < allBoats.length; i++) {
 		const otherBoat = allBoats[i];
 
 		// Skip self
 		if (otherBoat === boat) continue;
 
-		// Check leeward zone (main dirty air zone)
-		const leewardCheck = isPointInDirtyAirZone(
+		// Check Blanket Zone (leeward, triangular) - direct wind shadow
+		const blanketCheck = isPointInBlanketZone(
 			boatX,
 			boatY,
 			otherBoat.x,
 			otherBoat.y,
-			windDir,
-			8, // zoneLength
-			1.5, // zoneWidthStart
-			4, // zoneWidthEnd
-			35 // angleSpread
+			windDir
 		);
 
-		// Check windward zone (smaller, affects boats ahead)
-		const windwardCheck = isPointInDirtyAirZone(
+		// Check Backwind Zone (windward, irregular) - wind deflection
+		const backwindCheck = isPointInBackwindZone(
 			boatX,
 			boatY,
 			otherBoat.x,
 			otherBoat.y,
-			windDir,
-			3, // zoneLength (shorter)
-			1, // zoneWidthStart
-			2, // zoneWidthEnd
-			25 // angleSpread (narrower)
+			windDir
 		);
 
-		const intensity = Math.max(leewardCheck.intensity, windwardCheck.intensity);
+		const intensity = Math.max(blanketCheck.intensity, backwindCheck.intensity);
 
-		if (leewardCheck.inZone || windwardCheck.inZone) {
+		if (blanketCheck.inZone || backwindCheck.inZone) {
 			if (intensity > maxIntensity) {
 				maxIntensity = intensity;
 			}

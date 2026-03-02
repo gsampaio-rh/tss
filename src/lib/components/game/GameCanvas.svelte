@@ -17,6 +17,7 @@
 	import BoatTacticalLines from './BoatTacticalLines.svelte';
 import WindZones from './WindZones.svelte';
 import DirtyAirZones from './DirtyAirZones.svelte';
+import WindArrows from './WindArrows.svelte';
 import RacingRulesWarnings from './RacingRulesWarnings.svelte';
 import { onMount, onDestroy } from 'svelte';
 	import { renderGameAreaSize } from '$lib/infrastructure/rendering/CanvasRenderer';
@@ -188,6 +189,13 @@ import { onMount, onDestroy } from 'svelte';
 			{#each $players as player, playerIndex}
 				<BoatTacticalLines boat={player} {playerIndex} />
 			{/each}
+
+			<!-- Wind Arrows (True Wind and Apparent Wind) -->
+			{#if $settings.showWindArrows}
+				{#each $players as player, playerIndex}
+					<WindArrows boat={player} {playerIndex} />
+				{/each}
+			{/if}
 
 			<!-- Wind Zones (shown when enabled, on boat hover) -->
 			{#if $settings.showWindZones}

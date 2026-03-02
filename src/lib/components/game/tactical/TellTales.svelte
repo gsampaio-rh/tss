@@ -231,23 +231,23 @@
 				class="strand-highlight"
 			/>
 
-			<path
+				<path
 				d={leewardPath3}
-				stroke={leewardColor}
+					stroke={leewardColor}
 				stroke-width="2.1"
 				opacity="0.52"
-				fill="none"
-				stroke-linecap="round"
+					fill="none"
+					stroke-linecap="round"
 				class="strand-body"
-			/>
-			<path
+				/>
+				<path
 				d={leewardPath3}
-				stroke={leewardColor}
+					stroke={leewardColor}
 				stroke-width="1.1"
-				fill="none"
-				stroke-linecap="round"
+					fill="none"
+					stroke-linecap="round"
 				class="strand-highlight"
-			/>
+				/>
 
 			<!-- Leeward label -->
 			<text
@@ -305,23 +305,23 @@
 				class="strand-highlight"
 			/>
 
-			<path
+				<path
 				d={windwardPath3}
-				stroke={windwardColor}
+					stroke={windwardColor}
 				stroke-width="2.1"
 				opacity="0.52"
-				fill="none"
-				stroke-linecap="round"
+					fill="none"
+					stroke-linecap="round"
 				class="strand-body"
-			/>
-			<path
+				/>
+				<path
 				d={windwardPath3}
-				stroke={windwardColor}
+					stroke={windwardColor}
 				stroke-width="1.1"
-				fill="none"
-				stroke-linecap="round"
+					fill="none"
+					stroke-linecap="round"
 				class="strand-highlight"
-			/>
+				/>
 
 			<!-- Windward label -->
 			<text

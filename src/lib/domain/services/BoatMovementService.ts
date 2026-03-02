@@ -394,7 +394,7 @@ export class BoatMovementService {
 						} else {
 							// No violations, proceed with movement
 							currentPosition = newPosition;
-							points.push(currentPosition);
+						points.push(currentPosition);
 						}
 						moveDist = 0.0;
 					}

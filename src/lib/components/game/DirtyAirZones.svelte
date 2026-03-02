@@ -1,7 +1,9 @@
 <script lang="ts">
 	import type { Boat } from '$lib/types/boat';
 	import { currentWind, game } from '$lib/stores/game';
-	import { getBoatColorHex } from '$lib/types/game';
+	import { Angle } from '$lib/domain/value-objects/Angle';
+	import { BoatMovementService } from '$lib/domain/services/BoatMovementService';
+	import { calculateApparentWind } from '$lib/utils/apparentWind';
 
 	export let boat: Boat;
 	export let playerIndex: number;
@@ -12,113 +14,151 @@
 	$: gameWidth = $game?.width || 0;
 	$: gameHeight = $game?.height || 0;
 
-	// Calculate dirty air center line
-	$: leewardAngle = (windDir + 180) % 360;
-	$: centerLineLength = DIRTY_AIR_LENGTH * 0.8;
-	$: centerLineEndX = boat.x + centerLineLength * Math.sin((leewardAngle * Math.PI) / 180);
-	$: centerLineEndY = boat.y - centerLineLength * Math.cos((leewardAngle * Math.PI) / 180);
+	const BOAT_LENGTH = 1.0; // 1 unit = 1 boat length
 
-	// Dirty air zone parameters
-	const DIRTY_AIR_LENGTH = 8; // How far back the dirty air extends (in game units)
-	const DIRTY_AIR_WIDTH_START = 1.5; // Width at the boat (in game units)
-	const DIRTY_AIR_WIDTH_END = 4; // Width at the end of the zone (in game units)
-	const DIRTY_AIR_ANGLE_SPREAD = 35; // Angle spread from center line (degrees)
+	// Zone parameters (Option A: simple wedges - straight downwind)
+	const BLANKET_LENGTH = 4 * BOAT_LENGTH; // 3-4 boat lengths
+	const BLANKET_ANGLE_SPREAD = 15; // ±15° wedge (narrow)
+	
+	const BACKWIND_LENGTH = 10 * BOAT_LENGTH; // 8-10 boat lengths
+	const BACKWIND_ANGLE_SPREAD = 30; // ±30° wedge (wider than blanket)
 
-	// Calculate dirty air zone shape
-	// Dirty air extends leeward (downwind) and windward (upwind) from the boat
-	// The zone is wider at the end and narrower near the boat
-	function getDirtyAirPath(
+	// Calculate boat speed multiplier (for leeway calculation)
+	$: boatHeading = Angle.fromDegrees(boat.rotation);
+	$: windDirection = Angle.fromDegrees(windDir);
+	$: boatSpeedMultiplier = BoatMovementService.calculateSpeedMultiplier(boatHeading, windDirection);
+
+	// Calculate apparent wind with leeway effects
+	$: apparentWindResult = calculateApparentWind(boat.rotation, windDir, boatSpeedMultiplier);
+	$: apparentWindDir = apparentWindResult.angle;
+
+	/**
+	 * Determine which side is leeward (away from wind)
+	 * Returns: -1 for port tack (leeward is port/left), +1 for starboard tack (leeward is starboard/right)
+	 */
+	function getLeewardSide(boatRotation: number, windDir: number): number {
+		// Wind direction relative to boat heading
+		const windFromBoat = ((windDir - boatRotation + 180) % 360) - 180;
+		// Positive = wind from port side (starboard tack) = leeward is port = -1
+		// Negative = wind from starboard side (port tack) = leeward is starboard = +1
+		return windFromBoat > 0 ? -1 : 1;
+	}
+
+	/**
+	 * Calculate Blanket Zone path (narrow wedge on leeward side)
+	 * Wind shadow: directly downwind of sails on leeward side, narrow, strong, long-lasting
+	 * Originates from leeward side, extends downwind
+	 */
+	function getBlanketZonePath(
 		boatX: number,
 		boatY: number,
 		boatRotation: number,
 		windDir: number
 	): string {
-		// Calculate the direction leeward (downwind) from the boat
-		// This is opposite to the wind direction
-		const leewardAngle = (windDir + 180) % 360;
-
-		// The dirty air extends primarily leeward, but also spreads windward
-		// Center line of dirty air zone (leeward direction)
-		const centerAngle = leewardAngle;
-
-		// Calculate the four corners of the dirty air zone (trapezoid shape)
-		// Start points (near boat)
-		const startAngle1 = centerAngle - DIRTY_AIR_ANGLE_SPREAD;
-		const startAngle2 = centerAngle + DIRTY_AIR_ANGLE_SPREAD;
-
-		// End points (far from boat)
-		const endAngle1 = centerAngle - DIRTY_AIR_ANGLE_SPREAD;
-		const endAngle2 = centerAngle + DIRTY_AIR_ANGLE_SPREAD;
-
-		// Start width points (near boat)
-		const startX1 = boatX + (DIRTY_AIR_WIDTH_START / 2) * Math.sin((startAngle1 * Math.PI) / 180);
-		const startY1 = boatY - (DIRTY_AIR_WIDTH_START / 2) * Math.cos((startAngle1 * Math.PI) / 180);
-		const startX2 = boatX + (DIRTY_AIR_WIDTH_START / 2) * Math.sin((startAngle2 * Math.PI) / 180);
-		const startY2 = boatY - (DIRTY_AIR_WIDTH_START / 2) * Math.cos((startAngle2 * Math.PI) / 180);
-
-		// End width points (far from boat, leeward)
-		const endX1 =
-			boatX +
-			DIRTY_AIR_LENGTH * Math.sin((endAngle1 * Math.PI) / 180) +
-			(DIRTY_AIR_WIDTH_END / 2) * Math.sin((endAngle1 * Math.PI) / 180);
-		const endY1 =
-			boatY -
-			DIRTY_AIR_LENGTH * Math.cos((endAngle1 * Math.PI) / 180) +
-			(DIRTY_AIR_WIDTH_END / 2) * Math.cos((endAngle1 * Math.PI) / 180);
-		const endX2 =
-			boatX +
-			DIRTY_AIR_LENGTH * Math.sin((endAngle2 * Math.PI) / 180) +
-			(DIRTY_AIR_WIDTH_END / 2) * Math.sin((endAngle2 * Math.PI) / 180);
-		const endY2 =
-			boatY -
-			DIRTY_AIR_LENGTH * Math.cos((endAngle2 * Math.PI) / 180) +
-			(DIRTY_AIR_WIDTH_END / 2) * Math.cos((endAngle2 * Math.PI) / 180);
-
-		// Create trapezoid path
-		return `M ${startX1} ${startY1} L ${startX2} ${startY2} L ${endX2} ${endY2} L ${endX1} ${endY1} Z`;
+		// Calculate boat speed multiplier for leeway
+		const boatHeading = Angle.fromDegrees(boatRotation);
+		const windDirection = Angle.fromDegrees(windDir);
+		const boatSpeedMultiplier = BoatMovementService.calculateSpeedMultiplier(boatHeading, windDirection);
+		
+		const apparentWindResult = calculateApparentWind(boatRotation, windDir, boatSpeedMultiplier);
+		const apparentWindDir = apparentWindResult.angle;
+		
+		// Downwind direction = opposite of apparent wind (where wind flows TO)
+		const downwindDir = (apparentWindDir + 180) % 360;
+		const downwindRad = (downwindDir * Math.PI) / 180;
+		
+		// Determine leeward side
+		const leewardSide = getLeewardSide(boatRotation, windDir);
+		
+		// Blanket zone originates from leeward side of boat
+		// Leeward side is 90° perpendicular to boat heading, on the leeward side
+		const boatRad = (boatRotation * Math.PI) / 180;
+		const leewardPerpRad = boatRad + (leewardSide * Math.PI / 2); // 90° to leeward
+		
+		// Start point offset to leeward side of boat
+		const startOffset = 0.3 * BOAT_LENGTH; // Small offset from boat center
+		const startX = boatX + startOffset * Math.sin(leewardPerpRad);
+		const startY = boatY - startOffset * Math.cos(leewardPerpRad);
+		
+		// Blanket zone extends downwind, slightly angled toward leeward
+		// Center direction: downwind with slight leeward bias
+		const blanketCenterDir = (downwindDir + leewardSide * 5 + 360) % 360; // 5° bias toward leeward
+		const blanketCenterRad = (blanketCenterDir * Math.PI) / 180;
+		
+		// Create narrow wedge (±15°) extending downwind
+		const spreadRad = (BLANKET_ANGLE_SPREAD * Math.PI) / 180;
+		const leftEdgeRad = blanketCenterRad - spreadRad;
+		const rightEdgeRad = blanketCenterRad + spreadRad;
+		
+		const leftEndX = startX + BLANKET_LENGTH * Math.sin(leftEdgeRad);
+		const leftEndY = startY - BLANKET_LENGTH * Math.cos(leftEdgeRad);
+		
+		const rightEndX = startX + BLANKET_LENGTH * Math.sin(rightEdgeRad);
+		const rightEndY = startY - BLANKET_LENGTH * Math.cos(rightEdgeRad);
+		
+		return `M ${startX} ${startY} L ${leftEndX} ${leftEndY} L ${rightEndX} ${rightEndY} Z`;
 	}
 
-	// Also create a windward (upwind) dirty air zone
-	// This is smaller and extends upwind from the boat
-	function getWindwardDirtyAirPath(
+	/**
+	 * Calculate Backwind Zone path (simplified wedge on windward/stern side)
+	 * Turbulent wake: originates from stern, wider wedge extending downwind with windward bias
+	 */
+	function getBackwindZonePath(
 		boatX: number,
 		boatY: number,
 		boatRotation: number,
 		windDir: number
 	): string {
-		const windwardAngle = windDir; // Upwind direction
-		const WINDWARD_LENGTH = 3; // Shorter than leeward
-		const WINDWARD_WIDTH_START = 1;
-		const WINDWARD_WIDTH_END = 2;
-		const WINDWARD_SPREAD = 25;
-
-		const startAngle1 = windwardAngle - WINDWARD_SPREAD;
-		const startAngle2 = windwardAngle + WINDWARD_SPREAD;
-
-		const startX1 = boatX + (WINDWARD_WIDTH_START / 2) * Math.sin((startAngle1 * Math.PI) / 180);
-		const startY1 = boatY - (WINDWARD_WIDTH_START / 2) * Math.cos((startAngle1 * Math.PI) / 180);
-		const startX2 = boatX + (WINDWARD_WIDTH_START / 2) * Math.sin((startAngle2 * Math.PI) / 180);
-		const startY2 = boatY - (WINDWARD_WIDTH_START / 2) * Math.cos((startAngle2 * Math.PI) / 180);
-
-		const endX1 =
-			boatX -
-			WINDWARD_LENGTH * Math.sin((startAngle1 * Math.PI) / 180) +
-			(WINDWARD_WIDTH_END / 2) * Math.sin((startAngle1 * Math.PI) / 180);
-		const endY1 =
-			boatY +
-			WINDWARD_LENGTH * Math.cos((startAngle1 * Math.PI) / 180) +
-			(WINDWARD_WIDTH_END / 2) * Math.cos((startAngle1 * Math.PI) / 180);
-		const endX2 =
-			boatX -
-			WINDWARD_LENGTH * Math.sin((startAngle2 * Math.PI) / 180) +
-			(WINDWARD_WIDTH_END / 2) * Math.sin((startAngle2 * Math.PI) / 180);
-		const endY2 =
-			boatY +
-			WINDWARD_LENGTH * Math.cos((startAngle2 * Math.PI) / 180) +
-			(WINDWARD_WIDTH_END / 2) * Math.cos((startAngle2 * Math.PI) / 180);
-
-		return `M ${startX1} ${startY1} L ${startX2} ${startY2} L ${endX2} ${endY2} L ${endX1} ${endY1} Z`;
+		// Calculate boat speed multiplier for leeway
+		const boatHeading = Angle.fromDegrees(boatRotation);
+		const windDirection = Angle.fromDegrees(windDir);
+		const boatSpeedMultiplier = BoatMovementService.calculateSpeedMultiplier(boatHeading, windDirection);
+		
+		const apparentWindResult = calculateApparentWind(boatRotation, windDir, boatSpeedMultiplier);
+		const apparentWindDir = apparentWindResult.angle;
+		
+		// Downwind direction = opposite of apparent wind
+		const downwindDir = (apparentWindDir + 180) % 360;
+		const downwindRad = (downwindDir * Math.PI) / 180;
+		
+		// Determine leeward side (windward is opposite)
+		const leewardSide = getLeewardSide(boatRotation, windDir);
+		const windwardSide = -leewardSide; // Windward is opposite of leeward
+		
+		// Backwind zone originates from stern
+		const boatRad = (boatRotation * Math.PI) / 180;
+		const sternRad = boatRad + Math.PI; // 180° from bow (stern)
+		
+		// Start point: stern of boat
+		const startOffset = 0.4 * BOAT_LENGTH;
+		const startX = boatX + startOffset * Math.sin(sternRad);
+		const startY = boatY - startOffset * Math.cos(sternRad);
+		
+		// Backwind zone extends downwind with windward bias
+		// Center direction: downwind with slight windward bias
+		const backwindCenterDir = (downwindDir + windwardSide * 10 + 360) % 360; // 10° bias toward windward
+		const backwindCenterRad = (backwindCenterDir * Math.PI) / 180;
+		
+		// Create wider wedge (±30°) extending downwind
+		const spreadRad = (BACKWIND_ANGLE_SPREAD * Math.PI) / 180;
+		const leftEdgeRad = backwindCenterRad - spreadRad;
+		const rightEdgeRad = backwindCenterRad + spreadRad;
+		
+		const leftEndX = startX + BACKWIND_LENGTH * Math.sin(leftEdgeRad);
+		const leftEndY = startY - BACKWIND_LENGTH * Math.cos(leftEdgeRad);
+		
+		const rightEndX = startX + BACKWIND_LENGTH * Math.sin(rightEdgeRad);
+		const rightEndY = startY - BACKWIND_LENGTH * Math.cos(rightEdgeRad);
+		
+		return `M ${startX} ${startY} L ${leftEndX} ${leftEndY} L ${rightEndX} ${rightEndY} Z`;
 	}
+
+	// Calculate center line (downwind apparent wind direction)
+	$: downwindDir = (apparentWindDir + 180) % 360;
+	$: downwindRad = (downwindDir * Math.PI) / 180;
+	$: centerLineLength = BACKWIND_LENGTH * 0.8;
+	$: centerLineEndX = boat.x + centerLineLength * Math.sin(downwindRad);
+	$: centerLineEndY = boat.y - centerLineLength * Math.cos(downwindRad);
 
 	function formatSvgViewBox(left: number, top: number, width: number, height: number): string {
 		return `${left.toFixed(3)} ${top.toFixed(3)} ${width.toFixed(3)} ${height.toFixed(3)}`;
@@ -141,29 +181,31 @@
       opacity: 0.7;
     "
 	>
-		<!-- Leeward (downwind) dirty air zone - main zone -->
+		<!-- Backwind Zone: turbulent wake (wider, longer) -->
+		<!-- Render first (behind) so blanket zone appears on top -->
 		<path
-			d={getDirtyAirPath(boat.x, boat.y, boat.rotation, windDir)}
-			fill="rgba(150, 50, 50, 0.25)"
-			stroke="rgba(150, 50, 50, 0.6)"
+			d={getBackwindZonePath(boat.x, boat.y, boat.rotation, windDir)}
+			fill="rgba(180, 80, 60, 0.2)"
+			stroke="rgba(180, 80, 60, 0.5)"
+			stroke-width="0.06"
+			stroke-dasharray="0.4 0.6"
+			class="dirty-air-zone backwind"
+			data-player-index={playerIndex.toString()}
+		/>
+
+		<!-- Blanket Zone: wind shadow (narrow, darker, more intense) -->
+		<!-- Render on top (darker, more intense) -->
+		<path
+			d={getBlanketZonePath(boat.x, boat.y, boat.rotation, windDir)}
+			fill="rgba(150, 30, 30, 0.45)"
+			stroke="rgba(150, 30, 30, 0.85)"
 			stroke-width="0.08"
 			stroke-dasharray="0.3 0.5"
-			class="dirty-air-zone leeward"
+			class="dirty-air-zone blanket"
 			data-player-index={playerIndex.toString()}
 		/>
 
-		<!-- Windward (upwind) dirty air zone - smaller, affects boats ahead -->
-		<path
-			d={getWindwardDirtyAirPath(boat.x, boat.y, boat.rotation, windDir)}
-			fill="rgba(150, 50, 50, 0.2)"
-			stroke="rgba(150, 50, 50, 0.5)"
-			stroke-width="0.06"
-			stroke-dasharray="0.2 0.4"
-			class="dirty-air-zone windward"
-			data-player-index={playerIndex.toString()}
-		/>
-
-		<!-- Center line indicator (shows direction of dirty air flow) -->
+		<!-- Center line indicator (shows apparent wind direction) -->
 		<line
 			x1={boat.x}
 			y1={boat.y}

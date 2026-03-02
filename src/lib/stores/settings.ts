@@ -16,6 +16,7 @@ export interface Settings {
 	windParticlesLength: number; // 0.5-2.0 multiplier for streak length (1.0 = default)
 	showDirtyAir: boolean;
 	enableDirtyAirEffects: boolean;
+	showWindArrows: boolean; // Show true wind and apparent wind arrows
 }
 
 const defaultSettings: Settings = {
@@ -32,7 +33,8 @@ const defaultSettings: Settings = {
 	windParticlesSpeed: 1.0, // Default speed multiplier (100%)
 	windParticlesLength: 1.0, // Default length multiplier (100%)
 	showDirtyAir: false,
-	enableDirtyAirEffects: false
+	enableDirtyAirEffects: false,
+	showWindArrows: false // Default: hidden
 };
 
 const STORAGE_KEY = 'settings';

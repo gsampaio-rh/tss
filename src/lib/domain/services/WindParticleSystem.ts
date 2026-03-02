@@ -6,6 +6,9 @@
  */
 
 import { createUnitStreakPath, createSharedGradients } from '$lib/utils/windParticleUtils';
+import { calculateApparentWind, calculateDisturbedWind } from '$lib/utils/apparentWind';
+import { BoatMovementService } from './BoatMovementService';
+import { Angle } from '../value-objects/Angle';
 
 export interface Particle {
 	element: SVGPathElement;
@@ -116,7 +119,22 @@ export class WindParticleSystem {
 	}
 
 	/**
+	 * Calculate apparent wind direction for a boat (with leeway effects)
+	 * Uses shared utility function that includes leeway-induced flow rotation
+	 */
+	private calculateApparentWindForBoat(boatRotation: number, trueWindDirDeg: number, boatSpeedMultiplier: number): { vx: number; vy: number; angle: number } {
+		const apparentWind = calculateApparentWind(boatRotation, trueWindDirDeg, boatSpeedMultiplier);
+		return {
+			vx: apparentWind.vx,
+			vy: apparentWind.vy,
+			angle: apparentWind.angle
+		};
+	}
+
+
+	/**
 	 * Detect dirty air influence from boats
+	 * Uses simple wedge detection matching the visual zones (straight downwind wedges)
 	 * Returns weight (0-1) and boat ID affecting the particle
 	 */
 	private detectDirtyAir(particleX: number, particleY: number, windDir: { vx: number; vy: number }): { weight: number; boatId: number | null } {
@@ -124,10 +142,30 @@ export class WindParticleSystem {
 			return { weight: 0, boatId: null };
 		}
 
-		const BOAT_LENGTH = 1.0; // Approximate boat length in game units
-		const PLUME_LENGTH = 12 * BOAT_LENGTH; // 12 boat lengths downwind
-		const PLUME_WIDTH_BASE = 0.5 * BOAT_LENGTH; // Base width at boat
-		const PLUME_SPREAD = 0.25; // Width growth per unit distance
+		const BOAT_LENGTH = 1.0;
+		
+		// Blanket Zone: narrow wedge on leeward side, 3-4 boat lengths
+		const BLANKET_LENGTH = 4 * BOAT_LENGTH;
+		const BLANKET_ANGLE_SPREAD = 15; // ±15° wedge
+		
+		// Backwind Zone: curved zone wrapping around stern/windward, 8-10 boat lengths
+		const BACKWIND_LENGTH = 10 * BOAT_LENGTH;
+		const BACKWIND_ANGLE_SPREAD = 30; // ±30° wedge (wider)
+		
+		/**
+		 * Determine which side is leeward (away from wind)
+		 * Returns: -1 for port tack (leeward is port/left), +1 for starboard tack (leeward is starboard/right)
+		 */
+		function getLeewardSide(boatRotation: number, windDir: number): number {
+			const windFromBoat = ((windDir - boatRotation + 180) % 360) - 180;
+			return windFromBoat > 0 ? -1 : 1;
+		}
+
+		// True wind direction
+		const trueWindMag = Math.sqrt(windDir.vx * windDir.vx + windDir.vy * windDir.vy);
+		if (trueWindMag < 0.001) return { weight: 0, boatId: null };
+		const trueWindRad = Math.atan2(windDir.vx, windDir.vy);
+		const trueWindDirDeg = (trueWindRad * 180) / Math.PI;
 
 		let maxWeight = 0;
 		let affectingBoatId: number | null = null;
@@ -135,41 +173,77 @@ export class WindParticleSystem {
 		for (let i = 0; i < this.config.boats.length; i++) {
 			const boat = this.config.boats[i];
 			
+			// Calculate boat speed multiplier for leeway calculation
+			const boatHeading = Angle.fromDegrees(boat.rotation);
+			const windDirection = Angle.fromDegrees(trueWindDirDeg);
+			const boatSpeedMultiplier = BoatMovementService.calculateSpeedMultiplier(boatHeading, windDirection);
+			
+			// Calculate apparent wind for this boat (with leeway effects)
+			const apparentWindResult = this.calculateApparentWindForBoat(boat.rotation, trueWindDirDeg, boatSpeedMultiplier);
+			const apparentWindMag = Math.sqrt(apparentWindResult.vx * apparentWindResult.vx + apparentWindResult.vy * apparentWindResult.vy);
+			if (apparentWindMag < 0.001) continue;
+			
+			const apparentWindDir = apparentWindResult.angle;
+			
+			// Downwind direction = opposite of apparent wind (where wind flows TO)
+			const downwindDir = (apparentWindDir + 180) % 360;
+			const downwindRad = (downwindDir * Math.PI) / 180;
+			
+			// Determine leeward and windward sides
+			const leewardSide = getLeewardSide(boat.rotation, trueWindDirDeg);
+			const windwardSide = -leewardSide;
+			
 			// Vector from boat to particle
 			const dx = particleX - boat.x;
 			const dy = particleY - boat.y;
+			const dist = Math.sqrt(dx * dx + dy * dy);
 			
-			// Wind-aligned coordinates
-			const windMag = Math.sqrt(windDir.vx * windDir.vx + windDir.vy * windDir.vy);
-			if (windMag < 0.001) continue;
+			// Skip if too far away
+			if (dist > BACKWIND_LENGTH) continue;
 			
-			const windNormX = windDir.vx / windMag;
-			const windNormY = windDir.vy / windMag;
+			// Calculate angle from boat to particle
+			const particleAngleRad = Math.atan2(dx, -dy); // Note: -dy because y increases downward
+			const particleAngleDeg = (particleAngleRad * 180) / Math.PI;
 			
-			// Downwind distance (positive = downwind of boat)
-			const d = dx * windNormX + dy * windNormY;
+			// Distance along downwind direction (positive = downwind)
+			const downwindNormX = Math.sin(downwindRad);
+			const downwindNormY = -Math.cos(downwindRad);
+			const d = dx * downwindNormX + dy * downwindNormY;
 			
 			// Skip if upwind of boat
 			if (d < 0) continue;
 			
-			// Skip if too far downwind
-			if (d > PLUME_LENGTH) continue;
+			let weight = 0;
 			
-			// Perpendicular distance (side distance)
-			const perpX = -windNormY;
-			const perpY = windNormX;
-			const s = dx * perpX + dy * perpY;
+			// Check Blanket Zone (narrow wedge on leeward side, ±15°, 3-4 boat lengths)
+			if (d <= BLANKET_LENGTH) {
+				// Blanket zone center: downwind with slight leeward bias
+				const blanketCenterDir = (downwindDir + leewardSide * 5 + 360) % 360; // 5° bias toward leeward
+				let angleDiff = particleAngleDeg - blanketCenterDir;
+				while (angleDiff > 180) angleDiff -= 360;
+				while (angleDiff < -180) angleDiff += 360;
+				
+				if (Math.abs(angleDiff) <= BLANKET_ANGLE_SPREAD) {
+					const distanceFactor = this.smoothstep(BLANKET_LENGTH, 0, d);
+					const angleFactor = this.smoothstep(BLANKET_ANGLE_SPREAD, 0, Math.abs(angleDiff));
+					weight = Math.max(weight, distanceFactor * angleFactor * 0.9); // Strong blanketing
+				}
+			}
 			
-			// Plume half-width at this distance
-			const halfWidth = PLUME_WIDTH_BASE + PLUME_SPREAD * d;
-			
-			// Skip if outside plume width
-			if (Math.abs(s) > halfWidth) continue;
-			
-			// Calculate influence weight with smooth falloffs
-			const w_d = this.smoothstep(PLUME_LENGTH, 0, d); // Longitudinal falloff
-			const w_s = this.smoothstep(halfWidth, 0, Math.abs(s)); // Lateral falloff
-			const weight = w_d * w_s;
+			// Check Backwind Zone (simplified wedge on windward/stern side, ±30°, 8-10 boat lengths)
+			if (d <= BACKWIND_LENGTH) {
+				// Backwind zone center: downwind with windward bias
+				const backwindCenterDir = (downwindDir + windwardSide * 10 + 360) % 360; // 10° bias toward windward
+				let angleDiff = particleAngleDeg - backwindCenterDir;
+				while (angleDiff > 180) angleDiff -= 360;
+				while (angleDiff < -180) angleDiff += 360;
+				
+				if (Math.abs(angleDiff) <= BACKWIND_ANGLE_SPREAD) {
+					const distanceFactor = this.smoothstep(BACKWIND_LENGTH, 0, d);
+					const angleFactor = this.smoothstep(BACKWIND_ANGLE_SPREAD, 0, Math.abs(angleDiff));
+					weight = Math.max(weight, distanceFactor * angleFactor * 0.7); // Weaker but spreads wider
+				}
+			}
 			
 			if (weight > maxWeight) {
 				maxWeight = weight;
@@ -177,7 +251,17 @@ export class WindParticleSystem {
 			}
 		}
 
-		return { weight: maxWeight, boatId: affectingBoatId };
+		return { weight: Math.min(maxWeight, 1.0), boatId: affectingBoatId };
+	}
+	
+	/**
+	 * Calculate angle difference (wrapping around 2π)
+	 */
+	private angleDiff(a1: number, a2: number): number {
+		let diff = a1 - a2;
+		while (diff > Math.PI) diff -= 2 * Math.PI;
+		while (diff < -Math.PI) diff += 2 * Math.PI;
+		return diff;
 	}
 
 	/**
@@ -581,12 +665,42 @@ export class WindParticleSystem {
 			particle.age++;
 
 			// Get wind vector at current position (with streamlines and gusts)
-			const wind = this.getWindVector(particle.x, particle.y, this.gustTime);
+			let wind = this.getWindVector(particle.x, particle.y, this.gustTime);
 
 			// Detect dirty air influence
 			const dirtyAir = this.detectDirtyAir(particle.x, particle.y, { vx: wind.vx, vy: wind.vy });
 			particle.dirtyAirWeight = dirtyAir.weight;
 			particle.dirtyAirBoatId = dirtyAir.boatId;
+
+			// Apply disturbed wind rotation (downwash from sails) when in dirty air
+			if (particle.dirtyAirWeight > 0.01 && particle.dirtyAirBoatId !== null) {
+				const affectingBoat = this.config.boats?.[particle.dirtyAirBoatId];
+				if (affectingBoat) {
+					// Calculate distance from affecting boat
+					const dx = particle.x - affectingBoat.x;
+					const dy = particle.y - affectingBoat.y;
+					const distance = Math.sqrt(dx * dx + dy * dy);
+					
+					// Calculate disturbed wind (rotates leeward)
+					// Wind direction is where wind comes FROM
+					const windDirDeg = (Math.atan2(wind.vx, wind.vy) * 180) / Math.PI;
+					const disturbedWind = calculateDisturbedWind(
+						windDirDeg, 
+						distance, 
+						particle.dirtyAirWeight,
+						affectingBoat.rotation
+					);
+					
+					// Rotate wind vector by disturbed angle
+					const disturbedRad = (disturbedWind.angle * Math.PI) / 180;
+					const windMag = Math.sqrt(wind.vx * wind.vx + wind.vy * wind.vy);
+					wind = {
+						vx: Math.sin(disturbedRad) * windMag * disturbedWind.speedMultiplier,
+						vy: Math.cos(disturbedRad) * windMag * disturbedWind.speedMultiplier,
+						magnitude: windMag * disturbedWind.speedMultiplier
+					};
+				}
+			}
 
 			// Apply dirty air effects before updating velocity
 			if (particle.dirtyAirWeight > 0.01) {

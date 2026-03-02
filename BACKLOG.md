@@ -169,7 +169,7 @@ Add tell tales indicators to the player tactical card. Tell tales are visual ind
 
 **Priority**: 🟡 Medium  
 **Status**: ✅ Completed  
-**Estimated Effort**: 2-3 days  
+**Estimated Effort**: 2-3 days
 **Actual Effort**: ~2 hours
 
 #### Requirements
@@ -231,7 +231,7 @@ Add tell tales indicators to the player tactical card. Tell tales are visual ind
 
 **Priority**: 🔴 High  
 **Status**: ✅ Completed  
-**Estimated Effort**: 1 day  
+**Estimated Effort**: 1 day
 **Actual Effort**: ~1 day
 
 #### Description
@@ -273,7 +273,7 @@ Improve the visual design of wind zones. The current circle/arc visualization is
 
 **Priority**: 🔴 High  
 **Status**: ✅ Completed  
-**Estimated Effort**: 3-5 days  
+**Estimated Effort**: 3-5 days
 **Actual Effort**: ~2 hours
 
 #### Description
@@ -311,7 +311,7 @@ Implement speed variations based on sailing angle relative to optimal power. Boa
 
 **Priority**: 🔴 High  
 **Status**: ✅ Completed  
-**Estimated Effort**: 5-7 days  
+**Estimated Effort**: 5-7 days
 **Actual Effort**: ~4 hours
 
 #### Description
@@ -482,7 +482,7 @@ Implement more realistic wind dynamics with gusts (sudden increases in wind spee
 
 **Priority**: 🔴 High  
 **Status**: ✅ Completed  
-**Estimated Effort**: 1-2 days  
+**Estimated Effort**: 1-2 days
 **Actual Effort**: ~1 hour
 
 #### Description

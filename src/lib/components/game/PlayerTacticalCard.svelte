@@ -201,11 +201,11 @@
 				</div>
 			</div>
 			<div class="header-badges">
-				{#if decisionFlag !== 'HOLD'}
-					<div class="decision-badge" class:urgent={decisionFlag === 'TACK NOW'}>
-						{decisionFlag}
-					</div>
-				{/if}
+			{#if decisionFlag !== 'HOLD'}
+				<div class="decision-badge" class:urgent={decisionFlag === 'TACK NOW'}>
+					{decisionFlag}
+				</div>
+			{/if}
 				{#if hasPenalty}
 					<div class="penalty-badge" class:executing={isExecutingPenalty}>
 						{penaltyTurnsRemaining === 1 ? '360°' : '720°'} Penalty

@@ -23,24 +23,24 @@ export function createUnitStreakPath(length: number = 1.0, headWidth: number = 0
 	
 	// Tail: tapers to near-zero at the back (left side, x < 0)
 	const tailX = -length * 0.6;
-	
+
 	// Create a tapered streak using quadratic curves
 	// Start from tail (point)
 	let pathData = `M ${tailX.toFixed(3)} 0`;
-	
+
 	// Left side: smooth curve from tail to head
 	const numPoints = 6;
 	for (let i = 1; i <= numPoints; i++) {
 		const t = i / numPoints;
 		// Smooth easing for natural taper
 		const easeT = t * t * (3 - 2 * t); // Smoothstep
-		
+
 		// Position along the length
 		const posX = tailX + (headX - tailX) * easeT;
-		
+
 		// Width tapers smoothly from head to tail
 		const currentWidth = headRadius * (1 - easeT * 0.98);
-		
+
 		if (i === 1) {
 			pathData += ` L ${posX.toFixed(3)} ${currentWidth.toFixed(3)}`;
 		} else {
@@ -54,29 +54,29 @@ export function createUnitStreakPath(length: number = 1.0, headWidth: number = 0
 			pathData += ` Q ${controlX.toFixed(3)} ${controlY.toFixed(3)} ${posX.toFixed(3)} ${currentWidth.toFixed(3)}`;
 		}
 	}
-	
+
 	// Rounded head (semi-circle) - 4 points for smooth arc
 	const headPoints = 4;
 	for (let i = 0; i <= headPoints; i++) {
 		const headAngle = Math.PI / 2 + (i / headPoints) * Math.PI;
 		const headPointX = headX + Math.cos(headAngle) * headRadius;
 		const headPointY = Math.sin(headAngle) * headRadius;
-		
+
 		if (i === 0) {
 			pathData += ` L ${headPointX.toFixed(3)} ${headPointY.toFixed(3)}`;
 		} else {
 			pathData += ` Q ${headX.toFixed(3)} 0 ${headPointX.toFixed(3)} ${headPointY.toFixed(3)}`;
 		}
 	}
-	
+
 	// Right side (mirror of left) - back to tail
 	for (let i = numPoints - 1; i >= 0; i--) {
 		const t = i / numPoints;
 		const easeT = t * t * (3 - 2 * t);
-		
+
 		const posX = tailX + (headX - tailX) * easeT;
 		const currentWidth = headRadius * (1 - easeT * 0.98);
-		
+
 		if (i === numPoints - 1) {
 			pathData += ` L ${posX.toFixed(3)} ${(-currentWidth).toFixed(3)}`;
 		} else {
@@ -90,7 +90,7 @@ export function createUnitStreakPath(length: number = 1.0, headWidth: number = 0
 			pathData += ` Q ${controlX.toFixed(3)} ${controlY.toFixed(3)} ${posX.toFixed(3)} ${(-currentWidth).toFixed(3)}`;
 		}
 	}
-	
+
 	pathData += ` Z`;
 	return pathData;
 }

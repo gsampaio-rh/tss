@@ -384,6 +384,37 @@
 		{/if}
 
 		<!-- Show Dirty Air Zones -->
+		<!-- Show Wind Arrows (True Wind and Apparent Wind) -->
+		<label class="setting-item" class:checked={$settings.showWindArrows} for="set-show-wind-arrows">
+			<input
+				type="checkbox"
+				class="btn-check"
+				id="set-show-wind-arrows"
+				checked={$settings.showWindArrows}
+				onchange={() => toggleSetting('showWindArrows')}
+			/>
+			<div class="setting-content">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="18"
+					height="18"
+					viewBox="0 0 16 16"
+					class="setting-icon"
+				>
+					<!-- True Wind Arrow (Red) -->
+					<line x1="2" y1="8" x2="8" y2="2" stroke="#dc3545" stroke-width="1.5" stroke-linecap="round" />
+					<polygon points="8,2 6.5,3.5 7.5,3.5" fill="#dc3545" />
+					<!-- Apparent Wind Arrow (Blue) -->
+					<line x1="2" y1="8" x2="8" y2="4" stroke="#007bff" stroke-width="1.5" stroke-linecap="round" />
+					<polygon points="8,4 6.5,5 7.5,5" fill="#007bff" />
+				</svg>
+				<div class="setting-label">
+					<strong>Show Wind Arrows</strong>
+					<small>Display true wind and apparent wind vectors</small>
+				</div>
+			</div>
+		</label>
+
 		<label class="setting-item" class:checked={$settings.showDirtyAir} for="set-show-dirty-air">
 			<input
 				type="checkbox"
