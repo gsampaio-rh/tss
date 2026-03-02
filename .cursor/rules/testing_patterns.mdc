@@ -1,0 +1,46 @@
+---
+description: Testing patterns and strategies
+globs: 
+---
+
+# Testing Patterns
+
+## Test Pyramid
+
+- **Unit tests** (70%): Fast, isolated, test single functions/classes
+- **Integration tests** (20%): Test module interactions, external services mocked
+- **E2E tests** (10%): Full system tests, real dependencies
+
+## Backend Testing
+
+- **Mock LLMs**: Use mock LLMs for deterministic tests
+- **Mock tools**: Mock external tool calls
+- **Test state transitions**: Test graph nodes in isolation
+- **Test edge cases**: Test error conditions, boundary cases
+
+## Frontend Testing
+
+- **Component testing**: Test components in isolation (React Testing Library)
+- **API mocking**: Mock API responses (MSW - Mock Service Worker)
+- **E2E testing**: Use Playwright or Cypress for end-to-end tests
+- **Visual regression**: Use tools like Chromatic for UI tests
+
+## Contract Testing
+
+- **API contracts**: Test that frontend/backend contracts match
+- **Schema validation**: Validate API requests/responses match schemas
+- **Breaking changes**: Detect breaking changes in API contracts early
+
+## Test Quality
+
+- **Coverage**: Aim for 80%+ coverage (domain logic 100%)
+- **Deterministic**: No flaky tests, use mocks for non-deterministic code
+- **Fast**: Unit tests run in <100ms, full suite <5min
+- **Isolated**: Tests don't depend on each other or external state
+
+## LLM Testing
+
+- **Evaluation datasets**: Create test datasets for prompts/chains
+- **LLM-as-judge**: Use LLM evaluators for quality assessment
+- **Snapshot testing**: For LLM outputs (with tolerance for non-determinism)
+- **A/B testing**: Compare prompt/chain versions

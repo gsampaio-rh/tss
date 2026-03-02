@@ -9,7 +9,6 @@ export {
 	players,
 	turnCount,
 	isStart,
-	currentWindScenario,
 	currentWind,
 	previousWind,
 	gameWidth,

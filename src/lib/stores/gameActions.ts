@@ -4,7 +4,7 @@
  */
 
 import { get } from 'svelte/store';
-import { game, players, turnCount, isStart, currentWindScenario } from './gameStore';
+import { game, players, turnCount, isStart } from './gameStore';
 import { GameService } from '$lib/application/services/GameService';
 import { PlayerService } from '$lib/application/services/PlayerService';
 import { WindScenarioService } from '$lib/application/services/WindScenarioService';
@@ -50,7 +50,6 @@ export const gameActions = {
 			players.set(newGame.players);
 			isStart.set(true);
 			turnCount.set(0);
-			currentWindScenario.set(windscenario);
 			logger.debug('[gameActions] Stores updated', 'gameActions');
 
 			// Start logging
@@ -517,7 +516,6 @@ export const gameActions = {
 			}
 			currentGame.placeBoatsOnStart();
 
-			currentWindScenario.set(windscenario);
 			game.set(currentGame);
 			players.set(currentGame.players);
 			logger.info('Wind scenario changed', 'gameActions', { scenario: windscenario.name });

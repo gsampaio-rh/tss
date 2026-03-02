@@ -1,0 +1,95 @@
+---
+description: Core philosophy for writing maintainable, AI-friendly code
+alwaysApply: true
+---
+
+# Code Philosophy
+
+## "Code for AI, Optimize for Humans"
+
+Write code that both AI and humans can easily understand, modify, and extend. Make intent explicit, not implicit.
+
+## Core Principles
+
+### Explicit > Implicit
+- Prefer explicit patterns over clever abstractions
+- Make dependencies clear and obvious
+- Use type hints and interfaces liberally
+- Name things descriptively, even if verbose
+
+### Single Responsibility
+- Each function does exactly one thing
+- Each file has a single, clear purpose
+- Small, focused functions (10-20 lines ideal, max 50 lines)
+- If a function needs a comment to explain what it does, split it
+
+**Example:**
+```typescript
+// ❌ BAD: does validation + persistence + notification in one place
+function processOrder(order: Order) {
+  if (!order.items.length) throw new Error('...');
+  await db.orders.insert(order);
+  await email.send(order.customerId, 'Order confirmed');
+}
+
+// ✅ GOOD: one concern per function, orchestrate elsewhere
+function validateOrder(order: Order): void { ... }
+function persistOrder(order: Order): Promise<void> { ... }
+function notifyOrderConfirmation(customerId: string): Promise<void> { ... }
+```
+
+### DRY (Don't Repeat Yourself)
+- Extract repeated code into reusable functions
+- Share common logic through proper abstraction
+- Maintain single sources of truth
+
+### Meaningful Names
+- Variables, functions, and classes should reveal their purpose
+- Names should explain why something exists and how it's used
+- Avoid abbreviations unless universally understood
+- Long names > Short names: `handleUserProfileUpdate` > `handleUpdate`
+
+**Example:**
+```typescript
+// ❌ BAD: vague
+const handleUpdate = () => { ... };
+
+// ✅ GOOD: intent clear
+const handleUserProfileUpdate = () => { ... };
+```
+
+### Smart Comments
+- Don't comment on what the code does - make code self-documenting
+- Use comments to explain **why** something is done a certain way
+- Document APIs, complex algorithms, and non-obvious side effects
+- Use `// TODO:` for future improvements
+
+## Clean Structure
+- Keep related code together
+- Organize code in a logical hierarchy
+- Use consistent file and folder naming conventions
+- Encapsulate implementation details
+- Expose clear interfaces
+
+## Code Quality Maintenance
+- Refactor continuously
+- Fix technical debt early
+- Leave code cleaner than you found it
+- Write tests for edge cases and error conditions
+
+## What AI Handles Well
+- Consistent patterns across codebase
+- Type-safe code with explicit types
+- Small, focused functions
+- Clear interfaces between components
+
+## What AI Struggles With
+- Clever abstractions (AI may not understand)
+- Implicit behavior (magic, hidden side effects)
+- Large functions (hard to modify safely)
+- Dynamic types (`any` makes AI's job harder)
+
+## Remember
+
+> **"Code is read more often than written"** - especially by AI agents.  
+> Make it **obvious**, make it **explicit**, make it **maintainable**.

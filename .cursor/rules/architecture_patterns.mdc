@@ -1,0 +1,45 @@
+---
+description: Architecture patterns and design principles
+globs: 
+---
+
+# Architecture Patterns
+
+## Domain-Driven Design (DDD)
+
+- **Bounded contexts**: Organize by business domain, not technical layers
+- **Domain models**: Core business logic isolated from infrastructure
+- **Ubiquitous language**: Use domain terminology consistently
+- **Aggregate roots**: Clear boundaries for data consistency
+
+## Hexagonal Architecture (Ports & Adapters)
+
+- **Ports**: Interfaces defined in domain/application layers
+- **Adapters**: Implementations in infrastructure layer
+- **Dependency inversion**: High-level modules don't depend on low-level modules
+
+## Modular Monolith → Microservices
+
+- **Start modular**: Single deployable unit with clear internal boundaries
+- **Extract services**: When scale/team size demands, extract modules to services
+- **Module boundaries**: Each module has single responsibility, stable interfaces
+
+## Event-Driven Architecture
+
+- **Domain events**: Capture state changes as events
+- **Event handlers**: React to events asynchronously
+- **Decoupling**: Services communicate via events, not direct calls
+
+## API Design
+
+- **RESTful**: Use REST conventions (resources, HTTP methods, status codes)
+- **Type safety**: Generate TypeScript types from OpenAPI schemas
+- **Contract testing**: Ensure frontend/backend contracts match
+- **Versioning**: Version APIs for backward compatibility
+
+## Frontend/Backend Communication
+
+- **API contract**: Define in OpenAPI/Swagger, generate types
+- **Service layer**: Abstract API calls in frontend service layer
+- **Error handling**: Centralized error handling in API client
+- **Type-safe clients**: Use generated types for API calls

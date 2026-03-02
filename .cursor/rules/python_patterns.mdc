@@ -1,0 +1,38 @@
+---
+description: Python best practices and patterns
+globs: *.py
+---
+
+# Python Patterns
+
+## Type Safety
+
+- **Type hints**: All function signatures, class attributes, return types
+- **Strict typing**: Use `mypy --strict` in CI/CD
+- **Pydantic models**: For data validation and serialization
+- **TypedDict**: For structured dictionaries (state, configs)
+
+## Error Handling
+
+- **Specific exceptions**: Create custom exception classes
+- **Error context**: Include relevant context in exceptions
+- **Graceful degradation**: Handle failures without crashing
+- **Retry logic**: Exponential backoff for transient failures
+
+## Resource Management
+
+- **Context managers**: Use `with` statements for resources
+- **Connection pooling**: Reuse connections (databases, HTTP clients)
+- **Cleanup**: Always clean up resources (finally blocks)
+
+## Async/Await
+
+- **Use async**: For I/O-bound operations (LLM calls, API calls)
+- **Concurrent execution**: Use `asyncio.gather()` for parallel operations
+- **Error handling**: Handle exceptions in async code properly
+
+## Code Organization
+
+- **Import order**: Standard library → Third-party → Local
+- **Barrel exports**: Use `__init__.py` for public API exports
+- **Circular dependencies**: Avoid circular dependencies between modules

@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { Boat } from '$lib/types/boat';
 	import { marks, currentWind, previousWind, game } from '$lib/stores/game';
-	import { getCourseAxis } from '$lib/utils/gameLogic';
+	import { NavigationService } from '$lib/domain/services/NavigationService';
+	import { Position } from '$lib/domain/value-objects/Position';
 
 	export let boat: Boat;
 	export let playerIndex: number;
@@ -17,7 +18,7 @@
 
 	// 1. Course Axis - line from boat to windward mark (in game coordinates)
 	$: courseAxisAngle = windwardMark
-		? getCourseAxis(boat.x, boat.y, windwardMark.x, windwardMark.y)
+		? NavigationService.getCourseAxis(new Position(boat.x, boat.y), new Position(windwardMark.x, windwardMark.y)).degrees
 		: 0;
 
 	// 2. Wind Axis - line showing wind direction (passes through boat)

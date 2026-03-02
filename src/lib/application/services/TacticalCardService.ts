@@ -10,18 +10,12 @@
 
 import type { Boat } from '$lib/types/boat';
 import type { Game } from '$lib/types/game';
-import {
-	angleDiff,
-	getOptimalHeading,
-	calculateVMG,
-	calculateVMGEfficiency,
-	getCourseAxis,
-	calculateLiftHeader,
-	OPT_UPWIND_ANGLE
-} from '$lib/utils/gameLogic';
 import { BoatMovementService } from '$lib/domain/services/BoatMovementService';
 import { RacingRulesService } from '$lib/domain/services/RacingRulesService';
+import { TacticalAnalysisService, OPT_UPWIND_ANGLE } from '$lib/domain/services/TacticalAnalysisService';
+import { NavigationService } from '$lib/domain/services/NavigationService';
 import { Angle } from '$lib/domain/value-objects/Angle';
+import { Position } from '$lib/domain/value-objects/Position';
 
 const BOAT_SPEED = 1.0; // Base speed (full speed at optimal angle)
 
@@ -141,7 +135,7 @@ export function calculateTacticalMetrics(input: TacticalCardInput): TacticalMetr
 
 	// 1. Angle to True Wind (ATW)
 	const targetATW = OPT_UPWIND_ANGLE;
-	const atw = boat ? Math.abs(angleDiff(boat.rotation, windDir)) : 0;
+	const atw = boat ? Math.abs(TacticalAnalysisService.angleDiff(Angle.fromDegrees(boat.rotation), Angle.fromDegrees(windDir))) : 0;
 	const atwDelta = atw - targetATW;
 	const atwColor = Math.abs(atwDelta) <= 2 ? 'green' : Math.abs(atwDelta) <= 5 ? 'yellow' : 'red';
 	const atwStatusInfo = getStatusFromDelta(atwDelta, 2, 5, {
@@ -159,17 +153,19 @@ export function calculateTacticalMetrics(input: TacticalCardInput): TacticalMetr
 
 	// 2. VMG (using actual speed based on ATW)
 	const vmg = windwardMark
-		? calculateVMG(boat.rotation, boat.x, boat.y, windwardMark.x, windwardMark.y, actualSpeed)
+		? TacticalAnalysisService.calculateVMG(
+				new Position(boat.x, boat.y),
+				new Position(windwardMark.x, windwardMark.y),
+				actualSpeed,
+				Angle.fromDegrees(boat.rotation)
+			)
 		: 0;
 	const vmgEfficiency = windwardMark
-		? calculateVMGEfficiency(
-				boat.rotation,
-				boat.x,
-				boat.y,
-				windwardMark.x,
-				windwardMark.y,
+		? TacticalAnalysisService.calculateVMGEfficiency(
+				new Position(boat.x, boat.y),
+				new Position(windwardMark.x, windwardMark.y),
 				BOAT_SPEED,
-				true
+				Angle.fromDegrees(boat.rotation)
 			)
 		: 0;
 	const vmgPercent = Math.round(vmgEfficiency * 100);
@@ -186,14 +182,12 @@ export function calculateTacticalMetrics(input: TacticalCardInput): TacticalMetr
 	// 3. Lift/Header
 	const liftHeaderResult =
 		windDir !== previousWindDir && windwardMark && Math.abs(windDir - previousWindDir) > 0.1
-			? calculateLiftHeader(
-					boat,
-					boat.x,
-					boat.y,
-					windwardMark.x,
-					windwardMark.y,
-					previousWindDir,
-					windDir,
+			? TacticalAnalysisService.calculateLiftHeader(
+					new Position(boat.x, boat.y),
+					new Position(windwardMark.x, windwardMark.y),
+					boat.tack,
+					Angle.fromDegrees(previousWindDir),
+					Angle.fromDegrees(windDir),
 					true
 				)
 			: null;
@@ -207,8 +201,8 @@ export function calculateTacticalMetrics(input: TacticalCardInput): TacticalMetr
 	const liftHeaderBarWidth = Math.min(50, (Math.abs(liftAmount) / maxShift) * 50);
 
 	// 4. Target Heading
-	const optimalHeading = getOptimalHeading(boat.tack, windDir, true);
-	const headingDelta = angleDiff(boat.rotation, optimalHeading);
+	const optimalHeading = TacticalAnalysisService.getOptimalHeading(boat.tack, Angle.fromDegrees(windDir), true).degrees;
+	const headingDelta = TacticalAnalysisService.angleDiff(Angle.fromDegrees(boat.rotation), Angle.fromDegrees(optimalHeading));
 	const headingStatusInfo = getStatusFromDelta(headingDelta, 3, 5, {
 		excellent: 'On Course',
 		good: 'Close',
@@ -240,12 +234,12 @@ export function calculateTacticalMetrics(input: TacticalCardInput): TacticalMetr
 
 	// 7. Tack Advantage
 	const oppositeTack = !boat.tack;
-	const oppositeOptHeading = getOptimalHeading(oppositeTack, windDir, true);
+	const oppositeOptHeading = TacticalAnalysisService.getOptimalHeading(oppositeTack, Angle.fromDegrees(windDir), true).degrees;
 	const currentCourseAxis = windwardMark
-		? getCourseAxis(boat.x, boat.y, windwardMark.x, windwardMark.y)
+		? NavigationService.getCourseAxis(new Position(boat.x, boat.y), new Position(windwardMark.x, windwardMark.y)).degrees
 		: 0;
-	const currentError = windwardMark ? Math.abs(angleDiff(boat.rotation, currentCourseAxis)) : 0;
-	const oppositeError = windwardMark ? Math.abs(angleDiff(oppositeOptHeading, currentCourseAxis)) : 0;
+	const currentError = windwardMark ? Math.abs(TacticalAnalysisService.angleDiff(Angle.fromDegrees(boat.rotation), Angle.fromDegrees(currentCourseAxis))) : 0;
+	const oppositeError = windwardMark ? Math.abs(TacticalAnalysisService.angleDiff(Angle.fromDegrees(oppositeOptHeading), Angle.fromDegrees(currentCourseAxis))) : 0;
 	const tackAdvantage =
 		currentError < oppositeError ? oppositeError - currentError : -(currentError - oppositeError);
 	const tackAdvantagePercent =

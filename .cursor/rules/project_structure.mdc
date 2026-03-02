@@ -1,0 +1,70 @@
+---
+description: Project structure and organization patterns for full-stack applications
+globs: 
+---
+
+# Project Structure
+
+## Directory Structure (Full-Stack Monorepo)
+
+```
+project_root/
+├── backend/              # Backend service (Python or TypeScript)
+│   ├── src/
+│   │   ├── domain/       # Core business logic (no external deps)
+│   │   ├── application/  # Use cases, agents, workflows
+│   │   ├── infrastructure/ # External dependencies (LLMs, DBs, APIs)
+│   │   └── api/          # API layer (REST/GraphQL)
+│   ├── tests/            # Test suite
+│   └── configs/          # Configs, prompts
+├── frontend/             # Frontend application
+│   ├── src/
+│   │   ├── components/   # UI components
+│   │   ├── pages/        # Page components
+│   │   ├── services/     # API client services
+│   │   ├── store/        # State management
+│   │   └── types/        # TypeScript types
+│   └── tests/
+├── shared/               # Shared code
+│   ├── types/            # Shared TypeScript types
+│   └── schemas/          # Shared validation schemas (Zod)
+└── docs/                 # Documentation
+```
+
+## Dependency Rules
+
+### Backend Layers
+```
+domain/          → No dependencies (pure logic)
+application/     → domain/ only
+infrastructure/  → domain/, application/ (implements interfaces)
+api/            → application/, infrastructure/
+```
+
+### Cross-Layer
+```
+shared/         → No dependencies on backend/ or frontend/
+backend/        → Can import from shared/
+frontend/       → Can import from shared/
+```
+
+## Module Organization
+
+- **Domain**: Pure business logic, no external dependencies
+- **Application**: Orchestrates domain logic, contains LangChain/LangGraph workflows
+- **Infrastructure**: Implements interfaces, handles external systems
+- **API**: Thin layer translating HTTP to application calls
+- **Frontend**: Component-based, type-safe API clients
+
+## File Naming
+
+- **Modules**: `snake_case.py` (Python) or `camelCase.ts` (TypeScript)
+- **Classes**: `PascalCase`
+- **Functions/Variables**: `snake_case` (Python) or `camelCase` (TypeScript)
+- **Constants**: `UPPER_SNAKE_CASE`
+
+## Module Size
+
+- **Files**: Max 300 lines (ideally <200)
+- **Functions**: Max 50 lines (ideally <20)
+- **Classes**: Max 500 lines (ideally <200)

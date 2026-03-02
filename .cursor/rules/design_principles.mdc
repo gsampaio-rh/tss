@@ -1,0 +1,169 @@
+---
+description: Design philosophy and principles for building beautiful, accessible interfaces
+globs: 
+---
+
+# Design Principles: "Less but Better"
+
+Our design philosophy synthesizes principles from master designers: **Dieter Rams** (less but better), **BJ Fogg** (behavior-driven simplicity), **Steve Jobs** (user-centric focus), **Jony Ive** (minimalist craftsmanship), and **Le Corbusier** (functionalism).
+
+## Core Philosophy
+
+### Good Design is Honest (Dieter Rams)
+- **Transparency**: UI elements clearly communicate their function
+- **No deception**: Never mislead users about what actions will do
+- **Clear feedback**: Every interaction provides honest, immediate feedback
+- **Error states**: Show what went wrong and how to fix it
+
+### Good Design is Unobtrusive (Dieter Rams)
+- **Invisible when perfect**: The interface gets out of the user's way
+- **Content first**: Design supports content, never competes with it
+- **Minimal chrome**: Remove unnecessary UI elements
+- **Progressive disclosure**: Show only what's needed, when needed
+
+### Good Design Makes a Product Useful (Dieter Rams + Le Corbusier)
+- **Form follows function**: Every element serves a clear purpose
+- **Functional beauty**: Beauty emerges from solving problems elegantly
+- **No decoration**: Remove decorative elements that don't enhance usability
+- **Purpose-driven**: Every screen, component, and interaction has a defined purpose
+
+### Simplicity Through Focus (Steve Jobs)
+- **One thing well**: Each screen does one thing exceptionally well
+- **Eliminate the unnecessary**: If it doesn't add value, remove it
+- **Clarity over cleverness**: Simple, obvious solutions over complex ones
+- **Intuitive first**: Users should understand without explanation
+
+### Behavior-Driven Design (BJ Fogg)
+**B=MAT Model**: Behavior = Motivation + Ability + Trigger
+- **Motivation**: Make the value proposition clear and compelling
+- **Ability**: Make actions easy to perform (reduce friction)
+- **Trigger**: Provide clear calls-to-action at the right moment
+- **Reduce cognitive load**: Break complex tasks into simple steps
+- **Progressive enhancement**: Start simple, add complexity only when needed
+
+### Craftsmanship (Jony Ive)
+- **Pixel-perfect**: Every detail matters, from spacing to typography
+- **Consistent rhythm**: Use systematic spacing and sizing (8px grid)
+- **Refined interactions**: Smooth animations, appropriate timing, natural feel
+- **Quality over quantity**: Fewer, polished features over many half-finished ones
+
+## Visual Design
+
+### Typography
+- **Hierarchy**: Clear typographic hierarchy guides users through content
+- **Readability**: Choose typefaces optimized for screen reading
+- **Consistency**: Limited type scales (12px, 14px, 16px, 20px, 24px, 32px)
+- **Line length**: Optimal reading line length (45-75 characters)
+
+### Color
+- **Purposeful**: Colors communicate meaning, not just decoration
+- **Accessibility**: WCAG AA contrast ratios minimum (4.5:1 for text)
+- **Limited palette**: Use a restrained color palette (primary, secondary, neutral, semantic)
+- **Semantic colors**: Use colors consistently (red for errors, green for success)
+
+### Spacing & Layout
+- **8px grid system**: Base all spacing on multiples of 8px
+- **Breathing room**: Generous whitespace improves readability and focus
+- **Visual rhythm**: Consistent spacing creates visual harmony
+- **Alignment**: Align elements to a clear grid for visual order
+
+### Imagery & Icons
+- **Purposeful**: Every image and icon must serve a function
+- **Consistent style**: Maintain visual consistency across all imagery
+- **Appropriate size**: Scale images appropriately for context
+- **Accessibility**: Provide alt text and ensure icons are recognizable
+
+## Interaction Design
+
+### Clarity
+- **Obvious actions**: Users should immediately understand what they can do
+- **Clear labels**: Use descriptive, action-oriented labels
+- **Visual affordances**: Elements should look clickable/tappable when they are
+- **State communication**: Clearly show hover, active, disabled, and loading states
+
+### Feedback
+- **Immediate response**: Every action should provide instant feedback
+- **Progress indication**: Show progress for long-running operations
+- **Error handling**: Provide clear, actionable error messages
+- **Success confirmation**: Confirm successful actions appropriately
+
+### Efficiency
+- **Keyboard shortcuts**: Provide shortcuts for power users
+- **Smart defaults**: Pre-fill forms and remember preferences
+- **Reduce steps**: Minimize the number of steps to complete tasks
+- **Bulk actions**: Allow multiple items to be acted upon simultaneously
+
+### Delight
+- **Micro-interactions**: Subtle animations that provide feedback
+- **Pleasant surprises**: Small moments of delight that don't interfere
+- **Smooth transitions**: Natural-feeling animations between states
+- **Personality**: Subtle character that reflects the brand without being distracting
+
+## Accessibility
+
+### Universal Design
+- **Keyboard navigation**: All functionality accessible via keyboard
+- **Screen readers**: Proper ARIA labels and semantic HTML
+- **Color independence**: Don't rely solely on color to convey information
+- **Focus indicators**: Clear focus states for keyboard navigation
+
+### Inclusive Design
+- **Multiple input methods**: Support mouse, keyboard, touch, and voice
+- **Adjustable**: Allow users to customize text size and preferences
+- **Error prevention**: Prevent errors before they happen
+- **Error recovery**: Make it easy to recover from mistakes
+
+### Performance & Responsive Design
+- **Fast initial load**: Optimize for first contentful paint
+- **Smooth interactions**: 60fps animations, no jank
+- **Progressive loading**: Load critical content first
+- **Mobile-first**: Design for smallest screen first, enhance for larger
+- **Breakpoints**: Consistent breakpoints (mobile: 320px+, tablet: 768px+, desktop: 1024px+)
+- **Touch targets**: Minimum 44x44px for touch interactions
+- **Flexible layouts**: Use relative units and flexible grids
+
+### Semantic HTML
+- **Use semantic elements**: `<button>`, `<nav>`, `<main>`, etc.
+- **ARIA labels**: Add ARIA when semantic HTML isn't enough
+- **Keyboard navigation**: Ensure all interactions work with keyboard
+- **Focus management**: Manage focus for modals, dropdowns
+
+## Design System
+
+### Component Library
+- **Reusable components**: Buttons, inputs, cards, modals, etc.
+- **Consistent API**: Similar components should work similarly
+- **Documentation**: Clear usage guidelines for each component
+- **Variants**: Support different states and sizes
+
+### Design Tokens
+- **Colors**: Primary, secondary, neutral, semantic colors
+- **Typography**: Font families, sizes, weights, line heights
+- **Spacing**: Consistent spacing scale (8px grid)
+- **Shadows**: Elevation system for depth
+- **Borders**: Consistent border radius and widths
+
+### Patterns
+- **Navigation patterns**: Consistent navigation across the app
+- **Form patterns**: Standard form layouts and validation
+- **Feedback patterns**: Consistent error, success, and loading states
+- **Layout patterns**: Standard page layouts and grids
+
+## Design Process
+
+1. **Understand the Problem**: Start with user needs, not features
+2. **Simplify**: Remove everything that doesn't solve the problem
+3. **Prototype & Test**: Build quick prototypes, test with real users
+4. **Refine**: Polish details, ensure consistency
+5. **Maintain**: Keep design system updated, document decisions
+
+## Questions to Ask When Designing
+
+1. Does this solve a real problem? (Functionalism)
+2. Can we remove anything? (Simplicity)
+3. Is this the simplest solution? (Focus)
+4. Does this make the user's task easier? (Usefulness)
+5. Is this consistent with the rest of the system? (Modularity)
+6. Will users understand this immediately? (Clarity)
+7. Does this feel crafted? (Attention to detail)
+8. Is this accessible to everyone? (Universal design)

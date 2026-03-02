@@ -24,7 +24,7 @@ import { onMount, onDestroy } from 'svelte';
 	import { formatCssPx, formatCssDeg } from '$lib/utils/cssFormat';
 	import { formatSvgViewBox } from '$lib/utils/windParticleUtils';
 	import { getTrackPoints } from '$lib/utils/trackUtils';
-	import { calculateLaylineEndpoints } from '$lib/utils/laylineUtils';
+	import { calculateLaylineEndpoints, calculateLaylineProximity } from '$lib/utils/laylineUtils';
 
 	let gameArea: HTMLDivElement;
 	let gameCont: HTMLDivElement;
@@ -268,49 +268,35 @@ import { onMount, onDestroy } from 'svelte';
 				<!-- Layline proximity indicators (perpendicular ticks from boats) -->
 				{#each $players as player}
 					{#if player.finished === false}
-						{@const distToMark = Math.sqrt(
-							Math.pow(player.x - upMark.x, 2) + Math.pow(player.y - upMark.y, 2)
-						)}
-						{#if distToMark < 12 && distToMark > 2}
-							{@const angleToMark =
-								(Math.atan2(upMark.y - player.y, upMark.x - player.x) * 180) / Math.PI}
-							{@const windAngle = $currentWind * 2}
-							{@const laylineAngle1 = windAngle - 45}
-							{@const laylineAngle2 = windAngle + 45}
-							{@const angleDiff1 = Math.abs(((angleToMark - laylineAngle1 + 180) % 360) - 180)}
-							{@const angleDiff2 = Math.abs(((angleToMark - laylineAngle2 + 180) % 360) - 180)}
-							{@const nearLayline = angleDiff1 < 8 || angleDiff2 < 8}
-							{#if nearLayline}
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									viewBox="0 0 10 10"
-									class="layline-proximity-indicator"
-									style="
-                      left: {formatCssPx(player.x * GRID_SIZE)};
-                      top: {formatCssPx(player.y * GRID_SIZE)};
-                      width: 10px;
-                      height: 10px;
-                      margin-left: -5px;
-                      margin-top: -5px;
-                      opacity: {Math.max(0.3, 0.7 - distToMark / 20)};
-                      pointer-events: none;
-                      z-index: 50;
-                    "
-								>
-									<line
-										x1="5"
-										y1="5"
-										x2="5"
-										y2="0"
-										stroke={getBoatColorHex(player.color)}
-										stroke-width="0.15"
-										stroke-linecap="round"
-										transform="rotate({angleDiff1 < angleDiff2
-											? laylineAngle1 - angleToMark
-											: laylineAngle2 - angleToMark} 5 5)"
-									/>
-								</svg>
-							{/if}
+						{@const proximity = calculateLaylineProximity(player.x, player.y, upMark.x, upMark.y, $currentWind)}
+						{#if proximity.isNear}
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								viewBox="0 0 10 10"
+								class="layline-proximity-indicator"
+								style="
+									left: {formatCssPx(player.x * GRID_SIZE)};
+									top: {formatCssPx(player.y * GRID_SIZE)};
+									width: 10px;
+									height: 10px;
+									margin-left: -5px;
+									margin-top: -5px;
+									opacity: {proximity.opacity};
+									pointer-events: none;
+									z-index: 50;
+								"
+							>
+								<line
+									x1="5"
+									y1="5"
+									x2="5"
+									y2="0"
+									stroke={getBoatColorHex(player.color)}
+									stroke-width="0.15"
+									stroke-linecap="round"
+									transform="rotate({proximity.rotationAngle} 5 5)"
+								/>
+							</svg>
 						{/if}
 					{/if}
 				{/each}

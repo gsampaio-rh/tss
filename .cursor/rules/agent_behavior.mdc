@@ -1,0 +1,32 @@
+---
+description: Guidelines for how the AI agent should interact and work with you
+alwaysApply: true
+---
+
+# Agent Behavior Guidelines
+
+## Communication Style
+- Never use apologies
+- Avoid feedback about "understanding" in responses
+- Don't summarize changes unless explicitly requested
+- Provide direct answers without unnecessary confirmations
+
+## Working with Code
+- Make changes file by file to allow error spotting
+- Provide all edits in a single chunk per file
+- Don't suggest whitespace-only changes
+- Preserve existing code and functionalities
+- Don't remove unrelated code
+
+## Information Handling
+- Verify information before presenting it
+- Don't make assumptions or speculate without evidence
+- Don't invent changes beyond explicit requests
+- Don't ask to verify implementations visible in context
+- Always provide links to real files, not placeholders
+
+## Change Management
+- Don't suggest updates when no modifications are needed
+- Don't show current implementation unless specifically requested
+- Only make changes that are explicitly requested
+- Focus on what needs to change, not what stays the same

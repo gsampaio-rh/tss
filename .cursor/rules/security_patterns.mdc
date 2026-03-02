@@ -1,0 +1,41 @@
+---
+description: Security best practices and patterns
+globs: 
+---
+
+# Security Patterns
+
+## Input Validation
+
+- **Backend**: Validate all inputs at API boundaries (Pydantic/Zod)
+- **Frontend**: Validate user inputs before sending to API
+- **Sanitization**: Sanitize user inputs before LLM prompts (prevent prompt injection)
+- **Rate limiting**: Rate limit API endpoints
+
+## Authentication & Authorization
+
+- **Backend**: Authenticate all API requests (JWT, OAuth, API keys)
+- **Frontend**: Store tokens securely (httpOnly cookies preferred)
+- **Least privilege**: Use least privilege principle
+- **Audit logs**: Audit access logs
+
+## Data Protection
+
+- **Encryption**: Encrypt sensitive data at rest
+- **TLS/HTTPS**: Use TLS/HTTPS for data in transit
+- **PII masking**: Mask PII in logs
+- **Secrets**: Never store secrets in frontend code
+
+## Frontend Security
+
+- **XSS prevention**: Sanitize user-generated content
+- **CSRF protection**: Use CSRF tokens for state-changing operations
+- **CSP**: Implement Content Security Policy headers
+- **API keys**: Never expose API keys in frontend code (use backend proxy)
+
+## Dependency Security
+
+- **Vulnerability scanning**: Scan for known vulnerabilities (npm audit, pip-audit, Snyk)
+- **Dependency updates**: Regularly update dependencies
+- **Automated scanning**: Integrate security scanning in CI/CD
+- **Security advisories**: Review security advisories

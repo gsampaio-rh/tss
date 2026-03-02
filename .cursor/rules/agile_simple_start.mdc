@@ -1,0 +1,34 @@
+---
+description: Start simple, deliver in agile sprints; use project checklist for setup and planning
+alwaysApply: true
+---
+
+# Start Simple, Agile Sprints
+
+## Mindset
+
+- **Start simple:** Smallest viable scope first. One vertical slice (e.g. one flow end-to-end) before adding more. Avoid big upfront design.
+- **Agile sprints:** Work in short, time-boxed sprints (e.g. 1–2 weeks). Each sprint delivers something demonstrable and shippable.
+- **Checklist-driven:** When starting a new project or sprint, use the project checklist so nothing is skipped.
+
+## When Starting a Project
+
+- Prefer **minimal scope** for Sprint 0 / first sprint: one user journey, one API surface, one deploy path.
+- Ensure **docs and checklist** exist: `docs/PROJECT_CHECKLIST.md` (or project-specific copy). Use it for kickoff and sprint planning.
+- Don’t add features “while we’re here”; capture them in a backlog and schedule in a later sprint.
+
+## When Planning a Sprint
+
+- Define a **sprint goal** and a **short list of committed items** (backlog items / tasks).
+- Ensure each item has a **definition of done** (see checklist).
+- Prefer **small, completable tasks** over large “in progress” blocks.
+
+## When Implementing
+
+- Deliver **one slice at a time** (e.g. one endpoint + one screen + tests) so the product is always in a working state.
+- Update **docs and checklist** when you complete setup steps or change how the project runs (e.g. how to run tests, deploy).
+
+## Project Checklist Location
+
+- **Checklist:** `docs/PROJECT_CHECKLIST.md` — use for new project setup, Sprint 0, and ongoing sprint cadence.
+- If the user asks to “set up a checklist” or “start a project with agile,” create or update that file and follow it.

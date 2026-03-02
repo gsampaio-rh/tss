@@ -7,6 +7,7 @@ import { Position } from '../value-objects/Position';
 import { Angle } from '../value-objects/Angle';
 import { WindDirection } from '../value-objects/WindDirection';
 import { TacticalAnalysisService } from './TacticalAnalysisService';
+import { DETECTION } from '../constants/dirtyAir';
 import type { Boat } from '../../types/boat';
 
 export interface DirtyAirZoneResult {
@@ -21,18 +22,6 @@ export interface DirtyAirEffectResult {
 }
 
 export class DirtyAirService {
-	// Blanket Zone: leeward and behind, triangular
-	private static readonly BLANKET_LENGTH = 8; // boat lengths
-	private static readonly BLANKET_WIDTH_START = 0.3;
-	private static readonly BLANKET_WIDTH_END = 3.5;
-	private static readonly BLANKET_ANGLE_SPREAD = 30; // degrees
-	
-	// Backwind Zone: windward and behind, larger, irregular
-	private static readonly BACKWIND_LENGTH = 10; // boat lengths
-	private static readonly BACKWIND_WIDTH_START = 0.5;
-	private static readonly BACKWIND_WIDTH_END = 5.0;
-	private static readonly BACKWIND_ANGLE_SPREAD = 45; // degrees
-	private static readonly BACKWIND_CURVE_FACTOR = 0.3;
 
 	/**
 	 * Check if a point is within the Blanket Zone (leeward, triangular)
@@ -53,7 +42,7 @@ export class DirtyAirService {
 		// Must be downwind
 		const leewardRad = leewardAngle.radians;
 		const downwindDist = dx * Math.sin(leewardRad) - dy * Math.cos(leewardRad);
-		if (downwindDist < 0 || downwindDist > DirtyAirService.BLANKET_LENGTH) {
+		if (downwindDist < 0 || downwindDist > DETECTION.BLANKET_LENGTH) {
 			return { inZone: false, intensity: 0 };
 		}
 		
@@ -67,9 +56,9 @@ export class DirtyAirService {
 		}
 		
 		// Triangular width at this distance
-		const t = downwindDist / DirtyAirService.BLANKET_LENGTH;
-		const halfWidth = (DirtyAirService.BLANKET_WIDTH_START + 
-			(DirtyAirService.BLANKET_WIDTH_END - DirtyAirService.BLANKET_WIDTH_START) * t) / 2;
+		const t = downwindDist / DETECTION.BLANKET_LENGTH;
+		const halfWidth = (DETECTION.BLANKET_WIDTH_START + 
+			(DETECTION.BLANKET_WIDTH_END - DETECTION.BLANKET_WIDTH_START) * t) / 2;
 		
 		if (Math.abs(perpDist) > halfWidth) {
 			return { inZone: false, intensity: 0 };
@@ -78,7 +67,7 @@ export class DirtyAirService {
 		// Angle check
 		const pointAngle = Angle.fromRadians(Math.atan2(dx, -dy));
 		const angleDiffValue = Math.abs(TacticalAnalysisService.angleDiff(pointAngle, leewardAngle));
-		if (angleDiffValue > (DirtyAirService.BLANKET_ANGLE_SPREAD * Math.PI / 180)) {
+		if (angleDiffValue > DETECTION.BLANKET_ANGLE_SPREAD) {
 			return { inZone: false, intensity: 0 };
 		}
 		
@@ -109,7 +98,7 @@ export class DirtyAirService {
 		// Must be downwind
 		const leewardRad = leewardAngle.radians;
 		const downwindDist = dx * Math.sin(leewardRad) - dy * Math.cos(leewardRad);
-		if (downwindDist < 0 || downwindDist > DirtyAirService.BACKWIND_LENGTH) {
+		if (downwindDist < 0 || downwindDist > DETECTION.BACKWIND_LENGTH) {
 			return { inZone: false, intensity: 0 };
 		}
 		
@@ -123,10 +112,10 @@ export class DirtyAirService {
 		}
 		
 		// Irregular width with curvature
-		const t = downwindDist / DirtyAirService.BACKWIND_LENGTH;
-		const baseWidth = DirtyAirService.BACKWIND_WIDTH_START + 
-			(DirtyAirService.BACKWIND_WIDTH_END - DirtyAirService.BACKWIND_WIDTH_START) * t;
-		const curveOffset = Math.sin(t * Math.PI) * DirtyAirService.BACKWIND_CURVE_FACTOR * DirtyAirService.BACKWIND_WIDTH_END;
+		const t = downwindDist / DETECTION.BACKWIND_LENGTH;
+		const baseWidth = DETECTION.BACKWIND_WIDTH_START + 
+			(DETECTION.BACKWIND_WIDTH_END - DETECTION.BACKWIND_WIDTH_START) * t;
+		const curveOffset = Math.sin(t * Math.PI) * DETECTION.BACKWIND_CURVE_FACTOR * DETECTION.BACKWIND_WIDTH_END;
 		const halfWidth = (baseWidth + curveOffset) / 2;
 		
 		if (perpDist > halfWidth) {
@@ -137,7 +126,7 @@ export class DirtyAirService {
 		const pointAngle = Angle.fromRadians(Math.atan2(dx, -dy));
 		const windwardAngle = leewardAngle.add(Angle.fromDegrees(180));
 		const angleDiffValue = Math.abs(TacticalAnalysisService.angleDiff(pointAngle, windwardAngle));
-		if (angleDiffValue > (DirtyAirService.BACKWIND_ANGLE_SPREAD * Math.PI / 180)) {
+		if (angleDiffValue > DETECTION.BACKWIND_ANGLE_SPREAD) {
 			return { inZone: false, intensity: 0 };
 		}
 		

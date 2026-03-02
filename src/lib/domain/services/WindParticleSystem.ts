@@ -6,9 +6,10 @@
  */
 
 import { createUnitStreakPath, createSharedGradients } from '$lib/utils/windParticleUtils';
-import { calculateApparentWind, calculateDisturbedWind } from '$lib/utils/apparentWind';
+import { calculateApparentWind, calculateDisturbedWind, getLeewardSide } from '$lib/utils/apparentWind';
 import { BoatMovementService } from './BoatMovementService';
 import { Angle } from '../value-objects/Angle';
+import { VISUAL } from '../constants/dirtyAir';
 
 export interface Particle {
 	element: SVGPathElement;
@@ -119,20 +120,6 @@ export class WindParticleSystem {
 	}
 
 	/**
-	 * Calculate apparent wind direction for a boat (with leeway effects)
-	 * Uses shared utility function that includes leeway-induced flow rotation
-	 */
-	private calculateApparentWindForBoat(boatRotation: number, trueWindDirDeg: number, boatSpeedMultiplier: number): { vx: number; vy: number; angle: number } {
-		const apparentWind = calculateApparentWind(boatRotation, trueWindDirDeg, boatSpeedMultiplier);
-		return {
-			vx: apparentWind.vx,
-			vy: apparentWind.vy,
-			angle: apparentWind.angle
-		};
-	}
-
-
-	/**
 	 * Detect dirty air influence from boats
 	 * Uses simple wedge detection matching the visual zones (straight downwind wedges)
 	 * Returns weight (0-1) and boat ID affecting the particle
@@ -142,25 +129,11 @@ export class WindParticleSystem {
 			return { weight: 0, boatId: null };
 		}
 
-		const BOAT_LENGTH = 1.0;
+		const BLANKET_LENGTH = VISUAL.BLANKET_LENGTH;
+		const BLANKET_ANGLE_SPREAD = VISUAL.BLANKET_ANGLE_SPREAD;
+		const BACKWIND_LENGTH = VISUAL.BACKWIND_LENGTH;
+		const BACKWIND_ANGLE_SPREAD = VISUAL.BACKWIND_ANGLE_SPREAD;
 		
-		// Blanket Zone: narrow wedge on leeward side, 3-4 boat lengths
-		const BLANKET_LENGTH = 4 * BOAT_LENGTH;
-		const BLANKET_ANGLE_SPREAD = 15; // ±15° wedge
-		
-		// Backwind Zone: curved zone wrapping around stern/windward, 8-10 boat lengths
-		const BACKWIND_LENGTH = 10 * BOAT_LENGTH;
-		const BACKWIND_ANGLE_SPREAD = 30; // ±30° wedge (wider)
-		
-		/**
-		 * Determine which side is leeward (away from wind)
-		 * Returns: -1 for port tack (leeward is port/left), +1 for starboard tack (leeward is starboard/right)
-		 */
-		function getLeewardSide(boatRotation: number, windDir: number): number {
-			const windFromBoat = ((windDir - boatRotation + 180) % 360) - 180;
-			return windFromBoat > 0 ? -1 : 1;
-		}
-
 		// True wind direction
 		const trueWindMag = Math.sqrt(windDir.vx * windDir.vx + windDir.vy * windDir.vy);
 		if (trueWindMag < 0.001) return { weight: 0, boatId: null };
@@ -179,7 +152,7 @@ export class WindParticleSystem {
 			const boatSpeedMultiplier = BoatMovementService.calculateSpeedMultiplier(boatHeading, windDirection);
 			
 			// Calculate apparent wind for this boat (with leeway effects)
-			const apparentWindResult = this.calculateApparentWindForBoat(boat.rotation, trueWindDirDeg, boatSpeedMultiplier);
+			const apparentWindResult = calculateApparentWind(boat.rotation, trueWindDirDeg, boatSpeedMultiplier);
 			const apparentWindMag = Math.sqrt(apparentWindResult.vx * apparentWindResult.vx + apparentWindResult.vy * apparentWindResult.vy);
 			if (apparentWindMag < 0.001) continue;
 			
@@ -254,16 +227,6 @@ export class WindParticleSystem {
 		return { weight: Math.min(maxWeight, 1.0), boatId: affectingBoatId };
 	}
 	
-	/**
-	 * Calculate angle difference (wrapping around 2π)
-	 */
-	private angleDiff(a1: number, a2: number): number {
-		let diff = a1 - a2;
-		while (diff > Math.PI) diff -= 2 * Math.PI;
-		while (diff < -Math.PI) diff += 2 * Math.PI;
-		return diff;
-	}
-
 	/**
 	 * Apply dirty air effects to particle velocity
 	 */

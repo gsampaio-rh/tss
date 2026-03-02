@@ -3,7 +3,8 @@
 	import { currentWind, game } from '$lib/stores/game';
 	import { Angle } from '$lib/domain/value-objects/Angle';
 	import { BoatMovementService } from '$lib/domain/services/BoatMovementService';
-	import { calculateApparentWind } from '$lib/utils/apparentWind';
+	import { calculateApparentWind, getLeewardSide } from '$lib/utils/apparentWind';
+	import { VISUAL, BOAT_LENGTH } from '$lib/domain/constants/dirtyAir';
 
 	export let boat: Boat;
 	export let playerIndex: number;
@@ -14,14 +15,10 @@
 	$: gameWidth = $game?.width || 0;
 	$: gameHeight = $game?.height || 0;
 
-	const BOAT_LENGTH = 1.0; // 1 unit = 1 boat length
-
-	// Zone parameters (Option A: simple wedges - straight downwind)
-	const BLANKET_LENGTH = 4 * BOAT_LENGTH; // 3-4 boat lengths
-	const BLANKET_ANGLE_SPREAD = 15; // ±15° wedge (narrow)
-	
-	const BACKWIND_LENGTH = 10 * BOAT_LENGTH; // 8-10 boat lengths
-	const BACKWIND_ANGLE_SPREAD = 30; // ±30° wedge (wider than blanket)
+	const BLANKET_LENGTH = VISUAL.BLANKET_LENGTH;
+	const BLANKET_ANGLE_SPREAD = VISUAL.BLANKET_ANGLE_SPREAD;
+	const BACKWIND_LENGTH = VISUAL.BACKWIND_LENGTH;
+	const BACKWIND_ANGLE_SPREAD = VISUAL.BACKWIND_ANGLE_SPREAD;
 
 	// Calculate boat speed multiplier (for leeway calculation)
 	$: boatHeading = Angle.fromDegrees(boat.rotation);
@@ -31,18 +28,6 @@
 	// Calculate apparent wind with leeway effects
 	$: apparentWindResult = calculateApparentWind(boat.rotation, windDir, boatSpeedMultiplier);
 	$: apparentWindDir = apparentWindResult.angle;
-
-	/**
-	 * Determine which side is leeward (away from wind)
-	 * Returns: -1 for port tack (leeward is port/left), +1 for starboard tack (leeward is starboard/right)
-	 */
-	function getLeewardSide(boatRotation: number, windDir: number): number {
-		// Wind direction relative to boat heading
-		const windFromBoat = ((windDir - boatRotation + 180) % 360) - 180;
-		// Positive = wind from port side (starboard tack) = leeward is port = -1
-		// Negative = wind from starboard side (port tack) = leeward is starboard = +1
-		return windFromBoat > 0 ? -1 : 1;
-	}
 
 	/**
 	 * Calculate Blanket Zone path (narrow wedge on leeward side)

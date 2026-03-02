@@ -1,0 +1,80 @@
+---
+description: Research quality standards for AI experiment design, execution, and reporting — OpenAI/DeepMind tier rigor
+alwaysApply: false
+---
+
+# Research Quality Standards
+
+All experiments in this project must meet publication-grade rigor. Design for skeptical peer review, not confirmation.
+
+## Experiment Design
+
+### Pre-registration
+
+- State hypotheses BEFORE running experiments. Never retrofit hypotheses to match results.
+- Document expected direction and magnitude of effects in `EXPERIMENT.md` before any data is collected.
+- If an experiment is exploratory (no prior hypothesis), label it explicitly as exploratory analysis.
+
+### Controls and Baselines
+
+- Every experiment MUST have a null baseline (alpha=0, no incentive, no intervention).
+- Report baseline performance prominently — all other results are deltas from baseline.
+- When comparing conditions, change exactly ONE variable at a time. If multiple variables change, document this as a limitation.
+
+### Statistical Rigor
+
+- Report effect sizes, not just "it went up." Compute Cohen's d or percentage change with confidence intervals.
+- For N < 100 per condition, use bootstrap confidence intervals (95% CI) instead of assuming normality.
+- Never claim a result is "significant" without a proper test. Use permutation tests or Mann-Whitney U for non-parametric data.
+- Report exact p-values, not just "p < 0.05." Include test statistic and degrees of freedom.
+- Bonferroni-correct when testing multiple hypotheses simultaneously.
+
+### Sample Size
+
+- Justify sample size. For pilot studies, state it explicitly: "This is a pilot (N=50 per condition)."
+- When results are inconclusive, acknowledge low statistical power rather than claiming null effects.
+
+## Execution
+
+### Reproducibility
+
+- Pin ALL versions: model names (with quantization), Ollama version, Python version, random seeds where applicable.
+- Log raw data (all candidates, all scores) — not just aggregates. Others must be able to re-derive every number.
+- Configuration must be declarative (YAML) and committed alongside results.
+- Every experiment must be re-runnable from a clean checkout: `git clone -> install -> run -> identical analysis`.
+
+### Ablation Studies
+
+- When a system has multiple components (e.g., scoring formula with 4 sub-scores), test what happens when each is removed or replaced.
+- When results are surprising, run ablations to isolate the cause before drawing conclusions.
+
+### Threat Model
+
+- For every experiment, explicitly document threats to validity:
+  - **Internal**: Could the judge model be biased? Could the scoring formula be miscalibrated?
+  - **External**: Does this generalize beyond the specific model/prompt set used?
+  - **Construct**: Does the metric actually measure what we claim? (e.g., does "diversity count" capture real diversity?)
+
+## Reporting
+
+### Honest Reporting
+
+- Report ALL results, including nulls and surprises. Never hide non-confirmatory findings.
+- If a hypothesis is not supported, say so clearly. Do not reframe failure as success.
+- Distinguish between "no effect found" (inconclusive, possibly low power) and "effect is absent" (strong evidence of null).
+
+### Figures and Tables
+
+- All plots MUST include error bars (std or 95% CI). A curve without error bars is not a result.
+- Y-axis must start at a meaningful value (usually 0). Truncated axes require explicit justification.
+- Use consistent color coding across all figures in an experiment.
+- Every number in the findings document must be traceable to the analysis script.
+
+### Structure (per experiment)
+
+1. **Research question** — one sentence
+2. **Hypotheses** — numbered, directional, falsifiable
+3. **Method** — enough detail to reproduce without reading code
+4. **Results** — data first, interpretation second
+5. **Discussion** — what it means, what it doesn't mean, limitations
+6. **Threats to validity** — be your own harshest critic

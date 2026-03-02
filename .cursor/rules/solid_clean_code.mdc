@@ -1,0 +1,95 @@
+---
+description: SOLID principles and clean architecture — modular, testable, dependency direction
+globs: "**/*.ts,**/*.tsx,**/*.py"
+---
+
+# SOLID & Clean Architecture
+
+Follow SOLID and clear dependency direction so code stays modular, testable, and easy to change.
+
+## Single Responsibility (SRP)
+
+- One reason to change per class/module.
+- Split validation, payment, shipping, notifications into separate types; orchestrate in one place.
+
+```typescript
+// ❌ BAD: multiple responsibilities
+class User {
+  authenticate(credentials: Credentials): boolean { ... }
+  updateProfile(data: ProfileData): void { ... }
+  sendEmail(message: string): void { ... }
+}
+
+// ✅ GOOD: one responsibility each
+class UserAuthentication { authenticate(credentials: Credentials): boolean { ... } }
+class UserProfile { updateProfile(data: ProfileData): void { ... } }
+```
+
+## Open/Closed (OCP)
+
+- Open for extension, closed for modification.
+- Use interfaces/abstract types and add new implementations instead of editing existing logic.
+
+```typescript
+// ❌ BAD: closed for extension
+class PaymentProcessor {
+  process(payment: Payment, type: string): void {
+    if (type === 'credit') { ... } else if (type === 'paypal') { ... }
+  }
+}
+
+// ✅ GOOD: new behavior = new implementation
+interface PaymentProcessor { process(payment: Payment): void; }
+class CreditCardProcessor implements PaymentProcessor { ... }
+class PayPalProcessor implements PaymentProcessor { ... }
+```
+
+## Liskov Substitution (LSP)
+
+- Subtypes must be substitutable for their base type without breaking callers.
+- Don’t weaken preconditions, strengthen postconditions, or throw where the base doesn’t.
+
+## Interface Segregation (ISP)
+
+- Small, focused interfaces; clients shouldn’t depend on methods they don’t use.
+- Prefer `Readable` + `Writable` over one fat `FileSystem` interface.
+
+## Dependency Inversion (DIP)
+
+- Depend on abstractions (interfaces/protocols), not concrete classes.
+- Inject dependencies; high-level modules don’t import low-level implementations.
+
+```typescript
+// ❌ BAD: depends on concrete implementation
+class UserService {
+  private logger = new FileLogger();
+}
+
+// ✅ GOOD: depends on abstraction, inject implementation
+interface Logger { log(message: string): void; }
+class UserService {
+  constructor(private logger: Logger) {}
+}
+```
+
+## Dependency Direction (Clean Architecture)
+
+- **domain** ← **application** ← **infrastructure** ← **api**
+- Domain has no external dependencies. Application depends only on domain. Infrastructure implements interfaces defined in domain/application. API is a thin HTTP adapter.
+
+```text
+domain/          → no imports from application, infrastructure, or api
+application/     → domain only (use cases, workflows)
+infrastructure/  → domain + application (implements ports)
+api/             → application + infrastructure (HTTP → application calls)
+```
+
+- **Do not** import from infrastructure or api inside domain or application; depend on interfaces (ports) and inject adapters.
+
+## Quick Checklist
+
+- One clear responsibility per class/file.
+- New behavior via new types, not big `if/else` in existing code.
+- Depend on interfaces; inject concrete implementations.
+- Keep interfaces small and focused.
+- Respect layer boundaries and dependency direction above.

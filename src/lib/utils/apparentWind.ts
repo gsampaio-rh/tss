@@ -1,8 +1,36 @@
 /**
- * Apparent Wind Calculation Utilities
- * 
- * Calculates apparent wind including leeway and downwash effects for realistic sail aerodynamics.
+ * Wind Calculation Utilities
+ *
+ * Shared functions for wind math: angle differences, leeward/windward side detection,
+ * apparent wind with leeway, and disturbed wind in dirty air zones.
  */
+
+/**
+ * Shortest signed angle difference between two angles (degrees).
+ * Returns value in [-180, +180].
+ */
+export function angleDiffDeg(a: number, b: number): number {
+	let diff = b - a;
+	while (diff > 180) diff -= 360;
+	while (diff < -180) diff += 360;
+	return diff;
+}
+
+/**
+ * Determine which side of the boat is leeward (away from wind).
+ * @returns -1 for port tack (leeward is port/left), +1 for starboard tack (leeward is starboard/right)
+ */
+export function getLeewardSide(boatRotation: number, windDir: number): number {
+	const windFromBoat = angleDiffDeg(boatRotation, windDir);
+	return windFromBoat > 0 ? -1 : 1;
+}
+
+/**
+ * Calculate downwind direction (opposite of a given wind direction).
+ */
+export function downwindDirection(windDirDeg: number): number {
+	return (windDirDeg + 180) % 360;
+}
 
 export interface ApparentWindResult {
 	angle: number; // Degrees
@@ -46,10 +74,7 @@ export function calculateLeewayAngle(
 	// Reduce leeway with speed (faster = more lift = less drift)
 	const speedFactor = 0.7 + boatSpeed * 0.3; // 0.7-1.0 range
 	
-	// Leeway direction: always to leeward (away from wind)
-	// Determine which side is leeward based on tack
-	const windFromBoat = ((trueWindDir - boatRotation + 180) % 360) - 180;
-	const leewaySign = windFromBoat > 0 ? 1 : -1; // Positive = port tack leeway, negative = starboard
+	const leewaySign = -getLeewardSide(boatRotation, trueWindDir);
 	
 	return BASE_LEEWAY * leewayMultiplier * speedFactor * leewaySign;
 }
@@ -138,21 +163,10 @@ export function calculateDisturbedWind(
 	const distanceFactor = Math.max(0, 1 - distance / ROTATION_DECAY_DISTANCE);
 	const rotationAngle = MAX_ROTATION * intensity * distanceFactor;
 	
-	// Determine leeward direction
-	// Leeward = 90° to the side away from the wind (perpendicular to wind, away from source)
-	let leewardRotation = 0;
-	if (sourceBoatRotation !== undefined) {
-		// Determine which side is leeward based on boat's tack relative to wind
-		const windFromBoat = ((baseWindDir - sourceBoatRotation + 180) % 360) - 180;
-		// Leeward is 90° perpendicular to wind, in the direction away from wind source
-		leewardRotation = windFromBoat > 0 ? 90 : -90; // Port tack: +90°, Starboard tack: -90°
-	} else {
-		// Fallback: rotate perpendicular to wind direction
-		leewardRotation = 90;
-	}
-	
-	// Rotate wind direction leeward (away from wind source)
-	const disturbedAngle = baseWindDir + rotationAngle * Math.sign(leewardRotation);
+	const leewardSide = sourceBoatRotation !== undefined
+		? getLeewardSide(sourceBoatRotation, baseWindDir)
+		: -1;
+	const disturbedAngle = baseWindDir + rotationAngle * leewardSide;
 	
 	return {
 		angle: disturbedAngle,

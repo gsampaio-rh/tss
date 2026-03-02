@@ -7,9 +7,6 @@ export const selectedWindIndex = writable<number>(0);
 
 export const selectedWind = writable<WindScenario | null>(null);
 
-// Derived store for current wind scenario
-export const currentWindScenario = writable<WindScenario | null>(null);
-
 // Initialize with default presets
 export function initializeWindScenarios(): WindScenario[] {
 	return [
@@ -82,7 +79,6 @@ export const windActions = {
 				}
 			);
 			selectedWind.set(scenarios[0]);
-			currentWindScenario.set(scenarios[0]);
 		} else {
 			logger.warn('[windActions] No scenarios to load', 'windActions');
 		}
@@ -113,7 +109,6 @@ export const windActions = {
 				);
 				selectedWindIndex.set(index);
 				selectedWind.set(selectedScenario);
-				currentWindScenario.set(selectedScenario);
 				logger.debug('[windActions] Wind selection updated successfully', 'windActions');
 			} else {
 				logger.warn(

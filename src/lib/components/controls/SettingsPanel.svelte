@@ -1,36 +1,9 @@
 <script lang="ts">
 	import { settings } from '$lib/stores/settings';
-	import { gameLogs } from '$lib/stores/gameLogs';
-	import { onMount, onDestroy } from 'svelte';
-
-	let screenWidth = 0;
-	let screenHeight = 0;
-
-	function handleExportLogs() {
-		if ($gameLogs) {
-			gameLogs.downloadLog();
-		}
-	}
-
-	$: hasLogs = $gameLogs !== null;
-
-	function updateScreenSize() {
-		if (typeof window !== 'undefined') {
-			screenWidth = window.innerWidth;
-			screenHeight = window.innerHeight;
-		}
-	}
-
-	onMount(() => {
-		updateScreenSize();
-		window.addEventListener('resize', updateScreenSize);
-	});
-
-	onDestroy(() => {
-		if (typeof window !== 'undefined') {
-			window.removeEventListener('resize', updateScreenSize);
-		}
-	});
+	import WindParticleSettings from './settings/WindParticleSettings.svelte';
+	import WindZoneSettings from './settings/WindZoneSettings.svelte';
+	import DirtyAirSettings from './settings/DirtyAirSettings.svelte';
+	import LogExportSection from './settings/LogExportSection.svelte';
 
 	function toggleSetting(key: keyof typeof $settings) {
 		settings.update(s => ({
@@ -137,127 +110,8 @@
 			</div>
 		</label>
 
-		<!-- Show Wind Indicators -->
-		<label
-			class="setting-item"
-			class:checked={$settings.showWindIndicators}
-			for="set-show-wind-indicators"
-		>
-			<input
-				type="checkbox"
-				class="btn-check"
-				id="set-show-wind-indicators"
-				checked={$settings.showWindIndicators}
-				onchange={() => toggleSetting('showWindIndicators')}
-			/>
-			<div class="setting-content">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="18"
-					height="18"
-					fill="currentColor"
-					viewBox="0 0 16 16"
-					class="setting-icon"
-				>
-					<path
-						d="M 8 2 L 8 12 M 8 2 L 5 6 M 8 2 L 11 6"
-						stroke="currentColor"
-						stroke-width="1.5"
-						fill="none"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					/>
-				</svg>
-				<div class="setting-label">
-					<strong>Wind Particles</strong>
-					<small>Show animated wind flow</small>
-				</div>
-			</div>
-		</label>
-
-		<!-- Wind Particles Controls (only shown when wind particles are enabled) -->
-		{#if $settings.showWindIndicators}
-			<div class="setting-item setting-item-range">
-				<div class="setting-content">
-					<div class="setting-label">
-						<strong>Particle Density</strong>
-						<small>{Math.round($settings.windParticlesDensity * 100)}%</small>
-					</div>
-					<input
-						type="range"
-						class="opacity-slider"
-						min="0.5"
-						max="5.0"
-						step="0.1"
-						value={$settings.windParticlesDensity}
-						oninput={(e) => {
-							const value = parseFloat((e.target as HTMLInputElement).value);
-							settings.update(s => ({ ...s, windParticlesDensity: value }));
-						}}
-					/>
-				</div>
-			</div>
-			<div class="setting-item setting-item-range">
-				<div class="setting-content">
-					<div class="setting-label">
-						<strong>Particle Opacity</strong>
-						<small>{Math.round($settings.windParticlesOpacity * 100)}%</small>
-					</div>
-					<input
-						type="range"
-						class="opacity-slider"
-						min="0"
-						max="3.0"
-						step="0.05"
-						value={$settings.windParticlesOpacity}
-						oninput={(e) => {
-							const value = parseFloat((e.target as HTMLInputElement).value);
-							settings.update(s => ({ ...s, windParticlesOpacity: value }));
-						}}
-					/>
-				</div>
-			</div>
-			<div class="setting-item setting-item-range">
-				<div class="setting-content">
-					<div class="setting-label">
-						<strong>Particle Speed</strong>
-						<small>{Math.round($settings.windParticlesSpeed * 100)}%</small>
-					</div>
-					<input
-						type="range"
-						class="opacity-slider"
-						min="0.5"
-						max="2.0"
-						step="0.1"
-						value={$settings.windParticlesSpeed}
-						oninput={(e) => {
-							const value = parseFloat((e.target as HTMLInputElement).value);
-							settings.update(s => ({ ...s, windParticlesSpeed: value }));
-						}}
-					/>
-				</div>
-			</div>
-			<div class="setting-item setting-item-range">
-				<div class="setting-content">
-					<div class="setting-label">
-						<strong>Streak Length</strong>
-						<small>{Math.round($settings.windParticlesLength * 100)}%</small>
-					</div>
-					<input
-						type="range"
-						class="opacity-slider"
-						min="0.5"
-						max="2.0"
-						step="0.1"
-						value={$settings.windParticlesLength}
-						oninput={(e) => {
-							const value = parseFloat((e.target as HTMLInputElement).value);
-							settings.update(s => ({ ...s, windParticlesLength: value }));
-						}}
-					/>
-				</div>
-			</div>
-		{/if}
+		<!-- Wind Particles toggle + controls -->
+		<WindParticleSettings />
 
 		<!-- Show Grid -->
 		<label class="setting-item" class:checked={$settings.showGrid} for="set-show-grid">
@@ -296,269 +150,14 @@
 			</div>
 		</label>
 
-		<!-- Show Wind Zones -->
-		<label class="setting-item" class:checked={$settings.showWindZones} for="set-show-wind-zones">
-			<input
-				type="checkbox"
-				class="btn-check"
-				id="set-show-wind-zones"
-				checked={$settings.showWindZones}
-				onchange={() => toggleSetting('showWindZones')}
-			/>
-			<div class="setting-content">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="18"
-					height="18"
-					viewBox="0 0 16 16"
-					class="setting-icon"
-				>
-					<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1" fill="none" />
-					<line
-						x1="8"
-						y1="8"
-						x2="8"
-						y2="2"
-						stroke="currentColor"
-						stroke-width="1.5"
-						stroke-linecap="round"
-					/>
-					<path
-						d="M 6 4 L 8 2 L 10 4"
-						stroke="currentColor"
-						stroke-width="1.5"
-						fill="none"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					/>
-				</svg>
-				<div class="setting-label">
-					<strong>Wind Zones</strong>
-					<small>Show sailing zones on hover</small>
-				</div>
-			</div>
-		</label>
+		<!-- Wind Zones toggle + controls -->
+		<WindZoneSettings />
 
-		<!-- Wind Zones Opacity (only shown when wind zones are enabled) -->
-		{#if $settings.showWindZones}
-			<div class="setting-item setting-item-range">
-				<div class="setting-content">
-					<div class="setting-label">
-						<strong>Wind Zones Opacity</strong>
-						<small>{Math.round($settings.windZonesOpacity * 100)}%</small>
-					</div>
-					<input
-						type="range"
-						class="opacity-slider"
-						min="0"
-						max="1"
-						step="0.05"
-						value={$settings.windZonesOpacity}
-						oninput={(e) => {
-							const value = parseFloat((e.target as HTMLInputElement).value);
-							settings.update(s => ({ ...s, windZonesOpacity: value }));
-						}}
-					/>
-				</div>
-			</div>
-			<div class="setting-item setting-item-range">
-				<div class="setting-content">
-					<div class="setting-label">
-						<strong>Wind Zones Size</strong>
-						<small>{Math.round($settings.windZonesSize * 100)}%</small>
-					</div>
-					<input
-						type="range"
-						class="opacity-slider"
-						min="0.5"
-						max="2.0"
-						step="0.1"
-						value={$settings.windZonesSize}
-						oninput={(e) => {
-							const value = parseFloat((e.target as HTMLInputElement).value);
-							settings.update(s => ({ ...s, windZonesSize: value }));
-						}}
-					/>
-				</div>
-			</div>
-		{/if}
+		<!-- Wind Arrows + Dirty Air toggles -->
+		<DirtyAirSettings />
 
-		<!-- Show Dirty Air Zones -->
-		<!-- Show Wind Arrows (True Wind and Apparent Wind) -->
-		<label class="setting-item" class:checked={$settings.showWindArrows} for="set-show-wind-arrows">
-			<input
-				type="checkbox"
-				class="btn-check"
-				id="set-show-wind-arrows"
-				checked={$settings.showWindArrows}
-				onchange={() => toggleSetting('showWindArrows')}
-			/>
-			<div class="setting-content">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="18"
-					height="18"
-					viewBox="0 0 16 16"
-					class="setting-icon"
-				>
-					<!-- True Wind Arrow (Red) -->
-					<line x1="2" y1="8" x2="8" y2="2" stroke="#dc3545" stroke-width="1.5" stroke-linecap="round" />
-					<polygon points="8,2 6.5,3.5 7.5,3.5" fill="#dc3545" />
-					<!-- Apparent Wind Arrow (Blue) -->
-					<line x1="2" y1="8" x2="8" y2="4" stroke="#007bff" stroke-width="1.5" stroke-linecap="round" />
-					<polygon points="8,4 6.5,5 7.5,5" fill="#007bff" />
-				</svg>
-				<div class="setting-label">
-					<strong>Show Wind Arrows</strong>
-					<small>Display true wind and apparent wind vectors</small>
-				</div>
-			</div>
-		</label>
-
-		<label class="setting-item" class:checked={$settings.showDirtyAir} for="set-show-dirty-air">
-			<input
-				type="checkbox"
-				class="btn-check"
-				id="set-show-dirty-air"
-				checked={$settings.showDirtyAir}
-				onchange={() => toggleSetting('showDirtyAir')}
-			/>
-			<div class="setting-content">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="18"
-					height="18"
-					viewBox="0 0 16 16"
-					class="setting-icon"
-				>
-					<path
-						d="M 8 2 L 8 14 M 4 6 L 8 2 L 12 6"
-						stroke="currentColor"
-						stroke-width="1.5"
-						fill="none"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					/>
-					<path
-						d="M 3 10 Q 8 8 13 10"
-						stroke="currentColor"
-						stroke-width="1"
-						fill="none"
-						stroke-linecap="round"
-					/>
-					<path
-						d="M 3 12 Q 8 10 13 12"
-						stroke="currentColor"
-						stroke-width="1"
-						fill="none"
-						stroke-linecap="round"
-					/>
-				</svg>
-				<div class="setting-label">
-					<strong>Dirty Air Zones</strong>
-					<small>Show turbulent air visualization</small>
-				</div>
-			</div>
-		</label>
-
-		<!-- Enable Dirty Air Effects -->
-		<label
-			class="setting-item"
-			class:checked={$settings.enableDirtyAirEffects}
-			for="set-enable-dirty-air-effects"
-		>
-			<input
-				type="checkbox"
-				class="btn-check"
-				id="set-enable-dirty-air-effects"
-				checked={$settings.enableDirtyAirEffects}
-				onchange={() => toggleSetting('enableDirtyAirEffects')}
-			/>
-			<div class="setting-content">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="18"
-					height="18"
-					viewBox="0 0 16 16"
-					class="setting-icon"
-				>
-					<path
-						d="M 8 2 L 8 14 M 4 6 L 8 2 L 12 6"
-						stroke="currentColor"
-						stroke-width="1.5"
-						fill="none"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					/>
-					<path
-						d="M 3 10 Q 8 8 13 10"
-						stroke="currentColor"
-						stroke-width="1.5"
-						fill="none"
-						stroke-linecap="round"
-					/>
-					<path
-						d="M 3 12 Q 8 10 13 12"
-						stroke="currentColor"
-						stroke-width="1.5"
-						fill="none"
-						stroke-linecap="round"
-					/>
-					<circle cx="12" cy="4" r="2" fill="currentColor" opacity="0.8" />
-				</svg>
-				<div class="setting-label">
-					<strong>Dirty Air Effects</strong>
-					<small>Apply speed/angle penalties</small>
-				</div>
-			</div>
-		</label>
-
-		<!-- Screen Resolution (Info Only) -->
-		<div class="setting-item info-item">
-			<div class="setting-content">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="18"
-					height="18"
-					fill="currentColor"
-					viewBox="0 0 16 16"
-					class="setting-icon"
-				>
-					<path d="M0 0h16v16H0V0zm1 1v6h14V1H1zm0 8v6h14V9H1zm1-7h12v4H2V2zm0 8h12v4H2v-4z" />
-				</svg>
-				<div class="setting-label">
-					<strong>Screen Resolution</strong>
-					<small>{screenWidth} × {screenHeight} px</small>
-				</div>
-			</div>
-		</div>
-
-		<!-- Export Game Logs -->
-		<div class="setting-item action-item">
-			<button
-				class="btn btn-outline-primary btn-sm w-100"
-				onclick={handleExportLogs}
-				disabled={!hasLogs}
-				title="Export game logs as JSON"
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="16"
-					height="16"
-					fill="currentColor"
-					viewBox="0 0 16 16"
-					style="margin-right: 0.5rem;"
-				>
-					<path
-						d="M8.5 6.5a.5.5 0 0 0-1 0v3.793L6.854 9.146a.5.5 0 1 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L8.5 10.293V6.5z"
-					/>
-					<path
-						d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"
-					/>
-				</svg>
-				Export Logs
-			</button>
-		</div>
+		<!-- Screen info + Export logs -->
+		<LogExportSection />
 	</div>
 </div>
 
@@ -573,7 +172,7 @@
 		gap: 0.5rem;
 	}
 
-	.setting-item {
+	:global(.settings-grid .setting-item) {
 		display: flex;
 		align-items: center;
 		padding: 0.5rem;
@@ -584,106 +183,106 @@
 		background: #ffffff;
 	}
 
-	.setting-item:hover {
+	:global(.settings-grid .setting-item:hover) {
 		background: #f8f9fa;
 		border-color: #007bff;
 	}
 
-	.setting-item.checked {
+	:global(.settings-grid .setting-item.checked) {
 		background: #e7f3ff;
 		border-color: #007bff;
 	}
 
-	.setting-item.info-item {
+	:global(.settings-grid .setting-item.info-item) {
 		cursor: default;
 		background: #f8f9fa;
 		border-color: #dee2e6;
 	}
 
-	.setting-item.info-item:hover {
+	:global(.settings-grid .setting-item.info-item:hover) {
 		background: #f8f9fa;
 		border-color: #dee2e6;
 	}
 
-	.setting-item.action-item {
+	:global(.settings-grid .setting-item.action-item) {
 		padding: 0.5rem;
 		border: 1px solid #e9ecef;
 		border-radius: 4px;
 		background: #ffffff;
 	}
 
-	.setting-item.action-item button {
+	:global(.settings-grid .setting-item.action-item button) {
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
 
-	.setting-item.action-item button:disabled {
+	:global(.settings-grid .setting-item.action-item button:disabled) {
 		opacity: 0.5;
 		cursor: not-allowed;
 	}
 
-	.setting-content {
+	:global(.settings-grid .setting-content) {
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
 		flex: 1;
 	}
 
-	.setting-icon {
+	:global(.settings-grid .setting-icon) {
 		flex-shrink: 0;
 		color: #495057;
 	}
 
-	.setting-item.checked .setting-icon {
+	:global(.settings-grid .setting-item.checked .setting-icon) {
 		color: #007bff;
 	}
 
-	.setting-label {
+	:global(.settings-grid .setting-label) {
 		display: flex;
 		flex-direction: column;
 		gap: 0.1rem;
 		flex: 1;
 	}
 
-	.setting-label strong {
+	:global(.settings-grid .setting-label strong) {
 		font-size: 0.85rem;
 		color: #212529;
 		font-weight: 600;
 	}
 
-	.setting-label small {
+	:global(.settings-grid .setting-label small) {
 		font-size: 0.75rem;
 		color: #6c757d;
 		line-height: 1.2;
 	}
 
-	.setting-item.checked .setting-label strong {
+	:global(.settings-grid .setting-item.checked .setting-label strong) {
 		color: #007bff;
 	}
 
-	.btn-check {
+	:global(.settings-grid .btn-check) {
 		position: absolute;
 		opacity: 0;
 		pointer-events: none;
 	}
 
-	.setting-item-range {
+	:global(.settings-grid .setting-item-range) {
 		cursor: default;
 		padding: 0.75rem;
 	}
 
-	.setting-item-range:hover {
+	:global(.settings-grid .setting-item-range:hover) {
 		background: #ffffff;
 		border-color: #e9ecef;
 	}
 
-	.setting-item-range .setting-content {
+	:global(.settings-grid .setting-item-range .setting-content) {
 		flex-direction: column;
 		align-items: stretch;
 	}
 
-	.opacity-slider {
+	:global(.settings-grid .opacity-slider) {
 		width: 100%;
 		margin-top: 0.5rem;
 		height: 6px;
@@ -693,7 +292,7 @@
 		-webkit-appearance: none;
 	}
 
-	.opacity-slider::-webkit-slider-thumb {
+	:global(.settings-grid .opacity-slider::-webkit-slider-thumb) {
 		-webkit-appearance: none;
 		appearance: none;
 		width: 16px;
@@ -703,7 +302,7 @@
 		cursor: pointer;
 	}
 
-	.opacity-slider::-moz-range-thumb {
+	:global(.settings-grid .opacity-slider::-moz-range-thumb) {
 		width: 16px;
 		height: 16px;
 		border-radius: 50%;

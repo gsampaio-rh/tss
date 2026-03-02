@@ -1,0 +1,67 @@
+---
+description: Experiment lifecycle and file structure for running research experiments
+alwaysApply: false
+---
+
+# Experiment Workflow
+
+## Experiment Directory Structure
+
+Each experiment lives in `docs/experiments/<experiment_name>/` and follows this layout:
+
+```text
+docs/experiments/<experiment_name>/
+  EXPERIMENT.md          # Hypotheses, design, scoring formulas, conditions
+  PROJECT_CHECKLIST.md   # Phase-by-phase implementation tracker
+  ARCHITECTURE.md        # Technical architecture for this experiment (optional if simple)
+configs/<experiment_name>/
+  experiment.yaml        # Declarative config: models, params, alpha values, paths
+  prompts.txt            # Fixed prompt set with topic headers
+output/<experiment_name>/
+  trials.jsonl           # Raw trial data (all candidates, all scores)
+  run.log                # Execution log
+analysis/<experiment_name>/
+  analyze.py             # Aggregation, metrics, plots
+  plots/                 # Generated figures
+  FINDINGS.md            # Technical findings report
+  FINDINGS_SIMPLE.md     # Plain-language summary (optional)
+```
+
+## Experiment Lifecycle
+
+### 1. Design (before any code)
+
+- Write `EXPERIMENT.md` with research question, numbered hypotheses, scoring formulas, and conditions.
+- Hypotheses must be directional and falsifiable: "As X increases, Y decreases" — not "X affects Y."
+- Define metrics and how each maps to a hypothesis.
+
+### 2. Implement
+
+- Follow `PROJECT_CHECKLIST.md` phase by phase.
+- Domain logic first (pure scoring, selection), infrastructure second (LLM calls, I/O), orchestration last.
+- Write tests at each layer before moving to the next.
+
+### 3. Validate
+
+- Dry run (3 prompts, 2 alpha values) before full execution.
+- Check that scores have variance. If a metric is constant across conditions, the experiment cannot test its hypothesis.
+- Fix design issues BEFORE the full run, not after.
+
+### 4. Execute
+
+- Run the full grid. Log everything.
+- Do NOT stop early based on intermediate results (prevents cherry-picking the stopping point).
+- Back up previous run data (`trials_v1.jsonl`) before re-running.
+
+### 5. Analyze
+
+- Analysis script must be deterministic: same input JSONL produces identical output.
+- Report per-condition aggregates with error bars.
+- Run per-topic/per-factor breakdowns to find where effects concentrate.
+- Include at least one robustness check (e.g., semantic diversity vs count-based diversity).
+
+### 6. Report
+
+- Write findings AFTER analysis is complete. Never write conclusions first.
+- Every claim must reference a specific metric, alpha value, and confidence interval.
+- Include a "Limitations" section listing what the experiment cannot conclude.
