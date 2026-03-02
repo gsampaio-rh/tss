@@ -6,7 +6,7 @@
 /* Main App Layout */
 .app-layout {
   display: flex;
-  height: 100vh;
+  flex: 1;
   overflow: hidden;
   background: var(--color-bg-tertiary);
 }
@@ -15,7 +15,7 @@
 .sidebar {
   background: var(--color-bg-secondary);
   overflow-y: auto;
-  height: 100vh;
+  height: 100%;
   flex-shrink: 0;
   box-shadow: var(--shadow-md);
   border-right: 1px solid var(--color-border-light);
@@ -71,7 +71,7 @@
 /* Game Stage Container */
 .game-stage-container {
   width: var(--game-width);
-  height: 100vh;
+  height: 100%;
   position: relative;
   /* Match game background color to eliminate gray areas */
   background: var(--color-bg-primary);
