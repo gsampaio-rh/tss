@@ -8,15 +8,15 @@ export function createBoatIcon(L: LeafletModule, color: string, rotation: number
 	return L.divIcon({
 		className: 'boat-map-marker',
 		html: `<div style="transform: rotate(${rotation}deg); transform-origin: center;">
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="-7 -10 14 20" width="28" height="40">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="-7 -10 14 20" width="24" height="34">
 				<path d="M -4 7.5 L 4 7.5 C 5 1.5 5 -2.5 2.5 -9 L -2.5 -9 C -5 -2.5 -5 1.5 -4 7.5 Z"
 					stroke="#fff" stroke-width=".5" fill="${hex}" />
 				<path d="M 0 -6 C 2 -4 3 -1 2 6" stroke="white" fill="none" stroke-width="1" />
 				<ellipse rx="0.7" ry="0.7" cx="0" cy="-6" fill="#fff" />
 			</svg>
 		</div>`,
-		iconSize: [28, 40],
-		iconAnchor: [14, 20]
+		iconSize: [24, 34],
+		iconAnchor: [12, 17]
 	});
 }
 

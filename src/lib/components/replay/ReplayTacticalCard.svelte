@@ -21,7 +21,7 @@
 
 	type TabId = 'instruments' | 'performance' | 'maneuvers' | 'sogChart' | 'radar';
 	let activeTab: TabId = 'instruments';
-	let isCollapsed = false;
+	let isCollapsed = true;
 
 	const MS_TO_KNOTS = 1.94384;
 
@@ -146,9 +146,14 @@
 	}
 </script>
 
-<div class="sailor-card" class:collapsed={isCollapsed} data-player-index={playerIndex.toString()}>
+<div
+	class="sailor-card"
+	class:collapsed={isCollapsed}
+	data-player-index={playerIndex.toString()}
+	style="--boat-color: {getBoatColorHex(boat.color)}"
+>
 	<!-- Header with boat name and color -->
-	<div class="card-header">
+	<div class="card-header" on:dblclick={() => (isCollapsed = !isCollapsed)}>
 		<div class="player-identity">
 			<div class="player-avatar" style="background-color: {getBoatColorHex(boat.color)};">
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="-7 -10 14 20" width="20" height="28">
@@ -171,12 +176,8 @@
 				title={isCollapsed ? 'Expand card' : 'Collapse card'}
 				aria-label={isCollapsed ? 'Expand card' : 'Collapse card'}
 			>
-				<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
-					{#if isCollapsed}
-						<path d="M3.646 9.854a.5.5 0 0 1 .708 0L8 13.5l3.646-3.646a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 0-.708z"/>
-					{:else}
-						<path d="M3.646 6.146a.5.5 0 0 1 .708 0L8 9.793l3.646-3.647a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 0-.708z"/>
-					{/if}
+				<svg class="collapse-icon" class:open={!isCollapsed} viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+					<path d="M3.646 6.146a.5.5 0 0 1 .708 0L8 9.793l3.646-3.647a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 0-.708z"/>
 				</svg>
 			</button>
 		</div>
@@ -185,20 +186,34 @@
 	{#if isCollapsed}
 		<div class="collapsed-metrics">
 			<div class="collapsed-metric">
-				<span class="collapsed-key">SOG</span>
+				<span class="metric-label-row">
+					<span class="collapsed-key">SOG</span>
+					<span class="info-trigger" tabindex="0" aria-label="SOG explanation" on:click|stopPropagation>
+						<span class="info-dot">i</span>
+						<span class="info-tooltip">Speed Over Ground: your current speed relative to the water and current GPS movement.</span>
+					</span>
+				</span>
 				<span class="collapsed-val">{speedKnots.toFixed(1)} kts</span>
 			</div>
 			<div class="collapsed-metric">
-				<span class="collapsed-key">VMG</span>
+				<span class="metric-label-row">
+					<span class="collapsed-key">VMG</span>
+					<span class="info-trigger" tabindex="0" aria-label="VMG explanation" on:click|stopPropagation>
+						<span class="info-dot">i</span>
+						<span class="info-tooltip">Velocity Made Good: component of speed toward the upwind/downwind target direction.</span>
+					</span>
+				</span>
 				<span class="collapsed-val">{vmg !== null ? `${vmg.toFixed(1)} kts` : '--'}</span>
 			</div>
 			<div class="collapsed-metric">
-				<span class="collapsed-key">TWA</span>
+				<span class="metric-label-row">
+					<span class="collapsed-key">TWA</span>
+					<span class="info-trigger" tabindex="0" aria-label="TWA explanation" on:click|stopPropagation>
+						<span class="info-dot">i</span>
+						<span class="info-tooltip">True Wind Angle: angle between boat heading and true wind direction.</span>
+					</span>
+				</span>
 				<span class="collapsed-val">{twa > 0 ? '+' : ''}{twa.toFixed(0)}&deg;</span>
-			</div>
-			<div class="collapsed-metric">
-				<span class="collapsed-key">Tack</span>
-				<span class="collapsed-val">{tackSide}</span>
 			</div>
 		</div>
 	{:else}
@@ -236,7 +251,13 @@
 						<span class="inst-value">{speedKnots.toFixed(1)}</span>
 						<span class="inst-unit">kts</span>
 					</div>
-					<span class="inst-label">SOG</span>
+					<span class="metric-label-row">
+						<span class="inst-label">SOG</span>
+						<span class="info-trigger" tabindex="0" aria-label="SOG explanation" on:click|stopPropagation>
+							<span class="info-dot">i</span>
+							<span class="info-tooltip">Speed Over Ground in knots.</span>
+						</span>
+					</span>
 				</div>
 
 				<div class="instrument">
@@ -249,7 +270,13 @@
 						<span class="inst-value">{normalizedHeading.toFixed(0)}</span>
 						<span class="inst-unit">deg</span>
 					</div>
-					<span class="inst-label">Heading</span>
+					<span class="metric-label-row">
+						<span class="inst-label">Heading</span>
+						<span class="info-trigger" tabindex="0" aria-label="Heading explanation" on:click|stopPropagation>
+							<span class="info-dot">i</span>
+							<span class="info-tooltip">Compass direction the boat bow is pointing to.</span>
+						</span>
+					</span>
 				</div>
 
 				<div class="instrument">
@@ -263,7 +290,13 @@
 						<span class="inst-value">{twa > 0 ? '+' : ''}{twa.toFixed(0)}</span>
 						<span class="inst-unit">deg</span>
 					</div>
-					<span class="inst-label">TWA</span>
+					<span class="metric-label-row">
+						<span class="inst-label">TWA</span>
+						<span class="info-trigger" tabindex="0" aria-label="TWA explanation" on:click|stopPropagation>
+							<span class="info-dot">i</span>
+							<span class="info-tooltip">True Wind Angle relative to heading. Positive/negative indicates side.</span>
+						</span>
+					</span>
 				</div>
 
 				<div class="instrument">
@@ -276,7 +309,13 @@
 						<span class="inst-value">{vmg !== null ? vmg.toFixed(1) : '--'}</span>
 						<span class="inst-unit">kts</span>
 					</div>
-					<span class="inst-label">VMG</span>
+					<span class="metric-label-row">
+						<span class="inst-label">VMG</span>
+						<span class="info-trigger" tabindex="0" aria-label="VMG explanation" on:click|stopPropagation>
+							<span class="info-dot">i</span>
+							<span class="info-tooltip">Velocity Made Good toward the active mark direction.</span>
+						</span>
+					</span>
 				</div>
 
 				<div class="instrument">
@@ -290,7 +329,13 @@
 						<span class="inst-value">{absTwa.toFixed(0)}</span>
 						<span class="inst-unit">deg</span>
 					</div>
-					<span class="inst-label">ATW</span>
+					<span class="metric-label-row">
+						<span class="inst-label">ATW</span>
+						<span class="info-trigger" tabindex="0" aria-label="ATW explanation" on:click|stopPropagation>
+							<span class="info-dot">i</span>
+							<span class="info-tooltip">Absolute True Wind Angle (always positive).</span>
+						</span>
+					</span>
 				</div>
 
 				<div class="instrument">
@@ -304,7 +349,13 @@
 						<span class="inst-value">{windSpeed > 0 ? windSpeed.toFixed(0) : '--'}</span>
 						<span class="inst-unit">kts</span>
 					</div>
-					<span class="inst-label">TWS</span>
+					<span class="metric-label-row">
+						<span class="inst-label">TWS</span>
+						<span class="info-trigger" tabindex="0" aria-label="TWS explanation" on:click|stopPropagation>
+							<span class="info-dot">i</span>
+							<span class="info-tooltip">True Wind Speed in knots at current replay time.</span>
+						</span>
+					</span>
 				</div>
 			</div>
 
@@ -465,7 +516,18 @@
 		border: 1px solid var(--color-border-medium);
 		border-radius: var(--radius-lg);
 		overflow: hidden;
-		margin-bottom: var(--spacing-sm);
+		margin-bottom: 10px;
+		box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+		transition: box-shadow 0.16s ease, border-color 0.16s ease;
+	}
+
+	.sailor-card:not(.collapsed) {
+		background: linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(248, 250, 252, 1));
+	}
+
+	.sailor-card:hover {
+		border-color: var(--color-border-dark);
+		box-shadow: 0 4px 10px rgba(16, 24, 40, 0.1);
 	}
 
 	/* Header */
@@ -473,8 +535,10 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 8px 12px;
+		padding: 10px 12px;
 		border-bottom: 1px solid var(--color-border-light);
+		background: rgba(255, 255, 255, 0.8);
+		margin: 0;
 	}
 
 	.player-identity {
@@ -484,17 +548,20 @@
 	}
 
 	.player-avatar {
-		width: 32px;
-		height: 32px;
+		width: 34px;
+		height: 34px;
 		border-radius: 50%;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
+		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+		border: 2px solid rgba(255, 255, 255, 0.7);
 	}
 
 	.player-name {
-		font-size: var(--font-size-sm);
+		font-size: 13px;
+		font-weight: var(--font-weight-semibold);
 		color: var(--color-text-primary);
 	}
 
@@ -505,8 +572,8 @@
 	}
 
 	.tack-badge {
-		font-size: 10px;
-		padding: 2px 6px;
+		font-size: 11px;
+		padding: 3px 8px;
 		border-radius: var(--radius-sm);
 		font-weight: var(--font-weight-semibold);
 	}
@@ -522,8 +589,8 @@
 	}
 
 	.collapse-btn {
-		width: 22px;
-		height: 22px;
+		width: 24px;
+		height: 24px;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -540,18 +607,28 @@
 		background: var(--color-bg-tertiary);
 	}
 
+	.collapse-icon {
+		transition: transform 0.16s ease;
+	}
+
+	.collapse-icon.open {
+		transform: rotate(180deg);
+	}
+
 	.collapsed-metrics {
 		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: 4px;
-		padding: 8px 10px;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 6px;
+		padding: 10px;
+		background: linear-gradient(180deg, rgba(15, 23, 42, 0.02), rgba(15, 23, 42, 0));
 	}
 
 	.collapsed-metric {
 		display: flex;
 		flex-direction: column;
-		padding: 5px 6px;
-		background: var(--color-bg-tertiary);
+		padding: 6px 7px;
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border-light);
 		border-radius: var(--radius-sm);
 		min-width: 0;
 	}
@@ -563,8 +640,14 @@
 		letter-spacing: 0.3px;
 	}
 
+	.metric-label-row {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+	}
+
 	.collapsed-val {
-		font-size: 11px;
+		font-size: 12px;
 		font-weight: var(--font-weight-semibold);
 		color: var(--color-text-primary);
 		font-variant-numeric: tabular-nums;
@@ -575,60 +658,93 @@
 
 	/* Tab Bar */
 	.tab-bar {
-		display: flex;
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		align-items: stretch;
+		gap: 0;
+		padding: 0 10px;
 		border-bottom: 1px solid var(--color-border-light);
-		background: var(--color-bg-secondary);
-		overflow-x: auto;
+		background: rgba(255, 255, 255, 0.7);
+		overflow: visible;
+		margin: 0;
 	}
 
 	.tab {
-		flex: 1 0 auto;
-		padding: 6px 4px;
+		display: block;
+		width: 100%;
+		min-width: 0;
+		padding: 6px 12px 5px;
 		border: none;
+		border-radius: 0;
 		background: transparent;
-		font-size: 10px;
-		font-weight: var(--font-weight-medium);
-		color: var(--color-text-secondary);
+		font-size: 11px;
+		font-weight: var(--font-weight-semibold);
+		color: rgba(71, 85, 105, 0.9);
 		cursor: pointer;
-		transition: all var(--transition-fast);
-		border-bottom: 2px solid transparent;
+		transition: color var(--transition-fast), background var(--transition-fast);
+		white-space: nowrap;
+		position: relative;
+		text-align: center;
+		line-height: 1.15;
+		margin: 0;
+		appearance: none;
+		-webkit-appearance: none;
 	}
 
 	.tab.active {
-		color: var(--color-primary);
-		border-bottom-color: var(--color-primary);
+		color: var(--boat-color);
+		background: rgba(255, 255, 255, 0.55);
+	}
+
+	.tab.active::after {
+		content: '';
+		position: absolute;
+		left: 10px;
+		right: 10px;
+		bottom: 0;
+		height: 2px;
+		border-radius: 2px 2px 0 0;
+		background: var(--boat-color);
 	}
 
 	.tab:hover:not(.active) {
 		color: var(--color-text-primary);
-		background: var(--color-bg-tertiary);
+		background: rgba(15, 23, 42, 0.04);
 	}
 
 	/* Tab Content */
 	.tab-content {
-		padding: 8px 10px;
+		padding: 10px 10px 12px;
 	}
 
 	/* Instruments Grid */
 	.instruments-grid {
 		display: grid;
 		grid-template-columns: 1fr 1fr 1fr;
-		gap: 6px;
+		gap: 8px;
 	}
 
 	.instrument {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		padding: 6px 4px;
-		background: var(--color-bg-tertiary);
+		padding: 8px 6px;
+		background: rgba(255, 255, 255, 0.85);
+		border: 1px solid rgba(15, 23, 42, 0.08);
 		border-radius: var(--radius-sm);
-		gap: 2px;
+		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+		gap: 3px;
 	}
 
 	.inst-icon {
-		color: var(--color-text-secondary);
-		height: 18px;
+		color: rgba(100, 116, 139, 0.95);
+		height: 22px;
+		width: 22px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 999px;
+		background: rgba(148, 163, 184, 0.15);
 	}
 
 	.inst-data {
@@ -638,7 +754,7 @@
 	}
 
 	.inst-value {
-		font-size: 16px;
+		font-size: 17px;
 		font-weight: var(--font-weight-bold);
 		color: var(--color-text-primary);
 		line-height: 1;
@@ -653,7 +769,61 @@
 		font-size: 9px;
 		color: var(--color-text-secondary);
 		text-transform: uppercase;
-		letter-spacing: 0.5px;
+		letter-spacing: 0.7px;
+	}
+
+	.info-trigger {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 14px;
+		height: 14px;
+		flex-shrink: 0;
+	}
+
+	.info-dot {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 14px;
+		height: 14px;
+		border-radius: 50%;
+		border: 1px solid rgba(100, 116, 139, 0.5);
+		font-size: 9px;
+		font-weight: 700;
+		line-height: 1;
+		color: rgba(71, 85, 105, 0.9);
+		background: rgba(255, 255, 255, 0.75);
+	}
+
+	.info-tooltip {
+		position: absolute;
+		left: 50%;
+		bottom: calc(100% + 8px);
+		transform: translateX(-50%);
+		width: min(190px, 44vw);
+		padding: 6px 8px;
+		border-radius: var(--radius-sm);
+		background: rgba(21, 24, 33, 0.96);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+		font-size: 10px;
+		font-weight: 500;
+		line-height: 1.35;
+		color: rgba(255, 255, 255, 0.92);
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.14s ease;
+		z-index: 1200;
+		text-transform: none;
+		letter-spacing: normal;
+		white-space: normal;
+	}
+
+	.info-trigger:hover .info-tooltip,
+	.info-trigger:focus-within .info-tooltip {
+		opacity: 1;
 	}
 
 	/* Performance */

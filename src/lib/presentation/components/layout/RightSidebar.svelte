@@ -93,22 +93,22 @@
 
 <style>
 	.sidebar-section {
-		margin-bottom: var(--spacing-lg);
+		margin-bottom: var(--spacing-md);
 	}
 
 	.timestamp-display {
 		text-align: center;
-		padding: 8px 0;
-		margin-bottom: var(--spacing-sm);
+		padding: 10px 0 12px;
+		margin-bottom: var(--spacing-md);
 		border-bottom: 1px solid var(--color-border-light);
 	}
 
 	.timestamp-time {
-		font-size: 22px;
+		font-size: 24px;
 		font-weight: var(--font-weight-bold);
 		color: var(--color-primary);
 		font-variant-numeric: tabular-nums;
-		letter-spacing: 0.5px;
+		letter-spacing: 0.3px;
 	}
 
 	.timestamp-period {
