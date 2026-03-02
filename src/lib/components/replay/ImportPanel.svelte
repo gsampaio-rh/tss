@@ -36,19 +36,14 @@
 	async function handleDrop(e: DragEvent) {
 		e.preventDefault();
 		isDragOver = false;
-
 		const files = getGpxFiles(e.dataTransfer?.files);
-		if (files.length > 0) {
-			await importFiles(files);
-		}
+		if (files.length > 0) await importFiles(files);
 	}
 
 	async function handleFileInput(e: Event) {
 		const input = e.target as HTMLInputElement;
 		const files = getGpxFiles(input.files);
-		if (files.length > 0) {
-			await importFiles(files);
-		}
+		if (files.length > 0) await importFiles(files);
 		input.value = '';
 	}
 
@@ -76,7 +71,7 @@
 	function formatDuration(seconds: number): string {
 		const mins = Math.floor(seconds / 60);
 		const secs = Math.floor(seconds % 60);
-		return `${mins}m ${secs}s`;
+		return `${mins}m ${secs.toString().padStart(2, '0')}s`;
 	}
 
 	function formatDistance(meters: number): string {
@@ -84,11 +79,15 @@
 			? `${(meters / 1000).toFixed(2)} km`
 			: `${Math.round(meters)} m`;
 	}
+
+	function formatDate(date: Date): string {
+		const d = new Date(date);
+		return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+	}
 </script>
 
 <div class="import-panel">
 	{#if !importedSession}
-		<!-- Drop zone -->
 		<div
 			class="drop-zone"
 			class:drag-over={isDragOver}
@@ -100,67 +99,71 @@
 			tabindex="0"
 		>
 			{#if importing}
-				<div class="drop-icon spinner"></div>
-				<span class="drop-text">Importing...</span>
+				<div class="spinner"></div>
+				<span class="drop-label">Importing...</span>
 			{:else}
-				<div class="drop-icon">
-					<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
-						<path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-						<path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
-					</svg>
-				</div>
-				<span class="drop-text">Drop GPX files here</span>
-				<span class="drop-subtext">or click to browse</span>
+				<svg class="drop-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+					<path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+					<path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+				</svg>
+				<span class="drop-label">Drop GPX files here</span>
+				<span class="drop-sub">or click to browse</span>
 			{/if}
-			<input
-				type="file"
-				accept=".gpx"
-				multiple
-				class="file-input"
-				on:change={handleFileInput}
-			/>
+			<input type="file" accept=".gpx" multiple class="file-input" on:change={handleFileInput} />
 		</div>
 
 		{#if error}
-			<div class="import-error">{error}</div>
+			<div class="error-msg">{error}</div>
 		{/if}
 	{:else}
-		<!-- Import summary -->
-		<div class="import-summary">
-			<div class="summary-header">
-				<h4>{importedSession.name}</h4>
-				<button class="btn btn-sm btn-outline-danger" on:click={handleClearSession} title="Close session">
-					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+		<div class="session-card">
+			<!-- Header row: session name + close -->
+			<div class="session-header">
+				<div class="session-title">{importedSession.name}</div>
+				<button class="close-btn" on:click={handleClearSession} title="Close session">
+					<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
 						<path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/>
 					</svg>
 				</button>
 			</div>
 
-			<div class="summary-stats">
-				<div class="stat-row">
-					<span class="stat-label">Sailors</span>
-					<span class="stat-value">{importedSession.tracks.length}</span>
+			<!-- Stats row -->
+			<div class="stats-row">
+				<div class="stat">
+					<span class="stat-val">{importedSession.tracks.length}</span>
+					<span class="stat-key">sailors</span>
 				</div>
-				<div class="stat-row">
-					<span class="stat-label">Duration</span>
-					<span class="stat-value">{formatDuration((importedSession.endTime - importedSession.startTime) / 1000)}</span>
+				<div class="stat-divider"></div>
+				<div class="stat">
+					<span class="stat-val">{formatDuration((importedSession.endTime - importedSession.startTime) / 1000)}</span>
+					<span class="stat-key">duration</span>
+				</div>
+				<div class="stat-divider"></div>
+				<div class="stat">
+					<span class="stat-val">{formatDate(importedSession.date)}</span>
+					<span class="stat-key">date</span>
 				</div>
 			</div>
 
+			<!-- Track list -->
 			<div class="track-list">
 				{#each importedSession.tracks as track, idx}
-					<div class="track-item">
+					<div class="track-row">
 						<button
-							class="track-color-btn"
+							class="color-dot"
 							style="background-color: {getBoatColorHex(track.color)};"
 							on:click={() => toggleColorPicker(idx)}
 							title="Change color"
 						></button>
-						<div class="track-info">
+						<div class="track-detail">
 							<span class="track-name">{track.name}</span>
-							<span class="track-stats">
-								{formatDistance(track.stats.totalDistanceM)} &middot;
-								{track.stats.avgSpeedKnots.toFixed(1)} kn avg &middot;
+							<span class="track-meta">
+								{formatDistance(track.stats.totalDistanceM)}
+								<span class="meta-sep"></span>
+								{track.stats.avgSpeedKnots.toFixed(1)} kn avg
+								<span class="meta-sep"></span>
+								max {track.stats.maxSpeedKnots.toFixed(1)} kn
+								<span class="meta-sep"></span>
 								{track.stats.tackCount} tacks
 							</span>
 						</div>
@@ -169,8 +172,8 @@
 						<div class="color-picker">
 							{#each availableColors as [name, hex]}
 								<button
-									class="color-swatch"
-									class:selected={track.color === name}
+									class="swatch"
+									class:active={track.color === name}
 									style="background-color: {hex};"
 									on:click={() => handleColorSelect(idx, name)}
 									title={name}
@@ -189,18 +192,19 @@
 		width: 100%;
 	}
 
+	/* ── Drop zone ── */
 	.drop-zone {
 		position: relative;
-		border: 2px dashed var(--color-border-medium);
-		border-radius: var(--radius-lg);
-		padding: 24px 16px;
+		border: 1.5px dashed var(--color-border-medium);
+		border-radius: var(--radius-md);
+		padding: 18px 12px;
 		text-align: center;
 		cursor: pointer;
-		transition: all var(--transition-base);
+		transition: all 0.15s ease;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 8px;
+		gap: 4px;
 		color: var(--color-text-secondary);
 		background: var(--color-bg-primary);
 	}
@@ -208,13 +212,13 @@
 	.drop-zone:hover,
 	.drop-zone.drag-over {
 		border-color: var(--color-primary);
-		background: rgba(0, 123, 255, 0.05);
+		background: rgba(0, 123, 255, 0.04);
 		color: var(--color-primary);
 	}
 
 	.drop-zone.importing {
 		pointer-events: none;
-		opacity: 0.7;
+		opacity: 0.6;
 	}
 
 	.file-input {
@@ -225,165 +229,219 @@
 	}
 
 	.drop-icon {
-		font-size: 32px;
-		line-height: 1;
+		margin-bottom: 2px;
 	}
 
 	.spinner {
-		width: 24px;
-		height: 24px;
-		border: 3px solid var(--color-border-medium);
+		width: 20px;
+		height: 20px;
+		border: 2px solid var(--color-border-medium);
 		border-top-color: var(--color-primary);
 		border-radius: 50%;
-		animation: spin 0.8s linear infinite;
+		animation: spin 0.7s linear infinite;
 	}
 
 	@keyframes spin {
 		to { transform: rotate(360deg); }
 	}
 
-	.drop-text {
-		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-semibold);
+	.drop-label {
+		font-size: 12px;
+		font-weight: 600;
 	}
 
-	.drop-subtext {
-		font-size: var(--font-size-xs);
-		opacity: 0.7;
+	.drop-sub {
+		font-size: 10px;
+		opacity: 0.6;
 	}
 
-	.import-error {
-		margin-top: var(--spacing-sm);
-		padding: var(--spacing-sm);
-		background: rgba(220, 53, 69, 0.08);
-		border: 1px solid rgba(220, 53, 69, 0.25);
+	.error-msg {
+		margin-top: 6px;
+		padding: 6px 8px;
+		background: rgba(220, 53, 69, 0.06);
+		border: 1px solid rgba(220, 53, 69, 0.2);
 		border-radius: var(--radius-sm);
 		color: var(--color-danger);
-		font-size: var(--font-size-xs);
+		font-size: 11px;
 	}
 
-	.import-summary {
-		background: var(--color-bg-primary);
-		border: 1px solid var(--color-border-medium);
-		border-radius: var(--radius-lg);
-		padding: var(--spacing-md);
+	/* ── Session card ── */
+	.session-card {
+		width: 100%;
 	}
 
-	.summary-header {
+	.session-header {
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
-		margin-bottom: var(--spacing-sm);
+		justify-content: space-between;
+		margin-bottom: 8px;
 	}
 
-	.summary-header h4 {
-		margin: 0;
-		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-semibold);
+	.session-title {
+		font-size: 13px;
+		font-weight: 700;
 		color: var(--color-text-primary);
+		line-height: 1.2;
 	}
 
-	.summary-stats {
+	.close-btn {
 		display: flex;
-		gap: 16px;
+		align-items: center;
+		justify-content: center;
+		width: 22px;
+		height: 22px;
+		border: 1px solid var(--color-border-medium);
+		border-radius: var(--radius-sm);
+		background: var(--color-bg-secondary);
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition: all 0.12s ease;
+		flex-shrink: 0;
+	}
+
+	.close-btn:hover {
+		color: var(--color-danger);
+		border-color: var(--color-danger);
+		background: rgba(220, 53, 69, 0.06);
+	}
+
+	/* ── Stats row ── */
+	.stats-row {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 8px 0;
 		margin-bottom: 10px;
-		padding-bottom: var(--spacing-sm);
+		border-top: 1px solid var(--color-border-light);
 		border-bottom: 1px solid var(--color-border-light);
 	}
 
-	.stat-row {
+	.stat {
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+	}
+
+	.stat-val {
+		font-size: 12px;
+		font-weight: 700;
+		color: var(--color-text-primary);
+		line-height: 1.2;
+	}
+
+	.stat-key {
+		font-size: 9px;
+		text-transform: uppercase;
+		letter-spacing: 0.4px;
+		color: var(--color-text-secondary);
+		line-height: 1;
+	}
+
+	.stat-divider {
+		width: 1px;
+		height: 22px;
+		background: var(--color-border-light);
+		flex-shrink: 0;
+	}
+
+	/* ── Track list ── */
+	.track-list {
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
 	}
 
-	.stat-label {
-		font-size: 10px;
-		text-transform: uppercase;
-		color: var(--color-text-secondary);
-		letter-spacing: 0.5px;
-	}
-
-	.stat-value {
-		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-semibold);
-		color: var(--color-text-primary);
-	}
-
-	.track-list {
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
-	}
-
-	.track-item {
+	.track-row {
 		display: flex;
 		align-items: center;
-		gap: var(--spacing-sm);
+		gap: 8px;
+		padding: 6px 8px;
+		border-radius: var(--radius-sm);
+		transition: background 0.1s ease;
 	}
 
-	.track-color-btn {
-		width: 18px;
-		height: 18px;
+	.track-row:hover {
+		background: var(--color-bg-primary);
+	}
+
+	.color-dot {
+		width: 14px;
+		height: 14px;
 		border-radius: 50%;
 		flex-shrink: 0;
-		border: 2px solid rgba(255, 255, 255, 0.6);
+		border: 2px solid rgba(255, 255, 255, 0.7);
 		cursor: pointer;
-		transition: transform var(--transition-fast), box-shadow var(--transition-fast);
-		box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+		transition: transform 0.12s ease, box-shadow 0.12s ease;
+		box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
 	}
 
-	.track-color-btn:hover {
-		transform: scale(1.15);
-		box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25);
+	.color-dot:hover {
+		transform: scale(1.25);
+		box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
 	}
 
-	.color-picker {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 4px;
-		padding: 6px 8px;
-		background: var(--color-bg-secondary);
-		border: 1px solid var(--color-border-medium);
-		border-radius: var(--radius-sm);
-		margin-left: 26px;
-	}
-
-	.color-swatch {
-		width: 20px;
-		height: 20px;
-		border-radius: 50%;
-		border: 2px solid transparent;
-		cursor: pointer;
-		transition: transform var(--transition-fast), border-color var(--transition-fast);
-	}
-
-	.color-swatch:hover {
-		transform: scale(1.2);
-	}
-
-	.color-swatch.selected {
-		border-color: var(--color-text-primary);
-		box-shadow: 0 0 0 1px var(--color-bg-secondary);
-	}
-
-	.track-info {
+	.track-detail {
 		display: flex;
 		flex-direction: column;
 		min-width: 0;
+		gap: 1px;
 	}
 
 	.track-name {
-		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-semibold);
+		font-size: 12px;
+		font-weight: 600;
 		color: var(--color-text-primary);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+		line-height: 1.3;
 	}
 
-	.track-stats {
+	.track-meta {
 		font-size: 10px;
 		color: var(--color-text-secondary);
+		line-height: 1.3;
+	}
+
+	.meta-sep {
+		display: inline-block;
+		width: 2px;
+		height: 2px;
+		border-radius: 50%;
+		background: var(--color-text-secondary);
+		vertical-align: middle;
+		margin: 0 3px;
+		opacity: 0.5;
+	}
+
+	/* ── Color picker ── */
+	.color-picker {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+		padding: 5px 8px;
+		margin-left: 22px;
+		margin-bottom: 4px;
+		background: var(--color-bg-primary);
+		border: 1px solid var(--color-border-light);
+		border-radius: var(--radius-sm);
+	}
+
+	.swatch {
+		width: 18px;
+		height: 18px;
+		border-radius: 50%;
+		border: 2px solid transparent;
+		cursor: pointer;
+		transition: transform 0.1s ease, border-color 0.1s ease;
+	}
+
+	.swatch:hover {
+		transform: scale(1.2);
+	}
+
+	.swatch.active {
+		border-color: var(--color-text-primary);
+		box-shadow: 0 0 0 1px var(--color-bg-secondary);
 	}
 </style>

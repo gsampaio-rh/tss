@@ -53,8 +53,6 @@
 </script>
 
 <div class="course-marks-panel">
-	<h3 class="panel-title">Race Course</h3>
-
 	<div class="marks-list">
 		{#each markTypes as { type, label, icon }}
 			{@const placed = isPlaced(type)}
@@ -118,18 +116,7 @@
 
 <style>
 	.course-marks-panel {
-		padding: 10px 12px;
-		background: var(--color-bg-primary);
-		border: 1px solid var(--color-border-medium);
-		border-radius: var(--radius-lg);
-		margin-bottom: var(--spacing-sm);
-	}
-
-	.panel-title {
-		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-semibold);
-		color: var(--color-text-primary);
-		margin: 0 0 var(--spacing-sm) 0;
+		width: 100%;
 	}
 
 	.marks-list {
