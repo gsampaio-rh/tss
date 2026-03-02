@@ -16,7 +16,6 @@
 	import WindCompass from './overlays/WindCompass.svelte';
 	import MapViewControls from './overlays/MapViewControls.svelte';
 	import MapActionControls from './overlays/MapActionControls.svelte';
-	import FavouredTackOverlay from './overlays/FavouredTackOverlay.svelte';
 
 	let mapContainer: HTMLDivElement;
 	let L: typeof import('leaflet') | null = null;
@@ -365,10 +364,6 @@
 	$: currentWindDir = $session?.wind?.entries?.[0]?.direction ?? 0;
 	$: currentWindSpeed = $session?.wind?.entries?.[0]?.speed ?? 0;
 
-	$: activeFavouredTack = $session && $session.tracks.length > 0
-		? favouredTackCache.get($session.tracks[0].name) ?? null
-		: null;
-
 	// ── Reactive statements ──
 
 	$: if (ready && map && $timeline.currentTime) {
@@ -412,34 +407,6 @@
 	<div class="overlay-tr">
 		{#if $session}
 			<WindCompass direction={currentWindDir} speed={currentWindSpeed} />
-		{/if}
-		{#if trackColorMode === 'speed'}
-			<div class="speed-analysis-card">
-				<div class="speed-analysis-title">SOG / VMG</div>
-				<div class="metric-marker-legend">
-					<div class="metric-marker-row">
-						<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true">
-							<polygon points="10,2 2,18 18,18" fill="#f1d90a" stroke="#2b2b2b" stroke-width="1.4" />
-						</svg>
-						<span>Max VMG</span>
-					</div>
-					<div class="metric-marker-row">
-						<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true">
-							<polygon points="10,2 2,18 18,18" fill="none" stroke="#f3f6fa" stroke-width="2" />
-						</svg>
-						<span>Max SOG</span>
-					</div>
-				</div>
-				<div class="speed-legend-title">Speed Over Ground (kts)</div>
-				<div class="speed-legend-bar">
-					<span class="speed-legend-label">{speedRange.max.toFixed(2)}</span>
-					<div class="speed-gradient-bar"></div>
-					<span class="speed-legend-label">{speedRange.min.toFixed(2)}</span>
-				</div>
-			</div>
-		{/if}
-		{#if trackColorMode === 'favouredTack' && activeFavouredTack}
-			<FavouredTackOverlay data={activeFavouredTack} windDirection={currentWindDir} />
 		{/if}
 	</div>
 
@@ -487,77 +454,6 @@
 		flex-direction: column;
 		align-items: flex-end;
 		gap: 8px;
-	}
-
-	.speed-analysis-card {
-		padding: 7px 8px;
-		border-radius: var(--radius-md);
-		background: rgba(30, 34, 46, 0.85);
-		backdrop-filter: blur(10px);
-		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-		min-width: 122px;
-	}
-
-	.speed-analysis-title {
-		font-weight: 700;
-		font-size: 9px;
-		margin-bottom: 5px;
-		text-align: center;
-		color: rgba(255, 255, 255, 0.85);
-		letter-spacing: 0.3px;
-	}
-
-	.metric-marker-legend {
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-		margin-bottom: 6px;
-		padding-bottom: 5px;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-	}
-
-	.metric-marker-row {
-		display: flex;
-		align-items: center;
-		gap: 4px;
-		font-size: 9px;
-		font-weight: 600;
-		color: rgba(255, 255, 255, 0.75);
-	}
-
-	.speed-legend-title {
-		font-weight: 700;
-		font-size: 9px;
-		margin-bottom: 3px;
-		text-align: center;
-		color: rgba(255, 255, 255, 0.68);
-		letter-spacing: 0.3px;
-	}
-
-	.speed-legend-bar {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 2px;
-	}
-
-	.speed-legend-label {
-		font-variant-numeric: tabular-nums;
-		color: rgba(255, 255, 255, 0.5);
-		font-weight: 600;
-		font-size: 9px;
-	}
-
-	.speed-gradient-bar {
-		width: 14px;
-		height: 80px;
-		border-radius: 3px;
-		background: linear-gradient(to bottom,
-			rgb(255, 30, 30), rgb(255, 160, 0),
-			rgb(255, 255, 100), rgb(100, 180, 255),
-			rgb(200, 220, 255)
-		);
-		border: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
 	.overlay-bl {

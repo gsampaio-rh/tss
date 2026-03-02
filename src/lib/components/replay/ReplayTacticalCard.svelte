@@ -7,6 +7,10 @@
 	import { Position } from '$lib/domain/value-objects/Position';
 	import { interpolatePosition } from '$lib/domain/services/TrackInterpolator';
 	import { detectManeuvers, computeManeuverStats } from '$lib/domain/services/ManeuverDetectionService';
+	import { detectLegs } from '$lib/domain/services/LegDetectionService';
+	import { computePerformanceScores } from '$lib/domain/services/PerformanceMetricsService';
+	import SOGTimeChart from '$lib/components/replay/charts/SOGTimeChart.svelte';
+	import PerformanceRadar from '$lib/components/replay/charts/PerformanceRadar.svelte';
 	import { windwardMark, leewardMark, startLine } from '$lib/stores/courseMarks';
 
 	export let boat: Boat;
@@ -15,8 +19,9 @@
 	export let currentTime: number;
 	export let playerIndex: number;
 
-	type TabId = 'instruments' | 'performance' | 'maneuvers';
+	type TabId = 'instruments' | 'performance' | 'maneuvers' | 'sogChart' | 'radar';
 	let activeTab: TabId = 'instruments';
+	let isCollapsed = false;
 
 	const MS_TO_KNOTS = 1.94384;
 
@@ -98,6 +103,10 @@
 	$: maneuvers = detectManeuvers(track, windDir);
 	$: maneuverStats = computeManeuverStats(maneuvers);
 	$: maneuversUpToNow = maneuvers.filter((m) => m.time <= currentTime);
+	$: legs = detectLegs(track, session.raceCourse, windDir);
+	$: legMap = new Map([[track.name, legs]]);
+	$: maneuversMap = new Map([[track.name, maneuvers]]);
+	$: radarScore = computePerformanceScores([track], maneuversMap, legMap, windDir, 'upwind');
 
 	// Performance metrics
 	$: timeOnStarboard = computeTimeOnTack(false);
@@ -106,7 +115,6 @@
 		? (speedKnots / track.stats.maxSpeedKnots) * 100
 		: 0;
 	$: twaOptimal = absTwa >= 35 && absTwa <= 50 ? 100 : absTwa >= 25 && absTwa <= 65 ? 70 : 30;
-
 	function computeTimeOnTack(isPort: boolean): number {
 		// Simplified: count points up to current time on each tack
 		let count = 0;
@@ -138,7 +146,7 @@
 	}
 </script>
 
-<div class="sailor-card" data-player-index={playerIndex.toString()}>
+<div class="sailor-card" class:collapsed={isCollapsed} data-player-index={playerIndex.toString()}>
 	<!-- Header with boat name and color -->
 	<div class="card-header">
 		<div class="player-identity">
@@ -153,26 +161,68 @@
 				<strong class="player-name">{track.name}</strong>
 			</div>
 		</div>
-		<span class="tack-badge" class:port={pos?.tack} class:starboard={!pos?.tack}>
-			{tackSide}
-		</span>
+		<div class="header-actions">
+			<span class="tack-badge" class:port={pos?.tack} class:starboard={!pos?.tack}>
+				{tackSide}
+			</span>
+			<button
+				class="collapse-btn"
+				on:click={() => (isCollapsed = !isCollapsed)}
+				title={isCollapsed ? 'Expand card' : 'Collapse card'}
+				aria-label={isCollapsed ? 'Expand card' : 'Collapse card'}
+			>
+				<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+					{#if isCollapsed}
+						<path d="M3.646 9.854a.5.5 0 0 1 .708 0L8 13.5l3.646-3.646a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 0-.708z"/>
+					{:else}
+						<path d="M3.646 6.146a.5.5 0 0 1 .708 0L8 9.793l3.646-3.647a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 0-.708z"/>
+					{/if}
+				</svg>
+			</button>
+		</div>
 	</div>
 
-	<!-- Tabs -->
-	<div class="tab-bar">
-		<button class="tab" class:active={activeTab === 'instruments'} on:click={() => activeTab = 'instruments'}>
-			Instruments
-		</button>
-		<button class="tab" class:active={activeTab === 'performance'} on:click={() => activeTab = 'performance'}>
-			Performance
-		</button>
-		<button class="tab" class:active={activeTab === 'maneuvers'} on:click={() => activeTab = 'maneuvers'}>
-			Maneuvers
-		</button>
-	</div>
+	{#if isCollapsed}
+		<div class="collapsed-metrics">
+			<div class="collapsed-metric">
+				<span class="collapsed-key">SOG</span>
+				<span class="collapsed-val">{speedKnots.toFixed(1)} kts</span>
+			</div>
+			<div class="collapsed-metric">
+				<span class="collapsed-key">VMG</span>
+				<span class="collapsed-val">{vmg !== null ? `${vmg.toFixed(1)} kts` : '--'}</span>
+			</div>
+			<div class="collapsed-metric">
+				<span class="collapsed-key">TWA</span>
+				<span class="collapsed-val">{twa > 0 ? '+' : ''}{twa.toFixed(0)}&deg;</span>
+			</div>
+			<div class="collapsed-metric">
+				<span class="collapsed-key">Tack</span>
+				<span class="collapsed-val">{tackSide}</span>
+			</div>
+		</div>
+	{:else}
+		<!-- Tabs -->
+		<div class="tab-bar">
+			<button class="tab" class:active={activeTab === 'instruments'} on:click={() => activeTab = 'instruments'}>
+				Instruments
+			</button>
+			<button class="tab" class:active={activeTab === 'performance'} on:click={() => activeTab = 'performance'}>
+				Performance
+			</button>
+			<button class="tab" class:active={activeTab === 'maneuvers'} on:click={() => activeTab = 'maneuvers'}>
+				Maneuvers
+			</button>
+			<button class="tab" class:active={activeTab === 'sogChart'} on:click={() => activeTab = 'sogChart'}>
+				SOG vs Time
+			</button>
+			<button class="tab" class:active={activeTab === 'radar'} on:click={() => activeTab = 'radar'}>
+				Radar
+			</button>
+		</div>
 
-	<!-- Tab Content -->
-	<div class="tab-content">
+		<!-- Tab Content -->
+		<div class="tab-content">
 		{#if activeTab === 'instruments'}
 			<div class="instruments-grid">
 				<div class="instrument">
@@ -335,6 +385,20 @@
 				</div>
 			</div>
 
+		{:else if activeTab === 'sogChart'}
+			<div class="chart-tab">
+				<div class="chart-scroll">
+					<SOGTimeChart tracks={[track]} allLegs={legMap} windDirection={windDir} />
+				</div>
+			</div>
+
+		{:else if activeTab === 'radar'}
+			<div class="chart-tab">
+				<div class="radar-single-wrap">
+					<PerformanceRadar scores={radarScore} title="Upwind Performance" />
+				</div>
+			</div>
+
 		{:else if activeTab === 'maneuvers'}
 			<div class="maneuvers-section">
 				<div class="maneuver-summary">
@@ -391,7 +455,8 @@
 				{/if}
 			</div>
 		{/if}
-	</div>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -433,6 +498,12 @@
 		color: var(--color-text-primary);
 	}
 
+	.header-actions {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+
 	.tack-badge {
 		font-size: 10px;
 		padding: 2px 6px;
@@ -450,19 +521,72 @@
 		color: var(--color-success);
 	}
 
+	.collapse-btn {
+		width: 22px;
+		height: 22px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border: 1px solid var(--color-border-medium);
+		border-radius: var(--radius-sm);
+		background: var(--color-bg-secondary);
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.collapse-btn:hover {
+		color: var(--color-text-primary);
+		background: var(--color-bg-tertiary);
+	}
+
+	.collapsed-metrics {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 4px;
+		padding: 8px 10px;
+	}
+
+	.collapsed-metric {
+		display: flex;
+		flex-direction: column;
+		padding: 5px 6px;
+		background: var(--color-bg-tertiary);
+		border-radius: var(--radius-sm);
+		min-width: 0;
+	}
+
+	.collapsed-key {
+		font-size: 9px;
+		color: var(--color-text-secondary);
+		text-transform: uppercase;
+		letter-spacing: 0.3px;
+	}
+
+	.collapsed-val {
+		font-size: 11px;
+		font-weight: var(--font-weight-semibold);
+		color: var(--color-text-primary);
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
 	/* Tab Bar */
 	.tab-bar {
 		display: flex;
 		border-bottom: 1px solid var(--color-border-light);
 		background: var(--color-bg-secondary);
+		overflow-x: auto;
 	}
 
 	.tab {
-		flex: 1;
+		flex: 1 0 auto;
 		padding: 6px 4px;
 		border: none;
 		background: transparent;
-		font-size: 11px;
+		font-size: 10px;
 		font-weight: var(--font-weight-medium);
 		color: var(--color-text-secondary);
 		cursor: pointer;
@@ -537,6 +661,24 @@
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
+	}
+
+	.chart-tab {
+		padding: 0;
+	}
+
+	.chart-scroll {
+		overflow-x: auto;
+		overflow-y: hidden;
+	}
+
+	.radar-single-wrap {
+		background: #111;
+		border-radius: var(--radius-md);
+		padding: 8px 6px;
+		display: flex;
+		justify-content: center;
+		overflow-x: auto;
 	}
 
 	.perf-row {
