@@ -4,6 +4,10 @@
 	import { players, gameActions, game, isStart, turnCount } from '$lib/stores/game';
 	import HelpModal from '$lib/components/modals/HelpModal.svelte';
 	import SettingsModal from '$lib/components/modals/SettingsModal.svelte';
+	import ImportPanel from '$lib/components/replay/ImportPanel.svelte';
+	import WindInput from '$lib/components/replay/WindInput.svelte';
+	import CourseMarksPanel from '$lib/components/replay/CourseMarksPanel.svelte';
+	import { appMode, session } from '$lib/stores/session';
 	import { logger } from '$lib/infrastructure/logging/logger';
 
 	let showHelpModal = false;
@@ -121,6 +125,40 @@
 			</div>
 		</div>
 
+		<!-- Mode Toggle -->
+		<div class="mode-toggle">
+			<button
+				class="mode-btn"
+				class:active={$appMode === 'simulation'}
+				on:click={() => appMode.set('simulation')}
+			>
+				Simulation
+			</button>
+			<button
+				class="mode-btn"
+				class:active={$appMode === 'replay'}
+				on:click={() => appMode.set('replay')}
+			>
+				Replay
+			</button>
+		</div>
+
+		{#if $appMode === 'replay'}
+			<!-- GPX Replay Section -->
+			<div class="sidebar-section">
+				<h3 class="section-title">GPX Replay</h3>
+				<ImportPanel />
+			</div>
+
+			{#if $session}
+				<div class="sidebar-section">
+					<CourseMarksPanel />
+				</div>
+				<div class="sidebar-section">
+					<WindInput />
+				</div>
+			{/if}
+		{:else}
 		<!-- Wind Selector Section -->
 		<div class="sidebar-section">
 			<WindSelector />
@@ -203,6 +241,7 @@
 				</div>
 			{/if}
 		</div>
+		{/if}
 
 	</div>
 </div>
@@ -251,6 +290,39 @@
 
 	.header-buttons .btn svg {
 		margin: 0;
+	}
+
+	.mode-toggle {
+		display: flex;
+		background: var(--color-bg-primary);
+		border-radius: var(--radius-md);
+		padding: 2px;
+		margin-bottom: var(--spacing-lg);
+		border: 1px solid var(--color-border-medium);
+	}
+
+	.mode-btn {
+		flex: 1;
+		padding: 6px 12px;
+		border: none;
+		background: transparent;
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+		cursor: pointer;
+		border-radius: var(--radius-sm);
+		transition: all var(--transition-base);
+	}
+
+	.mode-btn.active {
+		background: var(--color-primary);
+		color: #fff;
+		box-shadow: var(--shadow-sm);
+	}
+
+	.mode-btn:hover:not(.active) {
+		color: var(--color-text-primary);
+		background: var(--color-bg-tertiary);
 	}
 </style>
 

@@ -1,0 +1,777 @@
+<script lang="ts">
+	import type { Boat } from '$lib/types/boat';
+	import type { SailorTrack, TrainingSession, Maneuver } from '$lib/types/session';
+	import { getBoatColorHex } from '$lib/types/game';
+	import { TacticalAnalysisService } from '$lib/domain/services/TacticalAnalysisService';
+	import { Angle } from '$lib/domain/value-objects/Angle';
+	import { Position } from '$lib/domain/value-objects/Position';
+	import { interpolatePosition } from '$lib/domain/services/TrackInterpolator';
+	import { detectManeuvers, computeManeuverStats } from '$lib/domain/services/ManeuverDetectionService';
+	import { windwardMark, leewardMark, startLine } from '$lib/stores/courseMarks';
+
+	export let boat: Boat;
+	export let track: SailorTrack;
+	export let session: TrainingSession;
+	export let currentTime: number;
+	export let playerIndex: number;
+
+	type TabId = 'instruments' | 'performance' | 'maneuvers';
+	let activeTab: TabId = 'instruments';
+
+	const MS_TO_KNOTS = 1.94384;
+
+	$: pos = interpolatePosition(track, currentTime);
+	$: speedKnots = (pos?.speed ?? 0) * MS_TO_KNOTS;
+	$: heading = pos?.rotation ?? 0;
+	$: normalizedHeading = ((heading % 360) + 360) % 360;
+	$: tackSide = pos?.tack ? 'Port' : 'Starboard';
+
+	// Wind at current time
+	$: windDir = getWindAtTime(currentTime);
+	$: windSpeed = getWindSpeedAtTime(currentTime);
+
+	function getWindAtTime(timeMs: number): number {
+		const entries = session.wind.entries;
+		if (entries.length === 0) return 0;
+		if (entries.length === 1) return entries[0].direction;
+		for (let i = entries.length - 1; i >= 0; i--) {
+			if (entries[i].time <= timeMs) return entries[i].direction;
+		}
+		return entries[0].direction;
+	}
+
+	function getWindSpeedAtTime(timeMs: number): number {
+		const entries = session.wind.entries;
+		if (entries.length === 0) return 0;
+		if (entries.length === 1) return entries[0].speed;
+		for (let i = entries.length - 1; i >= 0; i--) {
+			if (entries[i].time <= timeMs) return entries[i].speed;
+		}
+		return entries[0].speed;
+	}
+
+	// TWA (True Wind Angle) - angle between heading and wind
+	$: twa = angleDiff(heading, windDir);
+	$: absTwa = Math.abs(twa);
+
+	// VMG toward windward mark
+	$: vmgTarget = $windwardMark || ($leewardMark ? $leewardMark : null);
+	$: vmg = vmgTarget && pos
+		? computeVmgToGpsMark(pos.x, pos.y, pos.speed, heading, vmgTarget.lat, vmgTarget.lon)
+		: null;
+
+	function computeVmgToGpsMark(
+		x: number, y: number, speed: number, hdg: number,
+		markLat: number, markLon: number
+	): number {
+		// Simple VMG: speed * cos(angle between heading and bearing to mark)
+		// For now, use ATW-based VMG since marks are in GPS coords
+		const atwRad = (absTwa * Math.PI) / 180;
+		return speed * Math.cos(atwRad) * MS_TO_KNOTS;
+	}
+
+	// VMG as percentage of theoretical best
+	$: vmgEfficiency = vmg !== null && speedKnots > 0
+		? Math.min(100, Math.abs(vmg / speedKnots) * 100)
+		: null;
+
+	// Elapsed time
+	$: elapsedS = (currentTime - session.startTime) / 1000;
+	$: elapsedStr = formatDuration(elapsedS);
+
+	// Distance to windward mark (simplified)
+	$: distToMark = $windwardMark && pos
+		? computeDistToMark(pos, $windwardMark.lat, $windwardMark.lon)
+		: null;
+
+	function computeDistToMark(
+		p: { x: number; y: number },
+		markLat: number,
+		markLon: number
+	): number | null {
+		// Approximate distance using session bounds projection
+		// This is a rough estimate
+		return null; // Will be computed from GPS positions when available
+	}
+
+	// Maneuvers
+	$: maneuvers = detectManeuvers(track, windDir);
+	$: maneuverStats = computeManeuverStats(maneuvers);
+	$: maneuversUpToNow = maneuvers.filter((m) => m.time <= currentTime);
+
+	// Performance metrics
+	$: timeOnStarboard = computeTimeOnTack(false);
+	$: timeOnPort = computeTimeOnTack(true);
+	$: speedPercentile = track.stats.maxSpeedKnots > 0
+		? (speedKnots / track.stats.maxSpeedKnots) * 100
+		: 0;
+	$: twaOptimal = absTwa >= 35 && absTwa <= 50 ? 100 : absTwa >= 25 && absTwa <= 65 ? 70 : 30;
+
+	function computeTimeOnTack(isPort: boolean): number {
+		// Simplified: count points up to current time on each tack
+		let count = 0;
+		let total = 0;
+		for (const pt of track.points) {
+			if (pt.time > currentTime) break;
+			total++;
+			if (pt.tack === isPort) count++;
+		}
+		return total > 0 ? (count / total) * 100 : 50;
+	}
+
+	function angleDiff(a: number, b: number): number {
+		let d = b - a;
+		if (d > 180) d -= 360;
+		if (d < -180) d += 360;
+		return d;
+	}
+
+	function formatDuration(s: number): string {
+		const m = Math.floor(s / 60);
+		const sec = Math.floor(s % 60);
+		return `${m}:${sec.toString().padStart(2, '0')}`;
+	}
+
+	function formatTime(ms: number): string {
+		const d = new Date(ms);
+		return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+	}
+</script>
+
+<div class="sailor-card" data-player-index={playerIndex.toString()}>
+	<!-- Header with boat name and color -->
+	<div class="card-header">
+		<div class="player-identity">
+			<div class="player-avatar" style="background-color: {getBoatColorHex(boat.color)};">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="-7 -10 14 20" width="20" height="28">
+					<path d="M -4 7.5 L 4 7.5 C 5 1.5 5 -2.5 2.5 -9 L -2.5 -9 C -5 -2.5 -5 1.5 -4 7.5 Z"
+						stroke="#fff" stroke-width=".5" fill="#fff" fill-opacity="0.3" />
+					<path d="M 0 -6 C 2 -4 3 -1 2 6" stroke="white" fill="none" stroke-width="1" />
+				</svg>
+			</div>
+			<div class="player-info">
+				<strong class="player-name">{track.name}</strong>
+			</div>
+		</div>
+		<span class="tack-badge" class:port={pos?.tack} class:starboard={!pos?.tack}>
+			{tackSide}
+		</span>
+	</div>
+
+	<!-- Tabs -->
+	<div class="tab-bar">
+		<button class="tab" class:active={activeTab === 'instruments'} on:click={() => activeTab = 'instruments'}>
+			Instruments
+		</button>
+		<button class="tab" class:active={activeTab === 'performance'} on:click={() => activeTab = 'performance'}>
+			Performance
+		</button>
+		<button class="tab" class:active={activeTab === 'maneuvers'} on:click={() => activeTab = 'maneuvers'}>
+			Maneuvers
+		</button>
+	</div>
+
+	<!-- Tab Content -->
+	<div class="tab-content">
+		{#if activeTab === 'instruments'}
+			<div class="instruments-grid">
+				<div class="instrument">
+					<div class="inst-icon">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M12 2v20M2 12h20" stroke-opacity="0.3"/>
+							<path d="M12 2l4 8h-8l4-8z" fill="currentColor" stroke="none"/>
+						</svg>
+					</div>
+					<div class="inst-data">
+						<span class="inst-value">{speedKnots.toFixed(1)}</span>
+						<span class="inst-unit">kts</span>
+					</div>
+					<span class="inst-label">SOG</span>
+				</div>
+
+				<div class="instrument">
+					<div class="inst-icon">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M12 2L19 21H5L12 2z" fill="currentColor" stroke="none" transform="rotate({normalizedHeading}, 12, 12)"/>
+						</svg>
+					</div>
+					<div class="inst-data">
+						<span class="inst-value">{normalizedHeading.toFixed(0)}</span>
+						<span class="inst-unit">deg</span>
+					</div>
+					<span class="inst-label">Heading</span>
+				</div>
+
+				<div class="instrument">
+					<div class="inst-icon">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18">
+							<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z" fill="currentColor" opacity="0.3"/>
+							<path d="M12 6l2.5 6L12 18l-2.5-6L12 6z" fill="currentColor"/>
+						</svg>
+					</div>
+					<div class="inst-data">
+						<span class="inst-value">{twa > 0 ? '+' : ''}{twa.toFixed(0)}</span>
+						<span class="inst-unit">deg</span>
+					</div>
+					<span class="inst-label">TWA</span>
+				</div>
+
+				<div class="instrument">
+					<div class="inst-icon">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>
+						</svg>
+					</div>
+					<div class="inst-data">
+						<span class="inst-value">{vmg !== null ? vmg.toFixed(1) : '--'}</span>
+						<span class="inst-unit">kts</span>
+					</div>
+					<span class="inst-label">VMG</span>
+				</div>
+
+				<div class="instrument">
+					<div class="inst-icon">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+							<path d="M12 4C7 4 2.73 7.11 1 11.5 2.73 15.89 7 19 12 19s9.27-3.11 11-7.5C21.27 7.11 17 4 12 4zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" opacity="0.3"/>
+							<circle cx="12" cy="11.5" r="2.5"/>
+						</svg>
+					</div>
+					<div class="inst-data">
+						<span class="inst-value">{absTwa.toFixed(0)}</span>
+						<span class="inst-unit">deg</span>
+					</div>
+					<span class="inst-label">ATW</span>
+				</div>
+
+				<div class="instrument">
+					<div class="inst-icon">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+							<path d="M3 15h18v2H3v-2zm0-4h18v2H3v-2zm0-4h18v2H3V7z" opacity="0.3"/>
+							<circle cx="12" cy="12" r="3"/>
+						</svg>
+					</div>
+					<div class="inst-data">
+						<span class="inst-value">{windSpeed > 0 ? windSpeed.toFixed(0) : '--'}</span>
+						<span class="inst-unit">kts</span>
+					</div>
+					<span class="inst-label">TWS</span>
+				</div>
+			</div>
+
+		{:else if activeTab === 'performance'}
+			<div class="performance-section">
+				<!-- Speed gauge -->
+				<div class="perf-row">
+					<span class="perf-label">Speed % of Max</span>
+					<div class="perf-bar-container">
+						<div class="perf-bar" style="width: {Math.min(100, speedPercentile)}%;"
+							class:good={speedPercentile > 75}
+							class:ok={speedPercentile > 50 && speedPercentile <= 75}
+							class:poor={speedPercentile <= 50}
+						></div>
+					</div>
+					<span class="perf-value">{speedPercentile.toFixed(0)}%</span>
+				</div>
+
+				{#if vmgEfficiency !== null}
+					<div class="perf-row">
+						<span class="perf-label">VMG Efficiency</span>
+						<div class="perf-bar-container">
+							<div class="perf-bar" style="width: {vmgEfficiency}%;"
+								class:good={vmgEfficiency > 80}
+								class:ok={vmgEfficiency > 60 && vmgEfficiency <= 80}
+								class:poor={vmgEfficiency <= 60}
+							></div>
+						</div>
+						<span class="perf-value">{vmgEfficiency.toFixed(0)}%</span>
+					</div>
+				{/if}
+
+				<div class="perf-row">
+					<span class="perf-label">TWA Optimal</span>
+					<div class="perf-bar-container">
+						<div class="perf-bar" style="width: {twaOptimal}%;"
+							class:good={twaOptimal > 80}
+							class:ok={twaOptimal > 50 && twaOptimal <= 80}
+							class:poor={twaOptimal <= 50}
+						></div>
+					</div>
+					<span class="perf-value" class:good={absTwa >= 35 && absTwa <= 50} class:ok={absTwa >= 25 && absTwa <= 65} class:poor={absTwa < 25 || absTwa > 65}>
+						{absTwa.toFixed(0)}°
+					</span>
+				</div>
+
+				<!-- Tack distribution -->
+				<div class="tack-distribution">
+					<span class="perf-label">Tack Distribution</span>
+					<div class="tack-bar">
+						<div class="tack-port" style="width: {timeOnPort}%;">
+							P {timeOnPort.toFixed(0)}%
+						</div>
+						<div class="tack-stbd" style="width: {100 - timeOnPort}%;">
+							S {(100 - timeOnPort).toFixed(0)}%
+						</div>
+					</div>
+				</div>
+
+				<!-- Summary stats -->
+				<div class="perf-stats">
+					<div class="stat">
+						<span class="stat-label">Distance</span>
+						<span class="stat-value">{(track.stats.totalDistanceM / 1000).toFixed(2)} km</span>
+					</div>
+					<div class="stat">
+						<span class="stat-label">Duration</span>
+						<span class="stat-value">{formatDuration(track.stats.durationS)}</span>
+					</div>
+					<div class="stat">
+						<span class="stat-label">Avg Speed</span>
+						<span class="stat-value">{track.stats.avgSpeedKnots.toFixed(1)} kts</span>
+					</div>
+					<div class="stat">
+						<span class="stat-label">Max Speed</span>
+						<span class="stat-value">{track.stats.maxSpeedKnots.toFixed(1)} kts</span>
+					</div>
+				</div>
+			</div>
+
+		{:else if activeTab === 'maneuvers'}
+			<div class="maneuvers-section">
+				<div class="maneuver-summary">
+					<div class="maneuver-stat">
+						<span class="stat-big">{maneuverStats.totalTacks}</span>
+						<span class="stat-label">Tacks</span>
+					</div>
+					<div class="maneuver-stat">
+						<span class="stat-big">{maneuverStats.totalGybes}</span>
+						<span class="stat-label">Gybes</span>
+					</div>
+					<div class="maneuver-stat">
+						<span class="stat-big">{maneuverStats.avgTackAngle > 0 ? maneuverStats.avgTackAngle.toFixed(0) + '°' : '--'}</span>
+						<span class="stat-label">Avg Angle</span>
+					</div>
+					<div class="maneuver-stat">
+						<span class="stat-big">{maneuverStats.avgTackDuration > 0 ? maneuverStats.avgTackDuration.toFixed(1) + 's' : '--'}</span>
+						<span class="stat-label">Avg Time</span>
+					</div>
+				</div>
+
+				{#if maneuverStats.avgSpeedLossTack > 0}
+					<div class="speed-loss-row">
+						<span class="perf-label">Avg Speed Loss (Tack)</span>
+						<span class="speed-loss-value">-{maneuverStats.avgSpeedLossTack.toFixed(1)} kts</span>
+					</div>
+				{/if}
+
+				{#if maneuverStats.avgSpeedLossGybe > 0}
+					<div class="speed-loss-row">
+						<span class="perf-label">Avg Speed Loss (Gybe)</span>
+						<span class="speed-loss-value">-{maneuverStats.avgSpeedLossGybe.toFixed(1)} kts</span>
+					</div>
+				{/if}
+
+				<!-- Recent maneuvers timeline -->
+				{#if maneuversUpToNow.length > 0}
+					<div class="maneuver-list">
+						<span class="list-title">Recent Maneuvers</span>
+						{#each maneuversUpToNow.slice(-5).reverse() as m}
+							<div class="maneuver-item" class:tack={m.type === 'tack'} class:gybe={m.type === 'gybe'}>
+								<span class="maneuver-type">{m.type === 'tack' ? 'T' : 'G'}</span>
+								<span class="maneuver-time">{formatTime(m.time)}</span>
+								<span class="maneuver-angle">{m.headingChange.toFixed(0)}°</span>
+								<span class="maneuver-duration">{m.duration.toFixed(1)}s</span>
+								<span class="maneuver-speed-loss">
+									-{((m.speedBefore - m.speedMin) * MS_TO_KNOTS).toFixed(1)} kts
+								</span>
+							</div>
+						{/each}
+					</div>
+				{:else}
+					<p class="no-maneuvers">No maneuvers detected yet</p>
+				{/if}
+			</div>
+		{/if}
+	</div>
+</div>
+
+<style>
+	.sailor-card {
+		background: var(--color-bg-primary);
+		border: 1px solid var(--color-border-medium);
+		border-radius: var(--radius-lg);
+		overflow: hidden;
+		margin-bottom: var(--spacing-sm);
+	}
+
+	/* Header */
+	.card-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 8px 12px;
+		border-bottom: 1px solid var(--color-border-light);
+	}
+
+	.player-identity {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+	}
+
+	.player-avatar {
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	.player-name {
+		font-size: var(--font-size-sm);
+		color: var(--color-text-primary);
+	}
+
+	.tack-badge {
+		font-size: 10px;
+		padding: 2px 6px;
+		border-radius: var(--radius-sm);
+		font-weight: var(--font-weight-semibold);
+	}
+
+	.tack-badge.port {
+		background: rgba(220, 53, 69, 0.1);
+		color: var(--color-danger);
+	}
+
+	.tack-badge.starboard {
+		background: rgba(40, 167, 69, 0.1);
+		color: var(--color-success);
+	}
+
+	/* Tab Bar */
+	.tab-bar {
+		display: flex;
+		border-bottom: 1px solid var(--color-border-light);
+		background: var(--color-bg-secondary);
+	}
+
+	.tab {
+		flex: 1;
+		padding: 6px 4px;
+		border: none;
+		background: transparent;
+		font-size: 11px;
+		font-weight: var(--font-weight-medium);
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+		border-bottom: 2px solid transparent;
+	}
+
+	.tab.active {
+		color: var(--color-primary);
+		border-bottom-color: var(--color-primary);
+	}
+
+	.tab:hover:not(.active) {
+		color: var(--color-text-primary);
+		background: var(--color-bg-tertiary);
+	}
+
+	/* Tab Content */
+	.tab-content {
+		padding: 8px 10px;
+	}
+
+	/* Instruments Grid */
+	.instruments-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr 1fr;
+		gap: 6px;
+	}
+
+	.instrument {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 6px 4px;
+		background: var(--color-bg-tertiary);
+		border-radius: var(--radius-sm);
+		gap: 2px;
+	}
+
+	.inst-icon {
+		color: var(--color-text-secondary);
+		height: 18px;
+	}
+
+	.inst-data {
+		display: flex;
+		align-items: baseline;
+		gap: 2px;
+	}
+
+	.inst-value {
+		font-size: 16px;
+		font-weight: var(--font-weight-bold);
+		color: var(--color-text-primary);
+		line-height: 1;
+	}
+
+	.inst-unit {
+		font-size: 10px;
+		color: var(--color-text-secondary);
+	}
+
+	.inst-label {
+		font-size: 9px;
+		color: var(--color-text-secondary);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+
+	/* Performance */
+	.performance-section {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.perf-row {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+
+	.perf-label {
+		font-size: 10px;
+		color: var(--color-text-secondary);
+		min-width: 80px;
+	}
+
+	.perf-bar-container {
+		flex: 1;
+		height: 6px;
+		background: var(--color-bg-tertiary);
+		border-radius: 3px;
+		overflow: hidden;
+	}
+
+	.perf-bar {
+		height: 100%;
+		border-radius: 3px;
+		transition: width var(--transition-base);
+	}
+
+	.perf-bar.good { background: var(--color-success); }
+	.perf-bar.ok { background: var(--color-warning); }
+	.perf-bar.poor { background: var(--color-danger); }
+
+	.perf-value {
+		font-size: 11px;
+		font-weight: var(--font-weight-semibold);
+		min-width: 32px;
+		text-align: right;
+		color: var(--color-text-primary);
+	}
+
+	.perf-value.good { color: var(--color-success); }
+	.perf-value.ok { color: var(--color-warning); }
+	.perf-value.poor { color: var(--color-danger); }
+
+	/* Tack Distribution */
+	.tack-distribution {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+
+	.tack-bar {
+		display: flex;
+		height: 20px;
+		border-radius: var(--radius-sm);
+		overflow: hidden;
+		font-size: 9px;
+		font-weight: var(--font-weight-semibold);
+	}
+
+	.tack-port {
+		background: rgba(220, 53, 69, 0.15);
+		color: var(--color-danger);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.tack-stbd {
+		background: rgba(40, 167, 69, 0.15);
+		color: var(--color-success);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	/* Performance Stats */
+	.perf-stats {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 4px;
+		padding-top: 6px;
+		border-top: 1px solid var(--color-border-light);
+	}
+
+	.stat {
+		display: flex;
+		flex-direction: column;
+		padding: 4px 6px;
+		background: var(--color-bg-tertiary);
+		border-radius: var(--radius-sm);
+	}
+
+	.stat-label {
+		font-size: 9px;
+		color: var(--color-text-secondary);
+		text-transform: uppercase;
+		letter-spacing: 0.3px;
+	}
+
+	.stat-value {
+		font-size: 12px;
+		font-weight: var(--font-weight-semibold);
+		color: var(--color-text-primary);
+	}
+
+	/* Maneuvers */
+	.maneuvers-section {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.maneuver-summary {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 4px;
+	}
+
+	.maneuver-stat {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 6px 2px;
+		background: var(--color-bg-tertiary);
+		border-radius: var(--radius-sm);
+	}
+
+	.stat-big {
+		font-size: 18px;
+		font-weight: var(--font-weight-bold);
+		color: var(--color-text-primary);
+		line-height: 1.1;
+	}
+
+	.maneuver-stat .stat-label {
+		font-size: 8px;
+	}
+
+	.speed-loss-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 4px 6px;
+		background: rgba(220, 53, 69, 0.05);
+		border-radius: var(--radius-sm);
+	}
+
+	.speed-loss-value {
+		font-size: 12px;
+		font-weight: var(--font-weight-semibold);
+		color: var(--color-danger);
+	}
+
+	/* Maneuver List */
+	.maneuver-list {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+	}
+
+	.list-title {
+		font-size: 10px;
+		font-weight: var(--font-weight-semibold);
+		color: var(--color-text-secondary);
+		text-transform: uppercase;
+		letter-spacing: 0.3px;
+		margin-bottom: 2px;
+	}
+
+	.maneuver-item {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 3px 6px;
+		border-radius: var(--radius-sm);
+		font-size: 10px;
+	}
+
+	.maneuver-item.tack {
+		background: rgba(0, 123, 255, 0.05);
+	}
+
+	.maneuver-item.gybe {
+		background: rgba(255, 140, 0, 0.05);
+	}
+
+	.maneuver-type {
+		width: 16px;
+		height: 16px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 9px;
+		font-weight: var(--font-weight-bold);
+		color: white;
+		flex-shrink: 0;
+	}
+
+	.tack .maneuver-type {
+		background: var(--color-primary);
+	}
+
+	.gybe .maneuver-type {
+		background: #ff8c00;
+	}
+
+	.maneuver-time {
+		color: var(--color-text-secondary);
+		min-width: 56px;
+	}
+
+	.maneuver-angle {
+		font-weight: var(--font-weight-semibold);
+		color: var(--color-text-primary);
+		min-width: 28px;
+	}
+
+	.maneuver-duration {
+		color: var(--color-text-secondary);
+		min-width: 28px;
+	}
+
+	.maneuver-speed-loss {
+		color: var(--color-danger);
+		font-weight: var(--font-weight-medium);
+		margin-left: auto;
+	}
+
+	.no-maneuvers {
+		font-size: 11px;
+		color: var(--color-text-secondary);
+		text-align: center;
+		padding: 12px 0;
+		margin: 0;
+	}
+</style>
