@@ -120,6 +120,60 @@ export interface TrainingSession {
 	raceCourse: RaceCourse;
 }
 
+// --- Leg Detection ---
+
+export type LegType = 'upwind' | 'downwind' | 'reach';
+
+export interface LegStats {
+	avgSOG: number; // knots
+	maxSOG: number; // knots
+	avgVMG: number; // knots
+	avgTWA: number; // degrees
+	distance: number; // meters
+	duration: number; // seconds
+	tackCount: number;
+	gybeCount: number;
+}
+
+export interface Leg {
+	type: LegType;
+	legNumber: number;
+	startIdx: number;
+	endIdx: number;
+	startTime: number; // unix ms
+	endTime: number; // unix ms
+	stats: LegStats;
+}
+
+// --- Track Color Modes ---
+
+export type TrackColorMode = 'boat' | 'speed' | 'favouredTack';
+
+// --- Performance Scores ---
+
+export interface PerformanceScore {
+	sailorName: string;
+	color: string;
+	axes: number[]; // 6 values, 0-100
+}
+
+// --- Wind Shift Analysis ---
+
+export interface WindShiftPoint {
+	index: number;
+	shiftDeg: number;
+	side: 'left' | 'right';
+}
+
+export interface FavouredTackData {
+	shiftPoints: WindShiftPoint[];
+	meanTWA: number;
+	rightSidePercent: number;
+	leftSidePercent: number;
+	rightShiftPercent: number;
+	leftShiftPercent: number;
+}
+
 // --- App mode ---
 
 export type AppMode = 'simulation' | 'replay';

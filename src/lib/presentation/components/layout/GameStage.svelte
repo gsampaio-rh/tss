@@ -4,12 +4,20 @@
 	import GameCanvas from '$lib/components/game/GameCanvas.svelte';
 	import MapReplayCanvas from '$lib/components/replay/MapReplayCanvas.svelte';
 	import TimelineControls from '$lib/components/replay/TimelineControls.svelte';
+	import AnalysisDrawer from '$lib/components/replay/AnalysisDrawer.svelte';
+
+	let showAnalysis = false;
 </script>
 
 <div class="game-stage-container">
 	{#if $appMode === 'replay'}
 		{#if $session}
-			<MapReplayCanvas />
+			<div class="replay-layout" class:with-drawer={showAnalysis}>
+				<div class="map-area">
+					<MapReplayCanvas bind:showAnalysisDrawer={showAnalysis} />
+				</div>
+				<AnalysisDrawer open={showAnalysis} />
+			</div>
 			<TimelineControls />
 		{:else}
 			<div class="d-flex align-items-center justify-content-center h-100">
@@ -31,4 +39,21 @@
 	{/if}
 </div>
 
+<style>
+	.replay-layout {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
 
+	.map-area {
+		flex: 1;
+		position: relative;
+		min-height: 0;
+	}
+</style>
